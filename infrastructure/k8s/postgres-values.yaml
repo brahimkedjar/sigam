@@ -1,0 +1,14 @@
+pgpool:
+  adminUsername: postgres
+  adminPassword: crb12345
+  replicaCount: 1
+
+postgresql:
+  username: postgres
+  password: crb12345
+  database: sigam
+
+auth:
+  username: postgres
+  password: crb12345
+  database: sigam

@@ -1,0 +1,534 @@
+// pages/permis_dashboard/view/page.tsx
+import React, { useState } from 'react';
+import styles from './PermisView.module.css';
+import { Calendar, Clock, MapPin, FileText, Building2, RefreshCw, Edit2, FileSearch, XCircle, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
+import { useSearchParams } from 'next/navigation';
+import axios from 'axios';
+import NotificationBanner from '@/components/NotificationBanner';
+
+interface Procedure {
+  id_proc: number;
+  num_proc: string;
+  date_debut_proc: Date;
+  date_fin_proc: Date | null;
+  statut_proc: string;
+  typeProcedure: {
+    libelle: string;
+  };
+  SubstanceAssocieeDemande: {
+    substance: {
+      id_sub: number;
+      nom_subFR: string;
+      nom_subAR: string;
+      catégorie_sub: string;
+    };
+  }[];
+  ProcedureEtape: {
+    id_etape: number;
+    statut: string;
+    date_debut: Date;
+    date_fin: Date | null;
+    etape: {
+      lib_etape: string;
+      ordre_etape: number;
+    };
+  }[];
+}
+
+interface PermisDetails {
+  id: number;
+  code_permis: string;
+  date_octroi: Date | null;
+  date_expiration: Date | null;
+  date_annulation: Date | null;
+  date_renonciation: Date | null;
+  superficie: number | null;
+  statut: {
+    lib_statut: string;
+  } | null;
+  typePermis: {
+    lib_type: string;
+    code_type: string;
+  };
+  detenteur: {
+    nom_sociétéFR: string;
+  } | null;
+  procedures: Procedure[];
+}
+
+interface Props {
+  permis: PermisDetails;
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const id = context.query.id;
+
+  try {
+    const res = await fetch(`http://localhost:3001/Permisdashboard/${id}`);
+    if (!res.ok) throw new Error('Failed');
+
+    const permis = await res.json();
+    return {
+      props: { permis },
+    };
+  } catch (error) {
+    return { notFound: true };
+  }
+};
+
+const PermisViewPage: React.FC<Props> = ({ permis }) => {
+  const router = useRouter();
+  const [notif, setNotif] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [pendingPermisId, setPendingPermisId] = useState<number | null>(null);
+const searchParams = useSearchParams();
+const idPermis = searchParams!.get('id');
+  const formatDate = (date: Date | null) => {
+    return date ? format(new Date(date), 'PPP', { locale: fr }) : 'Non définie';
+  };
+
+  const procedureTypes = Array.from(
+    new Set(permis.procedures.map(p => p.typeProcedure.libelle))
+  );
+
+   const [selectedProcedures, setSelectedProcedures] = useState<Procedure[]>([]);
+
+const handleProcedureTypeClick = (type: string) => {
+  const matchingProcedures = permis.procedures.filter(p => p.typeProcedure.libelle === type);
+  if (matchingProcedures.length > 0) {
+    setSelectedProcedures(matchingProcedures);
+    setSelectedProcedure(matchingProcedures[0]); // default selection
+    setIsModalOpen(true);
+  }
+};
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'EN_COURS':
+        return styles.badgePrimary;
+      case 'TERMINEE':
+        return styles.badgeSuccess;
+      case 'EN_ATTENTE':
+        return styles.badgeWarning;
+      case 'REJETEE':
+      case 'ANNULEE':
+        return styles.badgeDanger;
+      default:
+        return styles.badgeNeutral;
+    }
+  };
+
+  const getProcedureBorderColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'EN_COURS': return '#6366f1';
+      case 'TERMINEE': return '#10b981';
+      case 'EN_ATTENTE': return '#f59e0b';
+      case 'REJETEE': return '#ef4444';
+      default: return '#94a3b8';
+    }
+  };
+
+  // Function to get all unique substances from all procedures
+  const getAllSubstances = () => {
+    const allSubstances: {
+      id_sub: number;
+      nom_subFR: string;
+      nom_subAR: string;
+      catégorie_sub: string;
+    }[] = [];
+
+    permis.procedures.forEach(procedure => {
+      procedure.SubstanceAssocieeDemande.forEach(sub => {
+        if (!allSubstances.some(s => s.id_sub === sub.substance.id_sub)) {
+          allSubstances.push(sub.substance);
+        }
+      });
+    });
+
+    return allSubstances;
+  };
+
+ const handleViewProcedure = (procedure: Procedure) => {
+  const isRenewal = procedure.typeProcedure.libelle.toLowerCase() === 'renouvellement';
+  const currentStep = procedure.ProcedureEtape.find(step => step.statut === 'EN_COURS');
+
+  let url: string;
+
+  if (isRenewal) {
+    // Find the original procedure (non-renouvellement)
+    const original = permis.procedures.find(p => 
+      p.typeProcedure.libelle.toLowerCase() !== 'renouvellement'
+    );
+
+    const originalDemandeId = original?.ProcedureEtape?.[0]?.id_etape || null;
+    const originalProcId = original?.id_proc || null;
+
+    if (currentStep) {
+      url = `/renouvellement/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
+    } else {
+      url = `/renouvellement/step2/page2?id=${procedure.id_proc}`;
+    }
+
+    // Add original params if found
+    if (originalDemandeId && originalProcId) {
+      url += `&originalDemandeId=${originalDemandeId}&original_proc_id=${originalProcId}`;
+    }
+
+  } else {
+    // Non-renewal
+    if (currentStep) {
+      url = `/demande/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
+    } else {
+      url = `/demande/step2/page2?id=${procedure.id_proc}`;
+    }
+  }
+
+  window.open(url, '_blank');
+};
+
+
+
+ const handleRenewalClick = async (permisId: number) => {
+  try {
+    // First: Only check payments
+    await axios.post('http://localhost:3001/api/procedures/renouvellement/check-payments', {
+      permisId,
+    });
+
+    // If OK, show date selection modal
+    setPendingPermisId(permisId);
+    setShowDateModal(true);
+  } catch (error: any) {
+    const message = error.response?.data?.message || 'Paiement incomplet';
+    setNotif({ message: `⛔ ${message}`, type: 'error' });
+  }
+};
+
+const handleSubmitDate = async () => {
+  if (!selectedDate || !pendingPermisId) return;
+
+  try {
+    const res = await axios.post('http://localhost:3001/api/procedures/renouvellement/start', {
+      permisId: pendingPermisId,
+      date_demande: selectedDate.toISOString().split('T')[0], // 👈 ensure ISO date without time
+    });
+
+    const { original_demande_id, original_proc_id, new_proc_id } = res.data;
+
+    router.push(
+      `/renouvellement/step2/page2?id=${new_proc_id}&originalDemandeId=${original_demande_id}&original_proc_id=${original_proc_id}`
+    );
+  } catch (error: any) {
+    setNotif({ message: 'Erreur lors du renouvellement.', type: 'error' });
+  } finally {
+    setShowDateModal(false);
+    setPendingPermisId(null);
+    setSelectedDate(null);
+  }
+};
+
+  const substances = getAllSubstances();
+
+
+  return (
+  <div className={styles.container}>
+    {notif && (
+  <NotificationBanner
+    message={notif.message}
+    type={notif.type}
+    onClose={() => setNotif(null)}
+  />
+)}
+
+    <div className={styles.header}>
+      <h1 className={styles.headerTitle}>Détails du Permis</h1>
+      <p className={styles.headerSubtitle}>
+        Informations complètes sur le permis {permis.code_permis}
+      </p>
+    </div>
+
+    <div className={styles.gridLayout}>
+      {/* Main Content */}
+      <div className="space-y-6">
+        {/* General Info Card */}
+        <div className={`${styles.card} ${styles.animateIn}`}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderIcon}>
+              <FileText size={20} />
+            </div>
+            <h2 className={styles.cardTitle}>Informations générales</h2>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.infoGrid}>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Code Permis</span>
+                <span className={styles.infoValue}>{permis.code_permis}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Type de Permis</span>
+                <span className={styles.infoValue}>
+                  {permis.typePermis.lib_type} ({permis.typePermis.code_type})
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Statut</span>
+                <span className={`${styles.badge} ${getStatusColor(permis.statut?.lib_statut || '')}`}>
+                  {permis.statut?.lib_statut || 'Inconnu'}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Superficie</span>
+                <span className={styles.infoValue}>
+                  {permis.superficie ? `${permis.superficie} Ha` : 'Non définie'}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Titulaire</span>
+                <span className={styles.infoValue}>
+                  {permis.detenteur?.nom_sociétéFR || 'Non défini'}
+                </span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Substances</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {substances.length > 0 ? (
+                    substances.map((substance) => (
+                      <span key={substance.id_sub} className={`${styles.badge} ${styles.badgePrimary}`}>
+                        {substance.nom_subFR}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-500">Non spécifiées</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dates Card */}
+        <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderIcon}>
+              <Calendar size={20} />
+            </div>
+            <h2 className={styles.cardTitle}>Dates importantes</h2>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.infoGrid}>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Date d'octroi</span>
+                <span className={styles.infoValue}>{formatDate(permis.date_octroi)}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Date d'expiration</span>
+                <span className={styles.infoValue}>{formatDate(permis.date_expiration)}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Date d'annulation</span>
+                <span className={styles.infoValue}>{formatDate(permis.date_annulation)}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>Date de renonciation</span>
+                <span className={styles.infoValue}>{formatDate(permis.date_renonciation)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Procedures Card */}
+        <div className={`${styles.card} ${styles.animateIn} ${styles.delay2}`}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderIcon}>
+              <Clock size={20} />
+            </div>
+            <h2 className={styles.cardTitle}>Procédures associées</h2>
+          </div>
+          <div className={styles.cardContent}>
+            {/* Procedure Types Section */}
+            <div className={styles.procedureTypes}>
+  <h3 className={styles.procedureTypesTitle}>Types de procédures</h3>
+  <div className={styles.procedureTypesList}>
+    {procedureTypes.map(type => (
+      <button
+        key={type}
+        onClick={() => handleProcedureTypeClick(type)}
+        className={styles.procedureTypeBadge}
+      >
+        {type}
+      </button>
+    ))}
+  </div>
+</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div className="space-y-6">
+  {/* Quick Actions Card */}
+  <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
+    <div className={styles.cardHeader}>
+      <div className={styles.cardHeaderIcon}>
+        <Building2 size={20} />
+      </div>
+      <h2 className={styles.cardTitle}>Actions rapides</h2>
+    </div>
+    <div className={styles.cardContent}>
+      <button 
+  className={`${styles.actionButton} ${styles.actionButtonPrimary}`}
+  disabled={permis.typePermis.code_type === 'PEM'}
+  style={{
+    opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+    cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+  }}
+  onClick={() => handleRenewalClick(permis.id)}
+
+>
+  <RefreshCw size={18} />
+  Demander un renouvellement
+</button>
+      <button 
+        className={`${styles.actionButton} ${styles.actionButtonSuccess}`}
+        disabled={permis.typePermis.code_type === 'PEM'}
+        style={{
+          opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+          cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+        }}
+      >
+        <Edit2 size={18} />
+        Demander une modification
+      </button>
+      <button 
+        className={`${styles.actionButton} ${styles.actionButtonWarning}`}
+       disabled={permis.typePermis.code_type === 'PEM'}
+        style={{
+          opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+          cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+        }}
+      >
+        <FileSearch size={18} />
+        Consulter les documents
+      </button>
+      <button 
+        className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+        disabled={permis.typePermis.code_type === 'PEM'}
+        style={{
+          opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+          cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+        }}
+      >
+        <XCircle size={18} />
+        Demander une renonciation
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+    {/* Procedure Modal */}
+{isModalOpen && selectedProcedure && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <button 
+        onClick={() => setIsModalOpen(false)} 
+        className={styles.modalCloseButton}
+      >
+        <XCircle size={20} />
+      </button>
+      
+      <h2 className={styles.modalTitle}>
+        {selectedProcedure.typeProcedure.libelle} - {selectedProcedure.num_proc}
+      </h2>
+      
+      <div className={styles.modalBody}>
+        <div className={styles.modalProcedureInfo}>
+          <div className={styles.modalProcedureDates}>
+            <span>Début: {formatDate(selectedProcedure.date_debut_proc)}</span>
+            <span> - </span>
+            <span>Fin: {formatDate(selectedProcedure.date_fin_proc)}</span>
+          </div>
+          <div className={`${styles.badge} ${getStatusColor(selectedProcedure.statut_proc)}`}>
+            {selectedProcedure.statut_proc}
+          </div>
+        </div>
+        {/* Add this here before the modalStepsContainer */}
+{selectedProcedures.length > 1 && (
+  <div className={styles.procedureSelector}>
+    <label className={styles.procedureSelectorLabel}>Choisir une procédure :</label>
+    <select
+      className={styles.procedureSelectorDropdown}
+      value={selectedProcedure?.id_proc}
+      onChange={(e) => {
+        const freshProc = permis.procedures.find(p => p.id_proc === Number(e.target.value));
+        if (freshProc) setSelectedProcedure(freshProc);
+      }}
+    >
+      {selectedProcedures.map(p => (
+        <option key={p.id_proc} value={p.id_proc}>
+          {p.num_proc} - {formatDate(p.date_debut_proc)}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+
+        <div className={styles.modalStepsContainer}>
+          {selectedProcedure.ProcedureEtape.map((step) => (
+            <div key={step.id_etape} className={styles.stepItem}>
+              <div 
+                className={styles.stepIndicator} 
+                style={{
+                  backgroundColor: step.statut === 'TERMINEE' ? '#10b981' :
+                                  step.statut === 'EN_ATTENTE' ? '#6366f1' : '#e2e8f0',
+                  color: step.statut === 'EN_ATTENTE' ? '#64748b' : 'white'
+                }}
+              >
+                {step.etape.ordre_etape}
+              </div>
+              <div className={styles.stepContent}>
+                <h4 className={styles.stepTitle}>{step.etape.lib_etape}</h4>
+                <div className={styles.stepDates}>
+                  {formatDate(step.date_debut)} - {formatDate(step.date_fin)}
+                </div>
+                <span className={`${styles.badge} ${getStatusColor(step.statut)}`}>
+                  {step.statut}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className={styles.modalSecondaryButton}
+        >
+          Fermer
+        </button>
+        <button
+          onClick={() => {
+            setIsModalOpen(false);
+            handleViewProcedure(selectedProcedure);
+          }}
+          className={styles.modalPrimaryButton}
+        >
+          Voir la procédure
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+  </div>
+);
+}
+
+export default PermisViewPage;

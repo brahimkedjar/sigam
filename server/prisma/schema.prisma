@@ -1,0 +1,720 @@
+// This is your Prisma schema file,
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === 1. Prisma Schema (schema.prisma) ===
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  roleId    Int?
+  role      Role?     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Role {
+  id               Int              @id @default(autoincrement())
+  name             String           @unique
+  users            User[]
+  rolePermissions  RolePermission[]
+}
+
+model Permission {
+  id                Int              @id @default(autoincrement())
+  name              String           @unique
+  rolePermissions   RolePermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model DossierAdministratif {
+  id_dossier   Int                   @id @default(autoincrement())
+  id_typeproc Int
+  id_typePermis Int
+  nombre_doc   Int
+  remarques    String?
+  typePermis        TypePermis @relation(fields: [id_typePermis], references: [id])
+  typeProcedure TypeProcedure @relation(fields: [id_typeproc], references: [id])
+  dossierDocuments DossierDocument[]
+  @@unique([id_typePermis, id_typeproc])
+}
+
+model Document {
+  id_doc       Int                @id @default(autoincrement())
+  nom_doc      String
+  description  String
+  format       String
+  taille_doc   String
+  dossierDocuments DossierDocument[]
+  dossierFournisDocuments DossierFournisDocument[]
+}
+
+model DossierFournis {
+  id_dossierFournis Int      @id @default(autoincrement())
+  id_demande      Int
+  date_depot      DateTime @default(now())
+  statut_dossier  String   // e.g., 'complet', 'incomplet', 'en_revision'
+  remarques       String?
+  
+  demande         Demande  @relation(fields: [id_demande], references: [id_demande])
+  documents       DossierFournisDocument[]
+  
+  @@map("dossier_fournis")
+}
+
+model DossierFournisDocument {
+  id_dossierFournis Int
+  id_doc         Int
+  status         String   // 'present' | 'manquant'
+  file_url       String?  // optional
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  dossierFournis DossierFournis @relation(fields: [id_dossierFournis], references: [id_dossierFournis])
+  document       Document       @relation(fields: [id_doc], references: [id_doc])
+
+  @@id([id_dossierFournis, id_doc])
+  @@map("dossier_fournis_document")
+}
+
+model DossierDocument {
+  id_dossier     Int
+  id_doc         Int
+
+  document       Document           @relation(fields: [id_doc], references: [id_doc])
+  dossier        DossierAdministratif @relation(fields: [id_dossier], references: [id_dossier])
+
+  @@id([id_dossier, id_doc])
+}
+
+model StatutPermis {
+    id                Int       @id @default(autoincrement())
+    lib_statut        String //Actif - suspendu - annulé - rennoncé - expiré
+    description       String
+    Permis Permis[]
+}
+
+model TypePermis {
+  id                Int       @id @default(autoincrement())
+  id_droit         Int
+  id_taxe          Int
+  lib_type          String    @unique   //Permis de prospection / Permis d'exploration ...
+  code_type         String    @unique // ppm / PEM / PXC ...
+  regime            String    // mines / carriere
+  duree_initiale    Int       // in years
+  duree_renouv_max  Int       // max renewal times
+  delai_renouv      Int       // days before expiration
+  superficie_max    Float?
+  permis            Permis[]
+  
+  @@map("typepermis")
+  DossierAdministratif DossierAdministratif[]
+  Demande Demande[]
+  barem            BaremProduitetDroit @relation(fields: [id_droit], references: [id])
+  taxe             SuperficiaireBareme @relation(fields: [id_taxe], references: [id])
+}
+
+model TypeProcedure {
+  id                Int         @id @default(autoincrement())
+  libelle           String?     // demande / extention / renouvellement / mofification / fusion ...
+  description       String?
+  procedures        Procedure[]
+  id_droit         Int?
+  @@map("typeprocedure")
+  DossierAdministratif DossierAdministratif[]
+  barem            BaremProduitetDroit? @relation(fields: [id_droit], references: [id])
+}
+
+
+model Permis {
+  id                        Int              @id @default(autoincrement())
+  id_typePermis             Int
+  id_antenne                Int?
+  id_detenteur              Int?
+  id_statut                 Int?
+  code_permis               String           @unique
+  date_adjudication         DateTime?
+  date_octroi               DateTime?
+  date_expiration           DateTime?
+  date_annulation           DateTime?
+  date_renonciation         DateTime?
+  duree_validite            Int              // in years
+  lieu_dit                  String?
+  mode_attribution          String?
+  superficie                Float?
+  utilisation               String?
+  statut_juridique_terrain String?
+  duree_prevue_travaux      Int?
+  date_demarrage_travaux    DateTime?
+  statut_activites          String?
+  commentaires              String?
+
+  // Relations
+  typePermis                TypePermis       @relation(fields: [id_typePermis], references: [id])
+  antenne                   Antenne?         @relation(fields: [id_antenne], references: [id_antenne])
+  detenteur                 DetenteurMorale? @relation(fields: [id_detenteur], references: [id_detenteur])
+  statut                    StatutPermis?    @relation(fields: [id_statut], references: [id])
+  procedures                Procedure[]  @relation("PermisProcedure")
+  RapportActivite           RapportActivite[]
+  @@map("permis") // Optional: maps to actual SQL table name
+  CahierCharge CahierCharge[]
+  ObligationFiscale ObligationFiscale[]
+}
+
+enum StatutProcedure {
+  EN_COURS     // "En cours"
+  TERMINEE     // "Terminée"
+  EN_ATTENTE   // "En attente"
+}
+
+enum StatutDemande {
+  ACCEPTEE
+  EN_COURS
+  REJETEE
+}
+
+model EtapeProc {
+  id_etape     Int          @id @default(autoincrement())
+  lib_etape    String
+  duree_etape  Int?         // en jours
+  ordre_etape  Int
+
+  procedureEtapes ProcedureEtape[]  // liaison
+  @@map("etape_proc")
+}
+
+model ProcedureEtape {
+  id_proc    Int
+  id_etape   Int
+  statut     StatutProcedure    // "en cours", "terminée", "en attente", etc.
+  date_debut DateTime
+  date_fin   DateTime?
+
+  procedure Procedure @relation(fields: [id_proc], references: [id_proc])
+  etape     EtapeProc @relation(fields: [id_etape], references: [id_etape])
+
+  @@id([id_proc, id_etape])
+  @@map("procedure_etape")
+}
+model Procedure {
+  id_proc           Int         @id @default(autoincrement())
+  id_typeproc       Int
+  num_proc          String      @unique
+  date_debut_proc   DateTime
+  date_fin_proc     DateTime?
+  statut_proc       StatutProcedure
+  resultat          String?
+  observations      String?
+
+  typeProcedure TypeProcedure @relation(fields: [id_typeproc], references: [id])
+  permis            Permis[]      @relation("PermisProcedure")
+  demandes      Demande[]
+  @@map("procedure")
+  SubstanceAssocieeDemande SubstanceAssocieeDemande[]
+  InteractionWali InteractionWali[]
+  CD ComiteDirection[]
+  ProcedureEtape ProcedureEtape[]
+  renouvellement    ProcedureRenouvellement?
+}
+
+model Demande {
+  id_demande                  Int      @id @default(autoincrement())
+  id_proc                     Int
+  id_detenteur                Int?
+  id_expert                   Int?
+  id_typePermis               Int
+  code_demande                String   @unique
+  date_demande                DateTime @default(now())
+  type_permis_demande         String
+  objet_demande               String?
+  date_enregistrement         DateTime?
+  date_instruction            DateTime?
+  date_refus                  DateTime?
+  date_fin                    DateTime?
+  lieu_dit                    String?
+  superficie                  Float?
+  statut_juridique_terrain    String?
+  occupant_terrain_legal      String?
+  destination                 String?
+  duree_travaux_estimee       Int?
+  date_demarrage_prevue       DateTime?
+  instruction_demande         String?
+  motif_rejet                 String?
+  remarques                   String?
+  capital_social_disponible   Float?
+  budget_prevu                Float?
+  description_travaux         String?
+  sources_financement         String?
+  id_wilaya        Int?
+  id_daira         Int?
+  id_commune       Int?
+  lieu_dit_ar      String?
+  statut_demande              StatutDemande? 
+  wilaya           Wilaya?    @relation(fields: [id_wilaya], references: [id_wilaya])
+  daira            Daira?     @relation(fields: [id_daira], references: [id_daira])
+  commune          Commune?   @relation(fields: [id_commune], references: [id_commune])
+  procedure       Procedure     @relation(fields: [id_proc], references: [id_proc])
+  detenteur       DetenteurMorale? @relation(fields: [id_detenteur], references: [id_detenteur])
+  expertMinier ExpertMinier? @relation(fields: [id_expert], references: [id_expert])
+  typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id]) 
+  dossiersFournis DossierFournis[]
+
+  @@map("demande")
+  Coordonnee Coordonnee[]
+  CahierCharge CahierCharge[]
+}
+
+model ProcedureRenouvellement {
+  id_renouvellement       Int       @id @default(autoincrement())
+  id_proc                 Int       @unique
+  nombre_renouvellement   Int
+  num_decision            String?
+  date_decision       DateTime? // Optional (set later)
+  date_debut_validite DateTime? // Set when finalized
+  date_fin_validite   DateTime? // Set when finalized
+  commentaire         String?   // Optional
+  procedure               Procedure @relation(fields: [id_proc], references: [id_proc])
+  
+}
+
+
+enum EnumTypeInteraction {
+  envoi
+  relance
+  reponse
+}
+
+enum EnumAvisWali {
+  favorable
+  defavorable
+}
+
+model InteractionWali {
+  id_interaction     Int                 @id @default(autoincrement())
+  id_procedure       Int
+  type_interaction   EnumTypeInteraction
+  avis_wali          EnumAvisWali?      // nullable for non-response
+  date_interaction   DateTime
+  remarques          String?
+  contenu            String?
+
+  // NEW FIELDS for timing
+  is_relance         Boolean             @default(false) // to distinguish relances
+
+  Procedure          Procedure           @relation(fields: [id_procedure], references: [id_proc])
+}
+
+
+
+
+
+model ExpertMinier {
+  id_expert       Int       @id @default(autoincrement())
+  nom_expert      String
+  fonction        String
+  num_registre    String?
+  organisme       String
+
+  demandes        Demande[]  // ✅ One-to-many inverse side
+
+  @@map("expertminier")
+}
+
+
+
+model DetenteurMorale {
+  id_detenteur       Int                @id @default(autoincrement())
+  id_statutJuridique String
+  nom_sociétéFR      String
+  nom_sociétéAR      String
+  nationalité        String
+  adresse_siège      String
+  telephone          String
+  fax                String
+  pay                String
+  email              String
+
+  fonctions          FonctionPersonneMoral[]
+  demande            Demande[]
+
+  registreCommerce   RegistreCommerce?  // Relation without attributes here
+
+  @@map("detenteurmorale")
+  Permis Permis[]
+}
+
+model RegistreCommerce {
+  id                  Int               @id @default(autoincrement())
+  id_detenteur        Int               @unique
+  numero_rc           String
+  date_enregistrement DateTime
+  capital_social      Float
+  nis                 String
+  nif                 String
+  adresse_legale      String
+
+  detenteur DetenteurMorale @relation(fields: [id_detenteur], references: [id_detenteur])
+
+  @@map("registrecommerce")
+}
+
+
+
+model PersonnePhysique {
+  id_personne              Int      @id @default(autoincrement())
+  nomFR                    String
+  nomAR                    String
+  prenomFR                 String
+  prenomAR                 String
+  date_naissance           DateTime
+  lieu_naissance           String
+  pay                      String
+  nationalité              String
+  adresse_domicile         String
+  telephone                String
+  fax                      String
+  email                    String
+  qualification            String
+  num_carte_identité       String @unique
+  lieu_juridique_soc       String
+  réf_professionnelles     String
+
+  fonctions FonctionPersonneMoral[]
+
+  @@map("personnephysique")
+}
+
+model FonctionPersonneMoral {
+  id_detenteur       Int
+  id_personne        Int
+  type_fonction      String
+  statut_personne    String
+  taux_participation Float
+
+  detenteur DetenteurMorale   @relation(fields: [id_detenteur], references: [id_detenteur])
+  personne  PersonnePhysique @relation(fields: [id_personne], references: [id_personne])
+
+  @@id([id_detenteur, id_personne])
+  @@map("fonctionpersonnemoral")
+}
+
+model Substance {
+  id_sub           Int                        @id @default(autoincrement())
+  nom_subFR        String
+  nom_subAR        String
+  catégorie_sub    String
+  id_redevance     Int?
+  redevance        RedevanceBareme?          @relation(fields: [id_redevance], references: [id_redevance])
+  associeesDemande SubstanceAssocieeDemande[]
+
+  @@map("substances")
+}
+
+model SubstanceAssocieeDemande {
+  id_assoc      Int       @id @default(autoincrement())
+  id_proc       Int
+  id_substance  Int
+  date_ajout    DateTime  @default(now())
+
+  procedure     Procedure  @relation(fields: [id_proc], references: [id_proc])
+  substance     Substance  @relation(fields: [id_substance], references: [id_sub])
+
+  @@unique([id_proc, id_substance])
+  @@map("substance_associee_demande")
+}
+
+model RedevanceBareme {
+  id_redevance       Int         @id @default(autoincrement())
+  taux_redevance     Float
+  valeur_marchande   Float
+  unite              String
+  devise             String
+  description        String
+  substances         Substance[]
+
+  @@map("redevance_bareme")
+}
+
+model ComiteDirection {
+  id_comite          Int              @id @default(autoincrement())
+  id_procedure       Int
+  date_comite        DateTime
+  numero_decision    String
+  objet_deliberation String
+  decision_comite    EnumDecisionComite
+  resume_reunion     String
+  motif              String?
+  fiche_technique    String?  // lien ou fichier
+  carte_projettee    String?
+  rapport_police     String?
+  instructeur        String?
+  procedure          Procedure        @relation(fields: [id_procedure], references: [id_proc])
+  membres            MembresComite[]  @relation("ComiteMembres") // 🔥 Supprimer `references`
+}
+
+model MembresComite {
+  id_membre         Int               @id @default(autoincrement())
+  nom_membre        String
+  prenom_membre     String
+  fonction_membre   String
+  email_membre      String
+  comites           ComiteDirection[] @relation("ComiteMembres") // 🔥 toujours sans references
+}
+
+
+enum EnumDecisionComite {
+  favorable
+  defavorable
+}
+
+
+
+
+model Ingenieur {
+  id_ingenieur Int @id @default(autoincrement())
+  nom          String
+  prenom       String
+  fonction     String
+  email        String
+}
+
+
+model ZoneInterdite {
+  id_zone         Int          @id @default(autoincrement())
+  nom_zone        String
+  type_zone       String
+  justification   String
+  date_creation   DateTime     @default(now())
+  commentaire     String?
+
+  coordonnees     Coordonnee[]
+}
+model Coordonnee {
+  id_coordonnees     Int             @id @default(autoincrement())
+  id_demande         Int
+  id_zone_interdite  Int?            // <- le ? rend le champ optionnel
+  point              String
+  x                  Float
+  y                  Float
+  z                  Float
+
+  demande            Demande         @relation(fields: [id_demande], references: [id_demande])
+  zoneInterdite      ZoneInterdite?  @relation(fields: [id_zone_interdite], references: [id_zone])
+}
+
+
+///////////////////////////////////////////////
+model Antenne {
+  id_antenne    Int      @id @default(autoincrement())
+  nom           String
+  localisation  String?
+  wilayas       Wilaya[]
+  Permis Permis[]
+}
+
+model Wilaya {
+  id_wilaya    Int      @id @default(autoincrement())
+  id_antenne   Int
+  code_wilaya  String   @unique
+  nom_wilaya   String
+  antenne      Antenne  @relation(fields: [id_antenne], references: [id_antenne])
+  daira        Daira[]
+
+  Demande Demande[]
+}
+
+model Daira {
+  id_daira     Int      @id @default(autoincrement())
+  id_wilaya    Int
+  code_daira   String   @unique
+  nom_daira    String
+  wilaya       Wilaya   @relation(fields: [id_wilaya], references: [id_wilaya])
+  communes     Commune[]
+
+  Demande Demande[]
+}
+
+model Commune {
+  id_commune   Int      @id @default(autoincrement())
+  id_daira     Int
+  code_commune String   @unique
+  nom_commune  String
+  daira        Daira    @relation(fields: [id_daira], references: [id_daira])
+
+  Demande Demande[]
+}
+
+/////////////////////////
+model CahierCharge {
+  id                  Int       @id @default(autoincrement())
+  permisId            Int?
+  dateCreation        DateTime
+  dateExercice        DateTime
+  fuseau              String?
+  typeCoordonnees     String?
+  version             String?
+  natureJuridique     String?
+  vocationTerrain     String?
+  nomGerant           String?
+  personneChargeTrxx  String?
+  qualification       String?
+  reservesGeologiques Float?
+  reservesExploitables Float?
+  volumeExtraction    Float?
+  dureeExploitation   Int?
+  methodeExploitation String?
+  dureeTravaux        Int?
+  dateDebutTravaux    DateTime?
+  dateDebutProduction DateTime?
+  investissementDA    Float?
+  investissementUSD   Float?
+  capaciteInstallee   Float?
+  commentaires        String?
+  demandeId           Int?
+  demande             Demande?   @relation(fields: [demandeId], references: [id_demande])
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  permis              Permis? @relation(fields: [permisId], references: [id])
+  @@map("cahiercharge")
+}
+
+
+model RapportActivite {
+  id_rapport               Int       @id @default(autoincrement())
+  id_permis                Int
+  permis                   Permis    @relation(fields: [id_permis], references: [id])
+  date_remise_reelle       DateTime
+  etat_activite            String
+  leve_topo_3112           String?
+  leve_topo_3006           String?
+  plan_exploitation        String?
+  date_debut_travaux       DateTime?
+  vente_exportation        String?
+  importation              String?
+  valeur_equipement_acquis Float?
+  pros_expl_entamee        String?
+  avancee_travaux          String?
+  travaux_realises         String?
+  nbr_ouvrages             Int?
+  volume                   Float?
+  resume_activites         String?
+  investissements_realises Float?
+  qte_explosifs            Float?
+  qte_explosifs_DIM        Float?
+  detonateurs              Int?
+  dmr                      Int?
+  cordeau_detonant         Int?
+  meche_lente              Int?
+  relais                   Int?
+  DEI                      Int?
+  effectif_cadre           Int?
+  effectif_maitrise        Int?
+  effectif_execution       Int?
+  production_toutvenant    Float?
+  production_marchande     Float?
+  production_vendue        Float?
+  production_stocke        Float?
+  stock_T_V                Float?
+  stock_produit_marchand   Float?
+  production_sable         Float?
+  poussieres               Float?
+  rejets_laverie           Float?
+  fumee_gaz                Float?
+  autres_effluents         Float?
+  nbr_accidents            Int?
+  accidents_mortels        Int?
+  accidents_non_mortels    Int?
+  nbrs_jours_perdues       Int?
+  taux_frequence           Float?
+  taux_gravite             Float?
+  nbrs_incidents           Int?
+  nbrs_malades_pro         Int?
+  remise_etat_realisee     String?
+  cout_remise_etat         Float?
+  commentaires_generaux    String?
+  rapport_url              String?
+
+  @@map("rapport_activite")
+}
+
+model TypePaiement {
+  id               Int           @id @default(autoincrement())
+  libelle          String        @unique
+  frequence        String        // Annuel, Unique, etc.
+  details_calcul   String?       // Formula for calculation if needed
+  obligations      ObligationFiscale[]
+  @@map("typepaiement")
+}
+
+model ObligationFiscale {
+  id                  Int         @id @default(autoincrement())
+  id_typePaiement     Int
+  typePaiement        TypePaiement @relation(fields: [id_typePaiement], references: [id])
+  id_permis           Int
+  permis              Permis      @relation(fields: [id_permis], references: [id])
+  annee_fiscale       Int
+  montant_attendu     Float
+  date_echeance       DateTime
+  statut              String      // "A payer", "Payé", "En retard", "Annulé"
+  details_calcul      String?
+  paiements           Paiement[]
+  @@map("obligationfiscale")
+}
+
+model Paiement {
+  id                Int         @id @default(autoincrement())
+  id_obligation     Int
+  obligation        ObligationFiscale @relation(fields: [id_obligation], references: [id])
+  montant_paye      Float
+  devise            String      @default("DZD")
+  date_paiement     DateTime
+  mode_paiement     String      // "Virement", "Chèque", "Espèces"
+  num_quittance     String?
+  etat_paiement     String      // "Validé", "En attente", "Rejeté"
+  justificatif_url  String?
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+  @@map("paiement")
+}
+
+model BaremProduitetDroit {
+  id               Int       @id @default(autoincrement())
+  montant_droit_etab Float
+  produit_attribution Float
+  typePermis       TypePermis[]
+  typeProcedures   TypeProcedure[]
+  @@map("barem_produit_droit")
+}
+
+model SuperficiaireBareme {
+  id               Int       @id @default(autoincrement())
+  droit_fixe       Float
+  periode_initiale Float
+  premier_renouv   Float
+  autre_renouv     Float
+  devise           String
+  typePermis       TypePermis[]
+  @@map("superficiaire_bareme")
+}
+
+
+
+/*
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.mmd"
+  format   = "mermaid"
+}
+*/
