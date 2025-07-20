@@ -701,40 +701,103 @@ const dossierData = [
 async function seedDatabase() {
   console.log("Starting database seeding...");
   
+  // First, create all unique documents
+  const allDocuments: {[key: string]: any} = {};
   for (const dossier of dossierData) {
-    try {
-      // 1. Create DossierAdministratif
-      const createdDossier = await prisma.dossierAdministratif.create({
+    for (const doc of dossier.documents) {
+      const key = `${doc.nom_doc}-${doc.description}-${doc.format}`;
+      if (!allDocuments[key]) {
+        allDocuments[key] = doc;
+      }
+    }
+  }
+  
+  // Create documents in database and map them
+  const documentMap = new Map<string, number>();
+  for (const [key, doc] of Object.entries(allDocuments)) {
+    const existingDoc = await prisma.document.findFirst({
+      where: {
+        nom_doc: doc.nom_doc,
+        description: doc.description,
+        format: doc.format
+      }
+    });
+    
+    if (!existingDoc) {
+      const createdDoc = await prisma.document.create({
         data: {
-          id_typeproc: dossier.id_typeproc,
-          id_typePermis: dossier.id_typePermis,
-          nombre_doc: dossier.nombre_doc,
-          remarques: dossier.remarques
+          nom_doc: doc.nom_doc,
+          description: doc.description,
+          format: doc.format,
+          taille_doc: doc.taille_doc
         }
       });
-
-      console.log(`Created dossier ${createdDossier.id_dossier} for permit type ${dossier.id_typePermis}, procedure ${dossier.id_typeproc}`);
-
-      // 2. Create all related Documents
-      for (const document of dossier.documents) {
-        await prisma.document.create({
+      documentMap.set(key, createdDoc.id_doc);
+    } else {
+      documentMap.set(key, existingDoc.id_doc);
+    }
+  }
+  
+  console.log(`Using ${documentMap.size} unique documents`);
+  
+  // Then create dossiers and their relationships
+  for (const dossier of dossierData) {
+    try {
+      // Check if dossier already exists
+      const existingDossier = await prisma.dossierAdministratif.findFirst({
+        where: {
+          id_typeproc: dossier.id_typeproc,
+          id_typePermis: dossier.id_typePermis
+        }
+      });
+      
+      let createdDossier;
+      
+      if (!existingDossier) {
+        createdDossier = await prisma.dossierAdministratif.create({
           data: {
-            nom_doc: document.nom_doc,
-            description: document.description,
-            format: document.format,
-            taille_doc: document.taille_doc,
-            dossierDocuments: {
-              create: {
-                id_dossier: createdDossier.id_dossier
-              }
-            }
+            id_typeproc: dossier.id_typeproc,
+            id_typePermis: dossier.id_typePermis,
+            nombre_doc: dossier.nombre_doc,
+            remarques: dossier.remarques
           }
         });
+        console.log(`Created dossier ${createdDossier.id_dossier}`);
+      } else {
+        createdDossier = existingDossier;
+        console.log(`Using existing dossier ${createdDossier.id_dossier}`);
+      }
+
+      // Create dossierDocument relationships
+      for (const doc of dossier.documents) {
+        const key = `${doc.nom_doc}-${doc.description}-${doc.format}`;
+        const docId = documentMap.get(key);
+        
+        if (!docId) {
+          throw new Error(`Document not found: ${key}`);
+        }
+        
+        // Check if relationship already exists
+        const existingRelation = await prisma.dossierDocument.findFirst({
+          where: {
+            id_dossier: createdDossier.id_dossier,
+            id_doc: docId
+          }
+        });
+        
+        if (!existingRelation) {
+          await prisma.dossierDocument.create({
+            data: {
+              id_dossier: createdDossier.id_dossier,
+              id_doc: docId
+            }
+          });
+        }
       }
       
-      console.log(`Added ${dossier.documents.length} documents to dossier ${createdDossier.id_dossier}`);
+      console.log(`Processed ${dossier.documents.length} document relations for dossier`);
     } catch (error) {
-      console.error(`Error creating dossier for permit type ${dossier.id_typePermis}, procedure ${dossier.id_typeproc}:`, error);
+      console.error(`Error processing dossier:`, error);
     }
   }
   
