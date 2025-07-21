@@ -1,5 +1,4 @@
 // app/layout.tsx
-import './globals.css';
 import ClientLayout from '../../utils/ClientLayout'; 
 export const metadata = {
   title: 'SIGAM App',

@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import { FiEdit, FiTrash2, FiPlus, FiX, FiFileText, FiFolder, FiCheck } from 'react-icons/fi';
+import { FiEdit, FiTrash2, FiPlus, FiX, FiFileText, FiFolder, FiCheck, FiSearch, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './DossierManager.module.css'
+import Navbar from '../navbar/Navbar';
+import Sidebar from '../sidebar/Sidebar';
+import { useViewNavigator } from '@/hooks/useViewNavigator';
+
 // Types
 interface TypePermis {
   id: number;
@@ -50,6 +54,7 @@ export default function DossierManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dossiers');
   const [searchTerm, setSearchTerm] = useState('');
+  const { currentView, navigateTo } = useViewNavigator('manage_documents');
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Form states
@@ -212,23 +217,37 @@ export default function DossierManager() {
     doc.id_doc.toString().includes(searchTerm)
   );
 
- return (
+return (
+  <div className={styles['app-container']}>
+    <Navbar />
+    <div className={styles['app-content']}>
+      <Sidebar currentView={currentView} navigateTo={navigateTo} />
+      <main className={styles['main-content']}>
+        <div className={styles['breadcrumb']}>
+          <span>SIGAM</span>
+          <FiChevronRight className={styles['breadcrumb-arrow']} />
+          <span>Manage Documents</span>
+        </div>
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
-        {/* Header */}
-        <div className={styles.header}>
+        {/* Enhanced Header */}
+        <header className={styles.header}>
           <div>
             <h1 className={styles.headerTitle}>
-              <FiFolder className={styles.ml1} /> Gestion des Dossiers
+              <FiFolder className={styles.headerIcon} />
+              Gestion des Dossiers
             </h1>
-            <p className={styles.headerSubtitle}>Administration des dossiers et documents</p>
+            <p className={styles.headerSubtitle}>
+              Administration centralisée des dossiers et documents
+            </p>
           </div>
           
           <div className={styles.searchContainer}>
-            <div className="relative">
+            <div className={styles.flex + ' ' + styles.itemsCenter}>
+              <FiSearch className={styles.searchIcon} />
               <input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder="Rechercher un dossier ou document..."
                 className={styles.searchInput}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -243,215 +262,230 @@ export default function DossierManager() {
               )}
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Tabs */}
+        {/* Premium Tabs */}
         <div className={styles.tabsContainer}>
           <button
             className={`${styles.tab} ${activeTab === 'dossiers' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('dossiers')}
           >
+            <FiFolder className={styles.ml1} />
             Dossiers
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'documents' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('documents')}
           >
+            <FiFileText className={styles.ml1} />
             Documents
           </button>
         </div>
 
         {/* Main Content */}
         {isLoading ? (
-          <div className={styles.loadingSpinner}>
+          <div className={styles.loadingContainer}>
             <div className={styles.spinner}></div>
           </div>
         ) : (
           <>
-            {/* Create New Section */}
+            {/* Creation Card - Glass Morphism Effect */}
             <div className={styles.card}>
-              <h2 className={styles.cardTitle}>
-                {activeTab === 'dossiers' ? (
-                  <>
-                    <FiPlus className={styles.ml1} /> Nouveau Dossier
-                  </>
-                ) : (
-                  <>
-                    <FiFileText className={styles.ml1} /> Nouveau Document
-                  </>
-                )}
-              </h2>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>
+                  {activeTab === 'dossiers' ? (
+                    <>
+                      <FiPlus className={styles.ml1} />
+                      Créer un nouveau dossier
+                    </>
+                  ) : (
+                    <>
+                      <FiFileText className={styles.ml1} />
+                      Ajouter un document
+                    </>
+                  )}
+                </h2>
+              </div>
               
-              {activeTab === 'dossiers' ? (
-                <div className={styles.formGrid}>
-                  <div>
-                    <label className={styles.formLabel}>Type Permis</label>
-                    <select
-                      className={styles.formSelect}
-                      value={newDossier.id_typePermis}
-                      onChange={(e) => setNewDossier({...newDossier, id_typePermis: e.target.value})}
-                    >
-                      <option value="">Sélectionner...</option>
-                      {typePermis.map((permis) => (
-                        <option key={`permis-${permis.id}`} value={permis.id}>
-                          {permis.lib_type} ({permis.code_type})
-                        </option>
-                      ))}
-                    </select>
+              <div className={styles.cardBody}>
+                {activeTab === 'dossiers' ? (
+                  <div className={styles.formGrid}>
+                    <div>
+                      <label className={styles.formLabel}>Type Permis</label>
+                      <select
+                        className={`${styles.formControl} ${styles.formSelect}`}
+                        value={newDossier.id_typePermis}
+                        onChange={(e) => setNewDossier({...newDossier, id_typePermis: e.target.value})}
+                      >
+                        <option value="">Sélectionner...</option>
+                        {typePermis.map((permis) => (
+                          <option key={`permis-${permis.id}`} value={permis.id}>
+                            {permis.lib_type} ({permis.code_type})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={styles.formLabel}>Type Procédure</label>
+                      <select
+                        className={`${styles.formControl} ${styles.formSelect}`}
+                        value={newDossier.id_typeproc}
+                        onChange={(e) => setNewDossier({...newDossier, id_typeproc: e.target.value})}
+                      >
+                        <option value="">Sélectionner...</option>
+                        {typeProcedures.map((proc) => (
+                          <option key={`proc-${proc.id}`} value={proc.id}>
+                            {proc.libelle}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className={`${styles.formGrid} md:col-span-2`}>
+                      <label className={styles.formLabel}>Remarques</label>
+                      <input
+                        type="text"
+                        className={styles.formControl}
+                        placeholder="Ajouter des remarques..."
+                        value={newDossier.remarques}
+                        onChange={(e) => setNewDossier({...newDossier, remarques: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div className={`${styles.flex} ${styles.justifyEnd} ${styles.mt1}`}>
+                      <button 
+                        className={styles.button + ' ' + styles.buttonPrimary}
+                        onClick={handleCreateDossier}
+                      >
+                        <FiPlus className={styles.ml1} />
+                        Créer Dossier
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className={styles.formLabel}>Type Procédure</label>
-                    <select
-                      className={styles.formSelect}
-                      value={newDossier.id_typeproc}
-                      onChange={(e) => setNewDossier({...newDossier, id_typeproc: e.target.value})}
-                    >
-                      <option value="">Sélectionner...</option>
-                      {typeProcedures.map((proc) => (
-                        <option key={`proc-${proc.id}`} value={proc.id}>
-                          {proc.libelle}
-                        </option>
-                      ))}
-                    </select>
+                ) : (
+                  <div className={`${styles.formGrid} md:grid-cols-2`}>
+                    <div>
+                      <label className={styles.formLabel}>Nom du document</label>
+                      <input
+                        type="text"
+                        className={styles.formControl}
+                        placeholder="Nom du document"
+                        value={newDocument.nom_doc}
+                        onChange={(e) => setNewDocument({...newDocument, nom_doc: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className={styles.formLabel}>Format</label>
+                      <select
+                        className={`${styles.formControl} ${styles.formSelect}`}
+                        value={newDocument.format}
+                        onChange={(e) => setNewDocument({...newDocument, format: e.target.value})}
+                      >
+                        <option value="PDF">PDF</option>
+                        <option value="DOCX">DOCX</option>
+                        <option value="XLSX">XLSX</option>
+                        <option value="JPG">JPG</option>
+                        <option value="PNG">PNG</option>
+                      </select>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label className={styles.formLabel}>Description</label>
+                      <textarea
+                        className={styles.formControl}
+                        placeholder="Description du document"
+                        rows={3}
+                        value={newDocument.description}
+                        onChange={(e) => setNewDocument({...newDocument, description: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className={styles.formLabel}>Taille</label>
+                      <input
+                        type="text"
+                        className={styles.formControl}
+                        placeholder="Taille (ex: 2MB)"
+                        value={newDocument.taille_doc}
+                        onChange={(e) => setNewDocument({...newDocument, taille_doc: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div className={`${styles.flex} ${styles.justifyEnd} ${styles.itemsCenter} md:col-span-2`}>
+                      <button 
+                        className={styles.button + ' ' + styles.buttonSuccess}
+                        onClick={handleCreateDocument}
+                      >
+                        <FiPlus className={styles.ml1} />
+                        Créer Document
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className={`${styles.formGrid} md:col-span-2`}>
-                    <label className={styles.formLabel}>Remarques</label>
-                    <input
-                      type="text"
-                      className={styles.formInput}
-                      placeholder="Remarques..."
-                      value={newDossier.remarques}
-                      onChange={(e) => setNewDossier({...newDossier, remarques: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className={`${styles.formGrid} md:col-span-4 flex justify-end`}>
-                    <button 
-                      className={`${styles.formButton} ${styles.primaryButton}`}
-                      onClick={handleCreateDossier}
-                    >
-                      <FiPlus className={styles.ml1} /> Créer Dossier
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className={`${styles.formGrid} md:grid-cols-2`}>
-                  <div>
-                    <label className={styles.formLabel}>Nom du document</label>
-                    <input
-                      type="text"
-                      className={styles.formInput}
-                      placeholder="Nom du document"
-                      value={newDocument.nom_doc}
-                      onChange={(e) => setNewDocument({...newDocument, nom_doc: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className={styles.formLabel}>Format</label>
-                    <select
-                      className={styles.formSelect}
-                      value={newDocument.format}
-                      onChange={(e) => setNewDocument({...newDocument, format: e.target.value})}
-                    >
-                      <option value="PDF">PDF</option>
-                      <option value="DOCX">DOCX</option>
-                      <option value="XLSX">XLSX</option>
-                      <option value="JPG">JPG</option>
-                      <option value="PNG">PNG</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className={styles.formLabel}>Description</label>
-                    <textarea
-                      className={styles.formTextarea}
-                      placeholder="Description"
-                      rows={2}
-                      value={newDocument.description}
-                      onChange={(e) => setNewDocument({...newDocument, description: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className={styles.formLabel}>Taille</label>
-                    <input
-                      type="text"
-                      className={styles.formInput}
-                      placeholder="Taille (ex: 2MB)"
-                      value={newDocument.taille_doc}
-                      onChange={(e) => setNewDocument({...newDocument, taille_doc: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className={`${styles.formGrid} md:col-span-2 flex justify-end`}>
-                    <button 
-                      className={`${styles.formButton} ${styles.successButton}`}
-                      onClick={handleCreateDocument}
-                    >
-                      <FiPlus className={styles.ml1} /> Créer Document
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Data Tables */}
+            {/* Data Tables - Premium Design */}
             {activeTab === 'dossiers' ? (
               <div className={styles.tableContainer}>
                 <div className={styles.tableHeader}>
                   <h2 className={styles.tableTitle}>
-                    <FiFolder className={styles.ml1} /> Liste des Dossiers
+                    <FiFolder className={styles.ml1} />
+                    Liste des Dossiers
                   </h2>
+                  <span className={styles.tableCount}>
+                    {filteredDossiers.length} {filteredDossiers.length === 1 ? 'dossier' : 'dossiers'}
+                  </span>
                 </div>
                 
                 <div className="overflow-x-auto">
                   <table className={styles.table}>
                     <thead className={styles.tableHead}>
                       <tr>
-                        <th className={styles.tableHeaderCell}>ID</th>
-                        <th className={styles.tableHeaderCell}>Type Permis</th>
-                        <th className={styles.tableHeaderCell}>Type Procédure</th>
-                        <th className={styles.tableHeaderCell}>Documents</th>
-                        <th className={styles.tableHeaderCell}>Date</th>
-                        <th className={styles.tableHeaderCell}>Actions</th>
+                        <th className={styles.th}>ID</th>
+                        <th className={styles.th}>Type Permis</th>
+                        <th className={styles.th}>Type Procédure</th>
+                        <th className={styles.th}>Documents</th>
+                        <th className={styles.th}>Date</th>
+                        <th className={styles.th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredDossiers.length > 0 ? (
                         filteredDossiers.map((dossier) => (
-                          <tr key={`dossier-${dossier.id_dossier}`} className={styles.tableRow}>
-                            <td className={`${styles.tableCell} ${styles.tableCellPrimary}`}>
+                          <tr key={`dossier-${dossier.id_dossier}`} className={styles.tr}>
+                            <td className={`${styles.td} ${styles.tdPrimary}`}>
                               #{dossier.id_dossier}
                             </td>
-                            <td className={styles.tableCell}>
-                              {dossier.typePermis?.lib_type} <span className="text-gray-400">({dossier.typePermis?.code_type})</span>
+                            <td className={styles.td}>
+                              <span className="font-medium">{dossier.typePermis?.lib_type}</span>
+                              <span className="text-gray-400 ml-1">({dossier.typePermis?.code_type})</span>
                             </td>
-                            <td className={styles.tableCell}>
+                            <td className={styles.td}>
                               {dossier.typeProcedure?.libelle}
                             </td>
-                            <td className={styles.tableCell}>
-                              <div className={`${styles.flexCenter} ${styles.gap1}`}>
+                            <td className={styles.td}>
+                              <div className={`${styles.flex} ${styles.flexWrap} ${styles.gap2} ${styles.itemsCenter}`}>
                                 {dossier.dossierDocuments?.map((doc) => (
                                   <span 
                                     key={`docspan-${doc.document.id_doc}`} 
-                                    className={styles.badge}
+                                    className={styles.badge + ' ' + styles.badgeBlue}
                                   >
                                     {doc.document.nom_doc}
                                     <button 
-                                      className="ml-1 text-blue-500 hover:text-blue-700"
+                                      className={styles.ml1}
                                       onClick={() => handleRemoveDocumentFromDossier(dossier.id_dossier, doc.document.id_doc)}
                                     >
-                                      <FiX size={14} />
+                                      <FiX size={12} />
                                     </button>
                                   </span>
                                 ))}
                               </div>
-                              <div className="mt-2">
+                              <div className={styles.mt1}>
                                 <select
-                                  className={styles.formSelect}
+                                  className={styles.formControl}
                                   onChange={(e) => handleAddDocumentToDossier(dossier.id_dossier, e.target.value)}
                                   defaultValue=""
                                 >
@@ -466,24 +500,24 @@ export default function DossierManager() {
                                 </select>
                               </div>
                             </td>
-                            <td className={styles.tableCell}>
+                            <td className={styles.td}>
                               {dossier.createdAt ? new Date(dossier.createdAt).toLocaleDateString() : '-'}
                             </td>
-                            <td className={styles.tableCell}>
-                              <div className={`${styles.flexCenter} ${styles.gap2}`}>
+                            <td className={styles.td}>
+                              <div className={`${styles.flex} ${styles.justifyEnd} ${styles.gap2}`}>
                                 <button
                                   onClick={() => setSelectedDossier(dossier)}
-                                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                                  className="text-blue-600 hover:text-blue-900 p-1.5 rounded-md hover:bg-blue-50 transition-colors"
                                   title="Modifier"
                                 >
-                                  <FiEdit />
+                                  <FiEdit size={18} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteDossier(dossier.id_dossier)}
-                                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-900 p-1.5 rounded-md hover:bg-red-50 transition-colors"
                                   title="Supprimer"
                                 >
-                                  <FiTrash2 />
+                                  <FiTrash2 size={18} />
                                 </button>
                               </div>
                             </td>
@@ -491,7 +525,7 @@ export default function DossierManager() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className={`${styles.tableCell} text-center`}>
+                          <td colSpan={6} className={`${styles.td} text-center`}>
                             Aucun dossier trouvé
                           </td>
                         </tr>
@@ -504,36 +538,42 @@ export default function DossierManager() {
               <div className={styles.tableContainer}>
                 <div className={styles.tableHeader}>
                   <h2 className={styles.tableTitle}>
-                    <FiFileText className={styles.ml1} /> Liste des Documents
+                    <FiFileText className={styles.ml1} />
+                    Liste des Documents
                   </h2>
+                  <span className={styles.tableCount}>
+                    {filteredDocuments.length} {filteredDocuments.length === 1 ? 'document' : 'documents'}
+                  </span>
                 </div>
                 
                 <div className="overflow-x-auto">
                   <table className={styles.table}>
                     <thead className={styles.tableHead}>
                       <tr>
-                        <th className={styles.tableHeaderCell}>ID</th>
-                        <th className={styles.tableHeaderCell}>Nom</th>
-                        <th className={styles.tableHeaderCell}>Description</th>
-                        <th className={styles.tableHeaderCell}>Format</th>
-                        <th className={styles.tableHeaderCell}>Date</th>
-                        <th className={styles.tableHeaderCell}>Actions</th>
+                        <th className={styles.th}>ID</th>
+                        <th className={styles.th}>Nom</th>
+                        <th className={styles.th}>Description</th>
+                        <th className={styles.th}>Format</th>
+                        <th className={styles.th}>Date</th>
+                        <th className={styles.th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredDocuments.length > 0 ? (
                         filteredDocuments.map((doc) => (
-                          <tr key={`doc-${doc.id_doc}`} className={styles.tableRow}>
-                            <td className={`${styles.tableCell} ${styles.tableCellPrimary}`}>
+                          <tr key={`doc-${doc.id_doc}`} className={styles.tr}>
+                            <td className={`${styles.td} ${styles.tdPrimary}`}>
                               #{doc.id_doc}
                             </td>
-                            <td className={`${styles.tableCell} ${styles.tableCellPrimary}`}>
+                            <td className={`${styles.td} ${styles.tdPrimary}`}>
                               {doc.nom_doc}
                             </td>
-                            <td className={styles.tableCell}>
-                              {doc.description}
+                            <td className={styles.td}>
+                              <div className={styles.lineClamp2}>
+                                {doc.description}
+                              </div>
                             </td>
-                            <td className={styles.tableCell}>
+                            <td className={styles.td}>
                               <span className={`${styles.badge} ${
                                 doc.format === 'PDF' ? styles.badgeRed :
                                 doc.format === 'DOCX' ? styles.badgeBlue :
@@ -543,23 +583,23 @@ export default function DossierManager() {
                                 {doc.format}
                               </span>
                             </td>
-                            <td className={styles.tableCell}>
+                            <td className={styles.td}>
                               {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}
                             </td>
-                            <td className={styles.tableCell}>
+                            <td className={styles.td}>
                               <button
                                 onClick={() => handleDeleteDocument(doc.id_doc)}
-                                className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                className="text-red-600 hover:text-red-900 p-1.5 rounded-md hover:bg-red-50 transition-colors"
                                 title="Supprimer"
                               >
-                                <FiTrash2 />
+                                <FiTrash2 size={18} />
                               </button>
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className={`${styles.tableCell} text-center`}>
+                          <td colSpan={6} className={`${styles.td} text-center`}>
                             Aucun document trouvé
                           </td>
                         </tr>
@@ -572,15 +612,15 @@ export default function DossierManager() {
           </>
         )}
 
-        {/* Edit Dossier Modal */}
+        {/* Enhanced Modal */}
         {selectedDossier && (
           <div className={styles.modalOverlay}>
             <div className={styles.modal}>
               <div className={styles.modalHeader}>
-                <h2 className={styles.modalTitle}>Modifier Dossier</h2>
+                <h3 className={styles.modalTitle}>Modifier Dossier</h3>
                 <button 
-                  onClick={() => setSelectedDossier(null)}
                   className={styles.modalClose}
+                  onClick={() => setSelectedDossier(null)}
                 >
                   <FiX size={24} />
                 </button>
@@ -589,19 +629,23 @@ export default function DossierManager() {
               <div className={styles.modalBody}>
                 <div className="space-y-4">
                   <div>
-                    <p className={styles.formLabel}>Type Permis</p>
-                    <p className="mt-1 text-gray-900">{selectedDossier.typePermis.lib_type} ({selectedDossier.typePermis.code_type})</p>
+                    <label className={styles.formLabel}>Type Permis</label>
+                    <p className="mt-1 text-gray-900 font-medium">
+                      {selectedDossier.typePermis.lib_type} ({selectedDossier.typePermis.code_type})
+                    </p>
                   </div>
                   
                   <div>
-                    <p className={styles.formLabel}>Type Procédure</p>
-                    <p className="mt-1 text-gray-900">{selectedDossier.typeProcedure.libelle}</p>
+                    <label className={styles.formLabel}>Type Procédure</label>
+                    <p className="mt-1 text-gray-900 font-medium">
+                      {selectedDossier.typeProcedure.libelle}
+                    </p>
                   </div>
                   
                   <div>
                     <label className={styles.formLabel}>Remarques</label>
                     <textarea
-                      className={styles.formTextarea}
+                      className={styles.formControl}
                       rows={3}
                       value={selectedDossier.remarques || ''}
                       onChange={(e) => setSelectedDossier({
@@ -616,14 +660,14 @@ export default function DossierManager() {
               <div className={styles.modalFooter}>
                 <button
                   type="button"
-                  className={styles.secondaryButton}
+                  className={styles.modalButton + ' ' + styles.modalButtonSecondary}
                   onClick={() => setSelectedDossier(null)}
                 >
                   Annuler
                 </button>
                 <button
                   type="button"
-                  className={`${styles.formButton} ${styles.primaryButton}`}
+                  className={styles.modalButton + ' ' + styles.modalButtonPrimary}
                   onClick={handleUpdateDossier}
                 >
                   Enregistrer
@@ -634,5 +678,10 @@ export default function DossierManager() {
         )}
       </div>
     </div>
+    </main>
+    </div>
+    </div>
   );
 }
+
+

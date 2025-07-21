@@ -15,7 +15,9 @@ const permissionMap: Record<ViewType, string> = {
   'gestion-utilisateurs': 'manage_users',
   'Admin-Panel': 'Admin-Panel',
   'Payments': 'Payments',
-  'controle_minier': 'controle_minier'
+  'controle_minier': 'controle_minier',
+  'manage_users': 'manage_users',
+  'manage_documents': 'manage_documents'
 };
 
 const routeMap: Record<ViewType, string> = {
@@ -29,7 +31,10 @@ const routeMap: Record<ViewType, string> = {
   'gestion-utilisateurs': '/gestion-utilisateurs',
   'Admin-Panel': '/admin_panel/panel',
   'Payments': '/DEA/DEA_dashboard',
-   'controle_minier': '/controle-minier'
+  'controle_minier': '/controle-minier',
+  'manage_users': '/admin_panel/manage_users',
+  'manage_documents': '/admin_panel/DossierAdminPage'
+
 };
 
 export const useViewNavigator = (initialView: ViewType = 'dashboard') => {

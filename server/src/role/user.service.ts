@@ -14,31 +14,49 @@ export class UserService {
 
 
   // user.service.ts
+// user.service.ts
+// user.service.ts
 async getAllUsers() {
-  const users = await this.prisma.user.findMany({
+  return this.prisma.user.findMany({
     include: {
       role: {
         include: {
           rolePermissions: {
             include: {
-              permission: true,
+              permission: true
+            }
+          }
+        }
+      },
+      userGroups: {
+        include: {
+          group: {
+            include: {
+              groupPermissions: {
+                include: {
+                  permission: true
+                }
+              }
             }
           }
         }
       }
     }
   });
-
-  // Map nested rolePermissions to a flat permissions array
-  return users.map(user => ({
-    ...user,
-    role: user.role
-      ? {
-          ...user.role,
-          permissions: user.role.rolePermissions.map(rp => rp.permission)
-        }
-      : null
-  }));
 }
 
+async assignGroupsToUser(userId: number, groupIds: number[]) {
+  // First remove all existing group associations
+  await this.prisma.userGroup.deleteMany({
+    where: { userId }
+  });
+
+  // Then create new associations
+  return this.prisma.userGroup.createMany({
+    data: groupIds.map(groupId => ({
+      userId,
+      groupId
+    }))
+  });
+}
 }

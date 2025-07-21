@@ -13,7 +13,8 @@ model User {
   email     String   @unique
   password  String
   roleId    Int?
-  role      Role?     @relation(fields: [roleId], references: [id])
+  role      Role?    @relation(fields: [roleId], references: [id])
+  userGroups UserGroup[]
   createdAt DateTime @default(now())
 }
 
@@ -24,10 +25,29 @@ model Role {
   rolePermissions  RolePermission[]
 }
 
+model Group {
+  id               Int              @id @default(autoincrement())
+  name             String           @unique
+  description      String?
+  userGroups       UserGroup[]
+  groupPermissions GroupPermission[]
+}
+
+model UserGroup {
+  userId    Int
+  groupId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  group     Group    @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId, groupId])
+}
+
 model Permission {
   id                Int              @id @default(autoincrement())
   name              String           @unique
   rolePermissions   RolePermission[]
+  groupPermissions  GroupPermission[]
 }
 
 model RolePermission {
@@ -39,6 +59,14 @@ model RolePermission {
   @@id([roleId, permissionId])
 }
 
+model GroupPermission {
+  groupId      Int
+  permissionId Int
+  group        Group      @relation(fields: [groupId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([groupId, permissionId])
+}
 model DossierAdministratif {
   id_dossier   Int                   @id @default(autoincrement())
   id_typeproc Int

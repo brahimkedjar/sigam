@@ -1,3 +1,5 @@
+/* AdminPanel.module.css */
+
 /* App Layout */
 .app-container {
   display: flex;
@@ -40,7 +42,6 @@
 }
 
 /* Notification */
-/* Notification */
 .notification {
   position: fixed;
   top: 20px;
@@ -53,26 +54,15 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   animation: slideIn 0.3s ease-out;
-  color: white; /* Ensure text is always white */
+  color: white;
 }
 
 .notificationSuccess {
-  background-color: #10B981; /* Modern green */
+  background-color: #10B981;
 }
 
 .notificationError {
-  background-color: #EF4444; /* Modern red */
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  background-color: #EF4444;
 }
 
 @keyframes slideIn {
@@ -183,7 +173,8 @@
 
 /* Form Elements */
 .form-scope input,
-.form-scope select {
+.form-scope select,
+.form-scope textarea {
   width: 83%;
   padding: 0.75rem 1rem;
   border: 1px solid #ddd;
@@ -194,7 +185,8 @@
 }
 
 .form-scope input:focus,
-.form-scope select:focus {
+.form-scope select:focus,
+.form-scope textarea:focus {
   outline: none;
   border-color: #3B82F6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
@@ -293,6 +285,17 @@
   border: 1px solid #ccc;
 }
 
+/* Group-specific styles */
+.group-description-input {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.group-description-input::placeholder {
+  color: #aaa;
+}
+
 /* Permissions */
 .permissions-grid {
   display: grid;
@@ -377,10 +380,40 @@
   overflow: hidden;
 }
 
+/* User Email Cell */
+.user-email {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.email-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+/* Value States */
+.has-value {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.no-value {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Table Container */
+.users-table-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 2fr;
+  grid-template-columns: 2fr 1fr 1fr 2fr;
   padding: 1rem;
   align-items: center;
 }
@@ -453,4 +486,33 @@
     height: 18px;
     font-size: 0.8rem;
   }
+  
+  .form-scope input,
+  .form-scope select,
+  .form-scope textarea {
+    width: 100%;
+  }
+}
+
+/* Group Management Specific Styles */
+.group-management-section {
+  margin-top: 2rem;
+  border-top: 1px solid #eee;
+  padding-top: 2rem;
+}
+
+.group-form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.group-form-input {
+  flex: 1;
+}
+
+.group-form-description {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
 }

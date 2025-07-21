@@ -6,10 +6,10 @@ const run = (cmd: string) => {
 };
 
 try {
-  // Safe for production and Kubernetes — applies existing migrations only
-  run('npx prisma migrate deploy');
+  // ❗ DANGER: This will drop the database, reapply all migrations, and re-seed from scratch
+  run('npx prisma migrate reset --force');
 
-  // Seed scripts (adjust or reorder as needed)
+  // Now run custom seeders if not handled automatically by migrate reset
   run('npx ts-node prisma/seed_paiment.ts');
   run('npx ts-node prisma/seed.ts');
   run('npx ts-node prisma/seed_documents.ts');
@@ -17,8 +17,8 @@ try {
   run('npx ts-node prisma/seed_substances.ts');
   run('npx ts-node prisma/seed_statutpermis.ts');
 
-  console.log('✅ All seeds executed successfully!');
+  console.log('✅ Database reset and all seeds executed successfully!');
 } catch (e) {
-  console.error('❌ Error while running seeds', e);
+  console.error('❌ Error while running reset or seeds', e);
   process.exit(1);
 }

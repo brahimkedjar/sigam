@@ -20,10 +20,18 @@ type Permission = {
   name: string;
 };
 
+type Group = {
+  id: number;
+  name: string;
+  description?: string;
+  permissions: Permission[];
+};
+
 type User = {
   id: number;
   email: string;
   role: Role | null;
+  groups: Group[]; 
 };
 
 export default function AdminPanel() {
@@ -45,31 +53,151 @@ export default function AdminPanel() {
   const [roleInputs, setRoleInputs] = useState<{ [id: number]: string }>({});
   const [permissionInputs, setPermissionInputs] = useState<{ [id: number]: string }>({});
   const [userSearch, setUserSearch] = useState('');
-  const { currentView, navigateTo } = useViewNavigator('Admin-Panel');
-  
+  const { currentView, navigateTo } = useViewNavigator('manage_users');
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [newGroup, setNewGroup] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+  const [selectedGroupForUser, setSelectedGroupForUser] = useState<number | null>(null);
+  const [editingGroups, setEditingGroups] = useState<{ [id: number]: boolean }>({});
+  const [selectedGroupsForUser, setSelectedGroupsForUser] = useState<number[]>([]);
+  const [groupInputs, setGroupInputs] = useState<{ [id: number]: { name: string, description: string } }>({});
+  const toggleAllPermissions = () => {
+  if (selectedPermissions.length === permissions.length) {
+    // Deselect all
+    setSelectedPermissions([]);
+  } else {
+    // Select all
+    setSelectedPermissions(permissions.map(p => p.id));
+  }
+};
+
+const isAllSelected = selectedPermissions.length === permissions.length && permissions.length > 0;
+const isSomeSelected = selectedPermissions.length > 0 && !isAllSelected;
+
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({message, type});
     setTimeout(() => setNotification(null), 5000);
   };
 
+  const assignPermissionsToGroup = async (groupId: number, permissionIds: number[]) => {
+  if (!groupId || permissionIds.length === 0) return;
+  try {
+    await axios.post(`${API_URL}/admin/group/assign-permissions`, {
+      groupId,
+      permissionIds,
+    });
+    setSelectedGroup(null);
+    setSelectedPermissions([]);
+    showNotification('Permissions assigned to group successfully', 'success');
+    fetchAll();
+  } catch (error) {
+    showNotification('Failed to assign permissions to group', 'error');
+  }
+};
+
   const fetchAll = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [rolesRes, permissionsRes, usersRes] = await Promise.all([
-        axios.get(`${API_URL}/admin/roles`),
-        axios.get(`${API_URL}/admin/permissions`),
-        axios.get(`${API_URL}/admin/users`)
-      ]);
-      setRoles(rolesRes.data);
-      setPermissions(permissionsRes.data);
-      setUsers(usersRes.data);
-    } catch (error) {
-      console.error("Failed to fetch admin data:", error);
-      showNotification("Failed to load data", 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [API_URL]);
+  setIsLoading(true);
+  try {
+    const [rolesRes, permissionsRes, usersRes, groupsRes] = await Promise.all([
+      axios.get(`${API_URL}/admin/roles`),
+      axios.get(`${API_URL}/admin/permissions`),
+      axios.get(`${API_URL}/admin/users`),
+      axios.get(`${API_URL}/admin/groups`)
+    ]);
+    
+    setRoles(rolesRes.data);
+    setPermissions(permissionsRes.data);
+    
+    // Process users data with multiple groups and permissions
+    const processedUsers = usersRes.data.map((user: any) => {
+      // Extract role permissions
+      const rolePermissions = user.role?.rolePermissions?.flatMap((rp: any) => rp.permission) || [];
+      
+      // Extract group permissions
+      const groupPermissions = user.userGroups?.flatMap((ug: any) => 
+        ug.group?.groupPermissions?.flatMap((gp: any) => gp.permission) || []
+      ) || [];
+      
+      return {
+        ...user,
+        role: user.role ? {
+          ...user.role,
+          permissions: rolePermissions
+        } : null,
+        groups: user.userGroups?.map((ug: any) => ({
+          ...ug.group,
+          permissions: ug.group?.groupPermissions?.map((gp: any) => gp.permission) || []
+        })) || []
+      };
+    });
+    
+    setUsers(processedUsers);
+    
+    setGroups(groupsRes.data.map((group: any) => ({
+      ...group,
+      permissions: group.groupPermissions?.map((gp: any) => gp.permission) || []
+    })));
+  } catch (error) {
+    console.error("Failed to fetch admin data:", error);
+    showNotification("Failed to load data", 'error');
+  } finally {
+    setIsLoading(false);
+  }
+}, [API_URL]);
+
+const createGroup = async () => {
+  if (!newGroup.trim()) return;
+  try {
+    await axios.post(`${API_URL}/admin/group`, { 
+      name: newGroup,
+      description: groupDescription 
+    });
+    setNewGroup('');
+    setGroupDescription('');
+    showNotification('Group created successfully', 'success');
+    fetchAll();
+  } catch (error) {
+    showNotification('Failed to create group', 'error');
+  }
+};
+
+
+const assignGroupsToUser = async () => {
+  if (!selectedUser || selectedGroupsForUser.length === 0) return;
+  try {
+    await axios.post(`${API_URL}/admin/user/assign-groups`, {
+      userId: selectedUser,
+      groupIds: selectedGroupsForUser,
+    });
+    setSelectedUser(null);
+    setSelectedGroupsForUser([]);
+    showNotification('Groups assigned to user successfully', 'success');
+    fetchAll();
+  } catch (error) {
+    showNotification('Failed to assign groups to user', 'error');
+  }
+};
+
+const deleteGroup = async (id: number) => {
+  try {
+    await axios.delete(`${API_URL}/admin/group/${id}`);
+    showNotification('Group deleted successfully', 'success');
+    fetchAll();
+  } catch {
+    showNotification('Failed to delete group', 'error');
+  }
+};
+
+const updateGroup = async (id: number, name: string, description?: string) => {
+  try {
+    await axios.put(`${API_URL}/admin/group/${id}`, { name, description });
+    showNotification('Group updated successfully', 'success');
+    fetchAll();
+  } catch {
+    showNotification('Failed to update group', 'error');
+  }
+};
 
   useEffect(() => {
     fetchAll();
@@ -132,12 +260,12 @@ export default function AdminPanel() {
   };
 
   const handlePermissionToggle = (permissionId: number) => {
-    setSelectedPermissions(prev =>
-      prev.includes(permissionId)
-        ? prev.filter(id => id !== permissionId)
-        : [...prev, permissionId]
-    );
-  };
+  setSelectedPermissions(prev =>
+    prev.includes(permissionId)
+      ? prev.filter(id => id !== permissionId)
+      : [...prev, permissionId]
+  );
+};
    
 const deleteRole = async (id: number) => {
   try {
@@ -189,7 +317,7 @@ return (
         <div className={styles['breadcrumb']}>
           <span>SIGAM</span>
           <FiChevronRight className={styles['breadcrumb-arrow']} />
-          <span>Admin Panel</span>
+          <span>Manage Users</span>
         </div>
 
         <div className={styles['admin-container']}>
@@ -214,6 +342,12 @@ return (
                 onClick={() => setActiveTab('users')}
               >
                 <FiUsers /> User Management
+              </button>
+              <button
+                className={`${styles['admin-tabs-button']} ${activeTab === 'groups' ? styles.active : ''}`}
+                onClick={() => setActiveTab('groups')}
+              >
+                <FiUsers /> Group Management
               </button>
             </div>
           </div>
@@ -359,19 +493,33 @@ return (
                     </div>
 
                     <div className={styles['permissions-grid']}>
-                      {permissions?.map(p => (
-                        <div
-                          key={p.id}
-                          className={`${styles['permission-item']} ${selectedPermissions.includes(p.id) ? styles.selected : ''}`}
-                          onClick={() => handlePermissionToggle(p.id)}
-                        >
-                          <div className={styles['permission-checkbox']}>
-                            {selectedPermissions.includes(p.id) && <FiCheck />}
-                          </div>
-                          <span>{p.name}</span>
-                        </div>
-                      ))}
-                    </div>
+  <div className={styles['permissions-header']}>
+    <h3>Available Permissions ({permissions.length})</h3>
+    <button 
+      onClick={toggleAllPermissions}
+      className={styles['select-all-button']}
+    >
+      {isAllSelected ? 'Deselect All' : 'Select All'}
+    </button>
+  </div>
+  
+  <div className={styles['permissions-container']}>
+    {permissions?.map(p => (
+      <div
+        key={p.id}
+        className={`${styles['permission-item']} ${
+          selectedPermissions.includes(p.id) ? styles.selected : ''
+        }`}
+        onClick={() => handlePermissionToggle(p.id)}
+      >
+        <div className={styles['permission-checkbox']}>
+          {selectedPermissions.includes(p.id) && <FiCheck />}
+        </div>
+        <span>{p.name}</span>
+      </div>
+    ))}
+  </div>
+</div>
 
                     <button
                       onClick={assignPermissions}
@@ -439,36 +587,275 @@ return (
 
                   <div className={styles['admin-card']}>
                     <h2><FiUsers /> User List</h2>
-                    <div className={styles['users-table']}>
-                      <div className={styles['table-header']}>
-                        <div>Email</div>
-                        <div>Role</div>
-                        <div>Permissions</div>
-                      </div>
-
-                      {users
-                        .filter(user =>
-                          user.email.toLowerCase().includes(userSearch.toLowerCase())
-                        )
-                        .map(user => (
-                          <div key={user.id} className={styles['table-row']}>
-                            <div><FiMail /> {user.email}</div>
-                            <div>{user.role?.name || 'No role assigned'}</div>
-                            <div className={styles['permissions-list']}>
-                              {user.role?.permissions?.length ? (
-                                user.role.permissions.map(p => (
-                                  <span key={p.id} className={styles['permission-badge']}>{p.name}</span>
-                                ))
-                              ) : (
-                                <span className={styles['no-permission']}>None</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
+                    <div className={styles['users-table-container']}>
+  <table className={styles['users-table']}>
+    <thead className={styles['table-header']}>
+      <tr>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Groups</th>
+        <th>Permissions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users
+        .filter(user => user.email.toLowerCase().includes(userSearch.toLowerCase()))
+        .map(user => (
+          <tr key={user.id} className={styles['table-row']}>
+            <td>
+              <div className={styles['user-email']}>
+                <FiMail className={styles['email-icon']} />
+                {user.email}
+              </div>
+            </td>
+            <td>
+              <span className={user.role ? styles['has-value'] : styles['no-value']}>
+                {user.role?.name || 'No role'}
+              </span>
+            </td>
+            <td>
+              <div className={styles['groups-list']}>
+                {user.groups?.length ? (
+                  user.groups.map(group => (
+                    <span key={group.id} className={styles['group-badge']}>
+                      {group.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className={styles['no-value']}>No groups</span>
+                )}
+              </div>
+            </td>
+            <td>
+              <td>
+  <div className={styles['permissions-list']}>
+    {[
+      ...(user.role?.permissions || []),
+      ...(user.groups?.flatMap(g => g.permissions || []) || [])
+    ].length > 0 ? (
+      [
+        ...new Set([
+          ...(user.role?.permissions?.map(p => p?.name).filter(Boolean) || []),
+          ...(user.groups?.flatMap(g => 
+            g.permissions?.map(p => p?.name).filter(Boolean) || []
+          ) || [])
+        ])
+      ].map((name, i) => (
+        name ? <span key={i} className={styles['permission-badge']}>{name}</span> : null
+      ))
+    ) : (
+      <span className={styles['no-permission']}>None</span>
+    )}
+  </div>
+</td>
+            </td>
+          </tr>
+        ))}
+    </tbody>
+  </table>
+</div>
                   </div>
                 </div>
               )}
+
+              {activeTab === 'groups' && (
+  <div className={styles['admin-content']}>
+    <div className={styles['admin-card']}>
+      <h2><FiPlus /> Create New Group</h2>
+      <div className={`${styles['form-group']} ${styles['form-scope']}`}>
+        <input
+          type="text"
+          value={newGroup}
+          onChange={e => setNewGroup(e.target.value)}
+          placeholder="Enter group name"
+        />
+        <input
+          type="text"
+          value={groupDescription}
+          onChange={e => setGroupDescription(e.target.value)}
+          placeholder="Enter group description (optional)"
+        />
+        <button onClick={createGroup} className={styles.primary}>
+          Create Group
+        </button>
+      </div>
+    </div>
+
+    <div className={styles['admin-card']}>
+      <h2>🛠️ Manage Existing Groups</h2>
+      {groups.map(group => (
+        <div key={group.id} className={`${styles['form-inline']} ${styles['form-scope']}`}>
+          <input
+            value={groupInputs[group.id]?.name ?? group.name}
+            disabled={!editingGroups[group.id]}
+            onChange={(e) =>
+              setGroupInputs(prev => ({ 
+                ...prev, 
+                [group.id]: { 
+                  ...prev[group.id], 
+                  name: e.target.value 
+                } 
+              }))
+            }
+          />
+          <input
+            value={groupInputs[group.id]?.description ?? group.description ?? ''}
+            disabled={!editingGroups[group.id]}
+            onChange={(e) =>
+              setGroupInputs(prev => ({ 
+                ...prev, 
+                [group.id]: { 
+                  ...prev[group.id], 
+                  description: e.target.value 
+                } 
+              }))
+            }
+            placeholder="Description"
+          />
+          {editingGroups[group.id] ? (
+            <button
+              className={styles.success}
+              onClick={() => {
+                updateGroup(
+                  group.id, 
+                  groupInputs[group.id].name,
+                  groupInputs[group.id].description
+                );
+                setEditingGroups(prev => ({ ...prev, [group.id]: false }));
+              }}
+            >
+              Save
+            </button>
+          ) : (
+            <button
+              className={styles.warning}
+              onClick={() => {
+                setEditingGroups(prev => ({ ...prev, [group.id]: true }));
+                setGroupInputs(prev => ({ 
+                  ...prev, 
+                  [group.id]: { 
+                    name: group.name, 
+                    description: group.description || '' 
+                  } 
+                }));
+              }}
+            >
+              Modify
+            </button>
+          )}
+          <button onClick={() => deleteGroup(group.id)} className={styles.danger}>
+            <FiTrash2 />
+          </button>
+        </div>
+      ))}
+    </div>
+
+    <div className={`${styles['admin-card']} ${styles['form-scope']}`}>
+      <h2><FiKey /> Assign Permissions to Group</h2>
+      <div className={styles['form-group']}>
+        <select
+          value={selectedGroup || ''}
+          onChange={e => setSelectedGroup(e.target.value ? Number(e.target.value) : null)}
+          className={styles['full-width']}
+        >
+          <option value="">Select a group</option>
+          {groups?.map(g => (
+            <option key={g.id} value={g.id}>{g.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className={styles['permissions-grid']}>
+        {permissions?.map(p => (
+          <div
+            key={p.id}
+            className={`${styles['permission-item']} ${
+              selectedPermissions.includes(p.id) ? styles.selected : ''
+            }`}
+            onClick={() => handlePermissionToggle(p.id)}
+          >
+            <div className={styles['permission-checkbox']}>
+              {selectedPermissions.includes(p.id) && <FiCheck />}
+            </div>
+            <span>{p.name}</span>
+          </div>
+        ))}
+      </div>
+
+      <button
+  onClick={() => {
+    if (selectedGroup) {
+      assignPermissionsToGroup(selectedGroup, selectedPermissions);
+    }
+  }}
+  className={`${styles.primary} ${styles['full-width']}`}
+  disabled={!selectedGroup || selectedPermissions.length === 0}
+>
+  Assign Selected Permissions to Group
+</button>
+    </div>
+
+    <div className={`${styles['admin-card']} ${styles['form-scope']}`}>
+  <h2><FiUsers /> Assign Groups to User</h2>
+  <div className={styles['form-group']}>
+    <label>Select User</label>
+    <input
+      type="text"
+      placeholder="Search by email..."
+      value={userSearch}
+      onChange={(e) => setUserSearch(e.target.value)}
+      className={styles['full-width']}
+    />
+    <select
+      value={selectedUser || ''}
+      onChange={(e) => setSelectedUser(e.target.value ? Number(e.target.value) : null)}
+      className={styles['full-width']}
+    >
+      <option value="">-- Choose a user --</option>
+      {users
+        .filter(u => u.email.toLowerCase().includes(userSearch.toLowerCase()))
+        .map(u => (
+          <option key={u.id} value={u.id}>
+            {u.email}
+          </option>
+        ))}
+    </select>
+  </div>
+
+  <div className={styles['form-group']}>
+    <label>Select Groups (multiple)</label>
+    <select
+  multiple
+  value={selectedGroupsForUser.map(String)} // Convert numbers to strings
+  onChange={(e) => {
+    const options = e.target.options;
+    const selected = [];
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].selected) {
+        selected.push(Number(options[i].value)); // Convert back to numbers
+      }
+    }
+    setSelectedGroupsForUser(selected);
+  }}
+  className={styles['full-width']}
+  size={5}
+>
+  {groups.map(g => (
+    <option key={g.id} value={g.id}>{g.name}</option>
+  ))}
+</select>
+  </div>
+
+  <button
+    onClick={assignGroupsToUser}
+    className={`${styles.primary} ${styles['full-width']}`}
+    disabled={!selectedUser || selectedGroupsForUser.length === 0}
+  >
+    Assign Groups to User
+  </button>
+</div>
+  </div>
+)}
             </>
           )}
         </div>

@@ -1,5 +1,6 @@
 // src/types/viewtype.ts
 
+// src/types/viewtype.ts
 export type ViewType =
   | 'dashboard'
   | 'nouvelle-demande'
@@ -10,5 +11,7 @@ export type ViewType =
   | 'parametres'
   | 'gestion-utilisateurs'
   | 'Admin-Panel'
+  | 'manage_users'       
+  | 'manage_documents'  
   | 'Payments'
   | 'controle_minier';
