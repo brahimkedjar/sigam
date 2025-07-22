@@ -7,12 +7,12 @@ import axios from 'axios';
 import { cleanLocalStorageForNewDemande } from '../../../utils/cleanLocalStorage';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../../src/store/useAuthStore';
 import { FiCheck, FiChevronRight } from 'react-icons/fi';
 import type { ViewType } from '../../../src/types/viewtype';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
-import ProgressStepper from '@/components/ProgressStepper';
-import { STEP_LABELS } from '@/constants/steps';
+import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import ProgressStepper from '../../../components/ProgressStepper';
+import { STEP_LABELS } from '../../../src/constants/steps';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const apiURL =
-  typeof window === 'undefined'
-    ? process.env.NEXT_PUBLIC_API_URL // middleware, server
-    : process.env.INTERNAL_API_URL; // browser
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // Always server-side in middleware
 
 const protectedRoutes = [
   '/dashboard',
@@ -25,59 +22,53 @@ const routePermissionMap: Record<string, string> = {
 };
 
 export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+const token = req.cookies.get('token')?.value;
+  const pathname = req.nextUrl.pathname;
 
-  // Redirect authenticated users away from login
-  if (pathname === '/') {
-    const token = req.cookies.get('token')?.value;
-    if (token) {
-      return NextResponse.redirect(new URL('/permis_dashboard/PermisDashboard', req.url));
-    }
+  console.log('🟡 [Middleware] Request Path:', pathname);
+  console.log('🟡 [Middleware] API URL:', API_URL);
+
+  if (!token) {
+    console.warn('🟠 [Middleware] No token found in cookies.');
+    return NextResponse.redirect(new URL('/unauthorized/page?reason=no_token', req.url));
   }
 
-  // Only protect relevant routes
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    const token = req.cookies.get('token')?.value;
+  try {
+    console.log('🟡 [Middleware] Sending request to /auth/me with token...');
 
-    if (!token) {
-      return NextResponse.redirect(new URL('/unauthorized/page?reason=not_authenticated', req.url));
+    const res = await fetch(`${API_URL}/auth/me`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      // Required in Edge Runtime
+      cache: 'no-store',
+    });
+
+    console.log('🟡 [Middleware] Response status:', res.status);
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error('🔴 [Middleware] Auth API returned error:', body);
+      return NextResponse.redirect(new URL(`/unauthorized/page?reason=${res.status}`, req.url));
     }
 
-    try {
-      const res = await fetch(`${apiURL}/auth/me`, {
-        method: 'GET',
-        headers: { cookie: `token=${token}` },
-      });
+    const user = await res.json();
+    console.log('🟢 [Middleware] Authenticated user:', user);
 
-      if (!res.ok) throw new Error('Unauthorized');
+    // Add user info to request if needed (optional)
+    return NextResponse.next();
+  } catch (err: any) {
+    console.error('❌ [Middleware] Fetch failed:', err.message);
+    console.error('❌ [Middleware] Full error:', err);
 
-      const data = await res.json();
-      const user = data.user;
-
-      // Block admin panel if not admin
-      if (pathname.startsWith('/admin_panel') && user.role !== 'admin') {
-        return NextResponse.redirect(new URL('/unauthorized/page?reason=insufficient_role', req.url));
-      }
-
-      // Check permission for route
-      for (const [route, permission] of Object.entries(routePermissionMap)) {
-        if (pathname.startsWith(route) && !user.permissions.includes(permission)) {
-          return NextResponse.redirect(new URL('/unauthorized/page?reason=missing_permissions', req.url));
-        }
-      }
-
-    } catch (err) {
-      console.error('❌ Middleware auth error:', err);
-      return NextResponse.redirect(new URL('/unauthorized/page?reason=auth_error', req.url));
-    }
+    return NextResponse.redirect(new URL('/unauthorized/page?reason=fetch_failed', req.url));
   }
-
-  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/',
+   
     '/dashboard/:path*',
     '/admin_panel/:path*',
     '/demande/:path*',

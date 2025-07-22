@@ -1,23 +1,18 @@
-/* register.css */
-.body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #c2e9fb, #a1c4fd);
-}
+/* Register.module.css */
 
-.register-container {
+.container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
-.register-card {
+.card {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
   padding: 2.5rem 2rem;
   border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 420px;
   animation: slideFadeIn 0.6s ease;
@@ -34,27 +29,34 @@
   }
 }
 
-.register-title {
+.title {
   text-align: center;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
   color: #1a237e;
 }
 
-.form-group {
+.message {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: green;
+  font-size: 0.95rem;
+}
+
+.formGroup {
   margin-bottom: 1.2rem;
   display: flex;
   flex-direction: column;
 }
 
-.form-group label {
+.formGroup label {
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: #333;
 }
 
-.form-group input,
-.form-group select {
+.formGroup input,
+.formGroup select {
   padding: 0.75rem;
   border: 1px solid #bbb;
   border-radius: 0.5rem;
@@ -63,12 +65,12 @@
   transition: border-color 0.3s ease;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.formGroup input:focus,
+.formGroup select:focus {
   border-color: #3f51b5;
 }
 
-.register-button {
+.button {
   width: 100%;
   padding: 0.9rem;
   background-color: #3f51b5;
@@ -81,13 +83,6 @@
   transition: background-color 0.3s ease;
 }
 
-.register-button:hover {
+.button:hover {
   background-color: #303f9f;
-}
-
-.register-message {
-  text-align: center;
-  margin-bottom: 1rem;
-  color: green;
-  font-size: 0.95rem;
 }

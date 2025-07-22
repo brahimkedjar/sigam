@@ -1,8 +1,8 @@
 // src/hooks/useViewNavigator.ts
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { useAuthStore } from '@/store/useAuthStore';
-import type { ViewType } from '@/types/viewtype';
+import { useAuthStore } from '../store/useAuthStore';
+import type { ViewType } from '../types/viewtype';
 
 const permissionMap: Record<ViewType, string> = {
   'dashboard': 'view_dashboard',

@@ -46,35 +46,28 @@ export class AuthService {
 
   const token = this.jwtService.sign(payload, { expiresIn: '24h' });
 
-  console.log('✅ JWT payload:', payload);
-  console.log('✅ JWT token:', token);
+  const userData = {
+    id: user.id,
+    email: user.email,
+    role: user.role.name,
+    permissions,
+  };
 
   if (res) {
     res.cookie('token', token, {
       httpOnly: true,
       secure: false,
-      sameSite: 'lax', // Critical for cross-origin in development
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24,
       path: '/',
     });
-
-    // Also set the token in the response body for debugging
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role.name,
-        permissions,
-      },
-      token: token
-    };
   }
+
+  return {
+    user: userData,
+    token,
+  };
 }
-
-
-
-
-
 
   async refresh(token: string) {
   try {

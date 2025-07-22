@@ -7,7 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import styles from './DossierManager.module.css'
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
+import { useViewNavigator } from '../../src/hooks/useViewNavigator';
 
 // Types
 interface TypePermis {

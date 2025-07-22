@@ -23,16 +23,16 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../../src/store/useAuthStore';
 import { useSearchParams } from 'next/navigation';
 import { BsSave } from 'react-icons/bs';
 import type { ViewType } from '../../../src/types/viewtype';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
-import ProgressStepper from '@/components/ProgressStepper';
-import { STEP_LABELS } from '@/constants/steps';
+import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import ProgressStepper from '../../../components/ProgressStepper';
+import { STEP_LABELS } from '../../../src/constants/steps';
 
 export default function CadastrePage() {
-  const ArcGISMap = dynamic(() => import('../../../src/components/map/ArcGISMap'), {
+  const ArcGISMap = dynamic(() => import('../../../components/map/ArcGISMap'), {
     ssr: false,
     loading: () => <div className="map-loading">Chargement de la carte...</div>
   });

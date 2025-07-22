@@ -7,14 +7,14 @@ import { useDemandeInfo } from '../../../utils/useDemandeInfo';
 import { FiChevronLeft, FiChevronRight, FiSave, FiUser, FiDollarSign, FiTool, FiCheck, FiFileText, FiX } from 'react-icons/fi';
 import styles from './capacites.module.css';
 import { useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../../src/store/useAuthStore';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import { BsSave } from 'react-icons/bs';
 import type { ViewType } from '../../../src/types/viewtype';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
-import ProgressStepper from '@/components/ProgressStepper';
-import { STEP_LABELS } from '@/constants/steps';
+import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import ProgressStepper from '../../../components/ProgressStepper';
+import { STEP_LABELS } from '../../../src/constants/steps';
 
 export default function Capacites() {
   const [form, setForm] = useState({

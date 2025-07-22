@@ -32,8 +32,8 @@ import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
 import { ViewType } from '../../src/types/viewtype';
 import router from 'next/router';
-import { useAuthStore } from '@/store/useAuthStore';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
+import { useAuthStore } from '../../src/store/useAuthStore';
+import { useViewNavigator } from '../../src/hooks/useViewNavigator';
 
 // Types
 type DashboardStats = {

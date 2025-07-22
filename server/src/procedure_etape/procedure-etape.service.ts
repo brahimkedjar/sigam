@@ -95,13 +95,29 @@ async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) 
 
 
   async getCurrentEtape(id_proc: number) {
-   return this.prisma.procedureEtape.findFirst({
-  where: {
-    id_proc,
-    statut: StatutProcedure.EN_COURS,
-  },
-  include: { etape: true },
-});
+  // Step 1: Try to get the step in progress
+  const enCours = await this.prisma.procedureEtape.findFirst({
+    where: {
+      id_proc,
+      statut: StatutProcedure.EN_COURS,
+    },
+    include: { etape: true },
+  });
 
-  }
+  if (enCours) return enCours;
+
+  // Step 2: If none is in progress, return the most recently saved one
+  const lastSaved = await this.prisma.procedureEtape.findFirst({
+    where: {
+      id_proc,
+    },
+    orderBy: {
+      date_debut: 'desc', // or use id_etape: 'desc' if needed
+    },
+    include: { etape: true },
+  });
+
+  return lastSaved;
+}
+
 }

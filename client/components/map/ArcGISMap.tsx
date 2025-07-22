@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import styles from '../../../pages/demande/step6/cadastre.module.css'
+import styles from '../../pages/demande/step6/cadastre.module.css'
 type Coordinate = {
   id: string;
   x: string;

@@ -8,8 +8,8 @@ import { useSearchParams } from 'next/navigation';
 import { FiChevronRight } from 'react-icons/fi';
 import Sidebar from '../../sidebar/Sidebar';
 import Navbar from '../../navbar/Navbar';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
-import { STEP_LABELS } from '@/constants/steps';
+import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import { STEP_LABELS } from '../../../src/constants/steps';
 import router from 'next/router';
 
 interface Obligation {
@@ -67,7 +67,8 @@ const handleTerminerProcedure = async () => {
     const res = await axios.put(`http://localhost:3001/api/procedures/terminer/${idProc}`);
     await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/10`);
     alert('Procédure terminée avec succès');
-    router.push('/dashboard/suivi_procedure'); 
+    router.push(`/demande/Timeline/Timeline?id=${idProc}`); 
+    /*router.push(`/demande/step10/page10?id=${idProc}`);*/
   } catch (err) {
     alert('Erreur lors de la terminaison de la procédure');
     console.error(err);

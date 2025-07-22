@@ -1,6 +1,6 @@
 'use client';
 
-import './msg_unauthorized.css';
+import styles from './MsgUnauthorized.module.css';
 import { useSearchParams } from 'next/navigation';
 import { FiHome, FiAlertTriangle } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
@@ -24,15 +24,15 @@ export default function Unauthorized() {
   };
 
   return (
-    <div className="unauthorized-container">
-      <div className="home-icon" onClick={() => router.push('/')}>
+    <div className={styles.container}>
+      <div className={styles.homeIcon} onClick={() => router.push('/')}>
         <FiHome size={26} />
       </div>
 
-      <div className="unauthorized-box">
+      <div className={styles.box}>
         <FiAlertTriangle size={36} color="#FFA500" />
         <h1>403 - Accès refusé</h1>
-        <p className="unauthorized-message">{getMessage()}</p>
+        <p className={styles.message}>{getMessage()}</p>
       </div>
     </div>
   );

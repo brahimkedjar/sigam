@@ -1,7 +1,6 @@
 // layouts/MiningControlLayout.tsx
 import { useState } from 'react';
 import styles from './styles/MiningControlLayout.module.css';
-import '../../styles/globals.css'
 import CahierChargesSection from './CahierCharges';
 import RapportActiviteSection from './RapportActivite';
 

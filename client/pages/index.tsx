@@ -2,11 +2,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
 import styles from './login.module.css';
-import '../styles/globals.css'
 import Link from 'next/link';
 
 export default function LoginPage() {

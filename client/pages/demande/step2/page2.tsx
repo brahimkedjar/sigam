@@ -17,10 +17,10 @@ import Navbar from "../../navbar/Navbar";
 import Sidebar from "../../sidebar/Sidebar";
 import { CgFileDocument } from "react-icons/cg";
 import { BsSave } from "react-icons/bs";
-import { useAuthStore } from "@/store/useAuthStore";
-import ProgressStepper from "@/components/ProgressStepper";
-import { STEP_LABELS } from "@/constants/steps";
-import { useViewNavigator } from "@/hooks/useViewNavigator";
+import { useAuthStore } from "../../../src/store/useAuthStore";
+import ProgressStepper from "../../../components/ProgressStepper";
+import { STEP_LABELS } from "../../../src/constants/steps";
+import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 
 type Document = {
   id_doc: number;

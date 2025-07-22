@@ -8,7 +8,7 @@ import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import NotificationBanner from '@/components/NotificationBanner';
+import NotificationBanner from '../../../components/NotificationBanner';
 
 interface Procedure {
   id_proc: number;

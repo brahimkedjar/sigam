@@ -9,11 +9,11 @@ import { FiCheck, FiChevronLeft, FiChevronRight, FiDownload, FiFileText, FiSave 
 import styles from './permis.module.css';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../../src/store/useAuthStore';
 import { BsSave } from 'react-icons/bs';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
-import ProgressStepper from '@/components/ProgressStepper';
-import { STEP_LABELS } from '@/constants/steps';
+import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import ProgressStepper from '../../../components/ProgressStepper';
+import { STEP_LABELS } from '../../../src/constants/steps';
 if (typeof window !== 'undefined') {
   Modal.setAppElement('#__next');
 }

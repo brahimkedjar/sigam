@@ -5,9 +5,9 @@ import styles from './AdminPanel.module.css';
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
 import router from 'next/router';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../src/store/useAuthStore';
 import { ViewType } from '../../src/types/viewtype';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
+import { useViewNavigator } from '../../src/hooks/useViewNavigator';
 
 type Role = {
   id: number;

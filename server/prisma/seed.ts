@@ -49,9 +49,9 @@ async function main7() {
     data: [
       { id_etape: 1, lib_etape: "Type de permis", ordre_etape: 1 },
       { id_etape: 2, lib_etape: "Documents", ordre_etape: 2 },
-      { id_etape: 3, lib_etape: "Capacités", ordre_etape: 3 },
-      { id_etape: 4, lib_etape: "Substances & Travaux", ordre_etape: 4 },
-      { id_etape: 5, lib_etape: "Identification", ordre_etape: 5 },
+      { id_etape: 5, lib_etape: "Identification", ordre_etape: 3 },
+      { id_etape: 3, lib_etape: "Capacités", ordre_etape: 4 },
+      { id_etape: 4, lib_etape: "Substances & Travaux", ordre_etape: 5 },
       { id_etape: 6, lib_etape: "Cadastre", ordre_etape: 6 },
       { id_etape: 7, lib_etape: "Avis Wali", ordre_etape: 7 },
       { id_etape: 8, lib_etape: "Comité de direction", ordre_etape: 8 },

@@ -9,7 +9,7 @@ import {
   FiSave
 } from 'react-icons/fi';
 import styles from './substances.module.css';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../../src/store/useAuthStore';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import * as turf from '@turf/turf';
@@ -17,9 +17,9 @@ import { BsSave } from 'react-icons/bs';
 import ConfirmReplaceModal from './ConfirmReplaceModal';
 import type { ViewType } from '../../../src/types/viewtype';
 import SummaryModal from "../popup/page6_popup";
-import ProgressStepper from '@/components/ProgressStepper';
-import { STEP_LABELS } from '@/constants/steps';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
+import ProgressStepper from '../../../components/ProgressStepper';
+import { STEP_LABELS } from '../../../src/constants/steps';
+import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 
 type Substance = {
   id_sub: number;

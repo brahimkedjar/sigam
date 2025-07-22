@@ -1,7 +1,7 @@
 // components/Navbar.tsx
 'use client';
 import { FiSearch, FiBell, FiUser, FiChevronDown, FiLogOut, FiSettings, FiHelpCircle } from 'react-icons/fi';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../../src/store/useAuthStore';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './Navbar.module.css'

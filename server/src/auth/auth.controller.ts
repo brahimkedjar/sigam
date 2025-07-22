@@ -8,21 +8,19 @@ import { Response } from 'express';
 export class AuthController {
 @UseGuards(JwtAuthGuard)
 @Get('me')
-getMe(@Req() req) {
-  if (!req.user) {
-    throw new UnauthorizedException('User not authenticated');
-  }
-  
-  console.log('User from JWT:', req.user);
+@UseGuards(JwtAuthGuard)
+async getMe(@Req() req: Request) {
+  const user = req.user as any;
   return {
     user: {
-      id: req.user.id, // Use direct property access
-      email: req.user.email,
-      role: req.user.role,
-      permissions: req.user.permissions,
-    },
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions,
+    }
   };
 }
+
 
 @Get('debug-cookies')
 getCookies(@Req() req: Request, @Res() res: Response) {

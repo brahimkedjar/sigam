@@ -92,6 +92,16 @@ async getObligationsForPermis(permisId: number): Promise<ObligationResponseDto[]
   }
 
   async createInitialObligations(permisId: number) {
+  // First check if obligations already exist
+  const existingObligations = await this.prisma.obligationFiscale.findMany({
+    where: { id_permis: permisId }
+  });
+
+  if (existingObligations.length > 0) {
+    return existingObligations; // Return existing ones if they exist
+  }
+
+  // Only create new obligations if none exist
   const [establishmentFee, surfaceTax, attributionProduct] = await Promise.all([
     this.calculateEstablishmentFee(permisId),
     this.calculateSurfaceTax(permisId),

@@ -1,13 +1,14 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './register.css';
+import styles from './Register.module.css';
 
 export default function Register() {
   const [form, setForm] = useState({ email: '', password: '', role: '' });
   const [message, setMessage] = useState('');
-  const [roles, setRoles] = useState<{ id: number; name: string }[]>([]); // 🟢 Store fetched roles
+  const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
 
-  // 🟢 Fetch roles on component mount
   useEffect(() => {
     const fetchRoles = async () => {
       try {
@@ -27,21 +28,21 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:3001/auth/register', form);
+      await axios.post('http://localhost:3001/auth/register', form);
       setMessage('✅ Inscription réussie !');
-    } catch (err) {
+    } catch {
       setMessage('❌ Échec de l\'inscription.');
     }
   };
 
   return (
-    <div className="register-container">
-      <form onSubmit={handleSubmit} className="register-card">
-        <h2 className="register-title">Créer un compte</h2>
+    <div className={styles.container}>
+      <form onSubmit={handleSubmit} className={styles.card}>
+        <h2 className={styles.title}>Créer un compte</h2>
 
-        {message && <p className="register-message">{message}</p>}
+        {message && <p className={styles.message}>{message}</p>}
 
-        <div className="form-group">
+        <div className={styles.formGroup}>
           <label htmlFor="email">Email</label>
           <input
             type="email"
@@ -52,7 +53,7 @@ export default function Register() {
           />
         </div>
 
-        <div className="form-group">
+        <div className={styles.formGroup}>
           <label htmlFor="password">Mot de passe</label>
           <input
             type="password"
@@ -63,7 +64,7 @@ export default function Register() {
           />
         </div>
 
-        <div className="form-group">
+        <div className={styles.formGroup}>
           <label htmlFor="role">Rôle</label>
           <select
             id="role"
@@ -78,7 +79,9 @@ export default function Register() {
           </select>
         </div>
 
-        <button type="submit" className="register-button">S'inscrire</button>
+        <button type="submit" className={styles.button}>
+          S'inscrire
+        </button>
       </form>
     </div>
   );

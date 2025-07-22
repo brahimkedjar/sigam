@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuthStore } from '@/store/useAuthStore';
-import { FiHome, FiFile, FiMap, FiSettings, FiUsers, FiChevronRight, FiLogOut, 
-         FiChevronLeft, FiActivity, FiBriefcase, FiClipboard, FiDollarSign, 
-         FiFileText, FiLayers, FiLock, FiShield, FiChevronDown } from 'react-icons/fi';
-import './sidebar.css';
+import { useAuthStore } from '../../src/store/useAuthStore';
+import { FiHome, FiFile, FiMap, FiSettings, FiUsers, FiChevronRight, 
+         FiLogOut, FiChevronLeft, FiActivity, FiBriefcase, FiClipboard, 
+         FiDollarSign, FiFileText, FiLayers, FiLock, FiShield, FiChevronDown } from 'react-icons/fi';
+import styles from './sidebar.module.css';
 import type { ViewType } from '../../src/types/viewtype';
 
 interface MenuItemBase {
@@ -16,10 +16,9 @@ interface MenuItemBase {
 }
 
 interface MenuItemWithSubItems extends MenuItemBase {
-  subItems: SubMenuItem[];
+  subItems: MenuItemBase[];
 }
 
-interface SubMenuItem extends MenuItemBase {}
 
 type MenuItem = MenuItemBase | MenuItemWithSubItems;
 
@@ -38,65 +37,65 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
   const [hoveredMenu, setHoveredMenu] = useState<ViewType | null>(null);
 
   if (!isLoaded) return (
-    <aside className="sidebar-loading">
-      <div className="loading-spinner"></div>
+    <aside className={styles.sidebarLoading}>
+      <div className={styles.loadingSpinner}></div>
     </aside>
   );
 
   const menuItems: MenuItem[] = [
-  { id: 'dashboard', icon: <FiActivity />, label: 'Tableau de bord', permission: 'dashboard' },
-  { id: 'procedures', icon: <FiClipboard />, label: 'Procédures', permission: 'view_procedures' },
-  { id: 'nouvelle-demande', icon: <FiFileText />, label: 'Nouvelle demande', permission: 'create_demande' },
-  { id: 'gestion-permis', icon: <FiLayers />, label: 'Gestion des permis', permission: 'manage_permits' },
-  { id: 'instruction-cadastrale', icon: <FiMap />, label: 'Instruction cadastrale', permission: 'view_cadastre' },
-  { id: 'generateur-permis', icon: <FiBriefcase />, label: 'Générateur permis', permission: 'generate_permits' },
-  { id: 'parametres', icon: <FiSettings />, label: 'Paramètres', permission: 'manage_settings' },
-  { id: 'gestion-utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', permission: 'manage_users' },
-  { 
-    id: 'Admin-Panel', 
-    icon: <FiLock />, 
-    label: 'Admin Panel', 
-    permission: 'Admin-Panel',
-    subItems: [
-      { id: 'manage_users', icon: <FiUsers />, label: 'Manage Users', permission: 'manage_users' },
-      { id: 'manage_documents', icon: <FiFile />, label: 'Manage Documents', permission: 'manage_documents' }
-    ]
-  },
-  { id: 'Payments', icon: <FiDollarSign />, label: 'Paiements', permission: 'Payments' },
-  { id: 'controle_minier', icon: <FiShield />, label: 'Contrôle minier', permission: 'controle_minier' }
-];
+    { id: 'dashboard', icon: <FiActivity />, label: 'Tableau de bord', permission: 'dashboard' },
+    { id: 'procedures', icon: <FiClipboard />, label: 'Procédures', permission: 'view_procedures' },
+    { id: 'nouvelle-demande', icon: <FiFileText />, label: 'Nouvelle demande', permission: 'create_demande' },
+    { id: 'gestion-permis', icon: <FiLayers />, label: 'Gestion des permis', permission: 'manage_permits' },
+    { id: 'instruction-cadastrale', icon: <FiMap />, label: 'Instruction cadastrale', permission: 'view_cadastre' },
+    { id: 'generateur-permis', icon: <FiBriefcase />, label: 'Générateur permis', permission: 'generate_permits' },
+    { id: 'parametres', icon: <FiSettings />, label: 'Paramètres', permission: 'manage_settings' },
+    { id: 'gestion-utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', permission: 'manage_users' },
+    { 
+      id: 'Admin-Panel', 
+      icon: <FiLock />, 
+      label: 'Admin Panel', 
+      permission: 'Admin-Panel',
+      subItems: [
+        { id: 'manage_users', icon: <FiUsers />, label: 'Manage Users', permission: 'manage_users' },
+        { id: 'manage_documents', icon: <FiFile />, label: 'Manage Documents', permission: 'manage_documents' }
+      ]
+    },
+    { id: 'Payments', icon: <FiDollarSign />, label: 'Paiements', permission: 'Payments' },
+    { id: 'controle_minier', icon: <FiShield />, label: 'Contrôle minier', permission: 'controle_minier' }
+  ];
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   return (
-    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <button className="sidebar-toggle" onClick={toggleSidebar}>
+    <aside className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
+      <button className={styles.sidebarToggle} onClick={toggleSidebar}>
         {isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
       </button>
       
-      <nav className="sidebar-nav">
-        <ul className="nav-menu">
+      <nav className={styles.sidebarNav}>
+        <ul className={styles.navMenu}>
           {menuItems.map(item => (
             hasPermission(item.permission) && (
               <li 
                 key={item.id} 
-                className="nav-item"
+                className={styles.navItem}
                 onMouseEnter={() => hasSubItems(item) && setHoveredMenu(item.id)}
                 onMouseLeave={() => setHoveredMenu(null)}
               >
                 <button
-                  className={`nav-link ${currentView === item.id ? 'active' : ''}`}
+                  className={`${styles.navLink} ${currentView === item.id ? styles.active : ''}`}
                   onClick={() => !hasSubItems(item) && navigateTo(item.id)}
                   title={isCollapsed ? item.label : undefined}
                 >
-                  <span className="nav-icon">{item.icon}</span>
+                  <span className={styles.navIcon}>{item.icon}</span>
                   {!isCollapsed && (
                     <>
-                      <span className="nav-label">{item.label}</span>
+                      <span className={styles.navLabel}>{item.label}</span>
                       {hasSubItems(item) && (
-                        <span className="nav-arrow">
+                        <span className={styles.navArrow}>
                           <FiChevronDown />
                         </span>
                       )}
@@ -105,20 +104,20 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
                 </button>
 
                 {!isCollapsed && hasSubItems(item) && (
-                  <ul className={`sub-menu ${hoveredMenu === item.id ? 'visible' : ''}`}>
+                  <ul className={`${styles.subMenu} ${hoveredMenu === item.id ? styles.visible : ''}`}>
                     {item.subItems.map(subItem => (
                       hasPermission(subItem.permission) && (
                         <li 
                           key={subItem.id} 
-                          className="sub-item"
+                          className={styles.subItem}
                           onMouseEnter={() => setHoveredMenu(item.id)}
                         >
                           <button
-                            className={`sub-link ${currentView === subItem.id ? 'active' : ''}`}
+                            className={`${styles.subLink} ${currentView === subItem.id ? styles.active : ''}`}
                             onClick={() => navigateTo(subItem.id)}
                           >
-                            <span className="sub-icon">{subItem.icon}</span>
-                            <span className="sub-label">{subItem.label}</span>
+                            <span className={styles.subIcon}>{subItem.icon}</span>
+                            <span className={styles.subLabel}>{subItem.label}</span>
                           </button>
                         </li>
                       )
@@ -131,19 +130,19 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
         </ul>
       </nav>
 
-      <div className="sidebar-footer">
+      <div className={styles.sidebarFooter}>
         {!isCollapsed && (
-          <div className="user-profile">
-            <div className="avatar">
+          <div className={styles.userProfile}>
+            <div className={styles.avatar}>
               {auth.role?.split(' ').map(w => w[0]).join('').toUpperCase()}
             </div>
-            <div className="user-info">
-              <span className="user-role">{auth.role || 'Utilisateur'}</span>
-              <span className="user-status">En ligne</span>
+            <div className={styles.userInfo}>
+              <span className={styles.userRole}>{auth.role || 'Utilisateur'}</span>
+              <span className={styles.userStatus}>En ligne</span>
             </div>
           </div>
         )}
-        <button className="logout-btn" onClick={logout} title={isCollapsed ? "Déconnexion" : undefined}>
+        <button className={styles.logoutBtn} onClick={logout} title={isCollapsed ? "Déconnexion" : undefined}>
           <FiLogOut />
           {!isCollapsed && <span>Déconnexion</span>}
         </button>

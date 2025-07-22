@@ -24,7 +24,7 @@ export default function CadastrePage() {
 
 
 
-const ArcGISMap = dynamic(() => import('../../src/components/map/ArcGISMap'), { 
+const ArcGISMap = dynamic(() => import('../../components/map/ArcGISMap'), { 
   ssr: false,
   loading: () => <div className="map-loading">Chargement de la carte...</div>
 });

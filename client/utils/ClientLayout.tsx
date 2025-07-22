@@ -1,6 +1,6 @@
 'use client';
 import { useSessionLoader } from '../src/hooks/useSessionLoader';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   useSessionLoader();

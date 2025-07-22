@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import axios from 'axios';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 export function useSessionLoader() {
   const login = useAuthStore((s) => s.login);

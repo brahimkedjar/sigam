@@ -12,9 +12,9 @@ import styles from './suivi.module.css';
 import Navbar from '../navbar/Navbar';
 import dynamic from 'next/dynamic';
 const Sidebar = dynamic(() => import('../sidebar/Sidebar'), { ssr: false });
-import { useAuthStore } from '@/store/useAuthStore';
-import { useViewNavigator } from '@/hooks/useViewNavigator';
-import { STEP_LABELS } from '@/constants/steps';
+import { useAuthStore } from '../../src/store/useAuthStore';
+import { useViewNavigator } from '../../src/hooks/useViewNavigator';
+import { STEP_LABELS } from '../../src/constants/steps';
 
 interface Demande {
   id_demande: number;
@@ -127,6 +127,35 @@ export default function SuiviDemandes() {
     }
   };
 
+  function getCurrentPhase(etapes: any[]): any | undefined {
+
+  // Cherche une étape EN_COURS
+  const enCours = etapes.find(
+    (et) =>
+      et.etape &&
+      LIB_PHASES.includes(et.etape.lib_etape) &&
+      et.statut === 'EN_COURS'
+  );
+
+  if (enCours) return enCours;
+
+  // Si aucune étape en cours, retourne la dernière TERMINÉE
+  const terminees = etapes
+    .filter(
+      (et) =>
+        et.etape &&
+        LIB_PHASES.includes(et.etape.lib_etape) &&
+        et.statut === 'TERMINEE'
+    )
+    .sort(
+      (a, b) =>
+        (b.etape?.ordre_etape ?? 0) - (a.etape?.ordre_etape ?? 0)
+    );
+
+  return terminees[0]; // peut être undefined si aucune trouvée
+}
+
+
 
   const getStatusConfig = (status: string) => {
     return STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.default;
@@ -146,14 +175,19 @@ export default function SuiviDemandes() {
     d.type_permis_demande === filters.permitCode;
 
   function getCurrentPhase(etapes: ProcedureEtape[]): ProcedureEtape | undefined {
-  const enCours = etapes.find(et => et.etape && LIB_PHASES.includes(et.etape.lib_etape) && et.statut === 'EN_COURS');
+  const enCours = etapes.find(
+    (et) => et.etape && LIB_PHASES.includes(et.etape.lib_etape) && et.statut === 'EN_COURS'
+  );
 
   if (enCours) return enCours;
 
-  return etapes
-    .filter(et => et.etape && LIB_PHASES.includes(et.etape.lib_etape) && et.statut === 'EN_COURS')
-    .sort((a, b) => (b.etape!.ordre_etape ?? 0) - (a.etape!.ordre_etape ?? 0))[0];
+  const terminees = etapes
+    .filter(et => et.etape && LIB_PHASES.includes(et.etape.lib_etape) && et.statut === 'TERMINEE')
+    .sort((a, b) => (b.etape!.ordre_etape ?? 0) - (a.etape!.ordre_etape ?? 0));
+
+  return terminees[0];
 }
+
 
 const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
 
@@ -344,13 +378,8 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
                     {filteredDemandes.map((d: any) => {
   console.log('>>> ProcedureEtapes:', d.procedure?.ProcedureEtape);
 
-  const currentPhase = (d.procedure?.ProcedureEtape || []).find(
-    (et: any) =>
-      et.etape &&
-      et.etape.lib_etape &&
-      LIB_PHASES.includes(et.etape.lib_etape) &&
-      et.statut === 'EN_COURS'
-  );
+  const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
+
 
   console.log('>>> Current Phase:', currentPhase);
 

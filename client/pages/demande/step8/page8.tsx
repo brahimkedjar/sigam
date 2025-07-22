@@ -13,14 +13,14 @@ type MembreComite = {
   signature_type: 'electronique' | 'manuelle';
 };
 import Sidebar from "../../sidebar/Sidebar";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "../../../src/store/useAuthStore";
 import Navbar from "../../navbar/Navbar";
 import { BsSave } from "react-icons/bs";
 import { useSearchParams } from "next/navigation";
 import type { ViewType } from '../../../src/types/viewtype';
-import { useViewNavigator } from "@/hooks/useViewNavigator";
-import ProgressStepper from "@/components/ProgressStepper";
-import { STEP_LABELS } from "@/constants/steps";
+import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
+import ProgressStepper from "../../../components/ProgressStepper";
+import { STEP_LABELS } from "../../../src/constants/steps";
 
 export default function AvisCd() {
   const router = useRouter();
