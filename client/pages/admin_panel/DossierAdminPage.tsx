@@ -56,7 +56,25 @@ export default function DossierManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const { currentView, navigateTo } = useViewNavigator('manage_documents');
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
+   const DocumentBadge = ({ doc, dossierId, onRemove }: { 
+    doc: Document, 
+    dossierId: number, 
+    onRemove: (dossierId: number, docId: number) => void 
+  }) => (
+    <div className={styles.tooltip}>
+      <span className={styles.documentBadge}>
+        {doc.nom_doc}
+        <button onClick={() => onRemove(dossierId, doc.id_doc)}>
+          <FiX size={12} />
+        </button>
+      </span>
+      <div className={styles.tooltipText}>
+        <p><strong>Format:</strong> {doc.format}</p>
+        <p><strong>Taille:</strong> {doc.taille_doc}</p>
+        <p><strong>Description:</strong> {doc.description}</p>
+      </div>
+    </div>
+  );
   // Form states
   const [newDocument, setNewDocument] = useState({
     nom_doc: '',
@@ -87,6 +105,7 @@ export default function DossierManager() {
         axios.get(`${API_URL}/type-permis`),
         axios.get(`${API_URL}/type-procedures`)
       ]);
+      console.log('ssssssssssssssssssss:',dossiersRes.data)
       setDossiers(dossiersRes.data);
       setDocuments(docsRes.data);
       setTypePermis(permisRes.data);
@@ -218,78 +237,98 @@ export default function DossierManager() {
   );
 
 return (
-  <div className={styles['app-container']}>
-    <Navbar />
-    <div className={styles['app-content']}>
-      <Sidebar currentView={currentView} navigateTo={navigateTo} />
-      <main className={styles['main-content']}>
-        <div className={styles['breadcrumb']}>
-          <span>SIGAM</span>
-          <FiChevronRight className={styles['breadcrumb-arrow']} />
-          <span>Manage Documents</span>
-        </div>
-    <div className={styles.container}>
-      <div className={styles.contentWrapper}>
-        {/* Enhanced Header */}
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.headerTitle}>
-              <FiFolder className={styles.headerIcon} />
-              Gestion des Dossiers
-            </h1>
-            <p className={styles.headerSubtitle}>
-              Administration centralisée des dossiers et documents
-            </p>
+    <div className={styles.appContainer}>
+      <Navbar />
+      <div className={styles.appContent}>
+        <Sidebar currentView={currentView} navigateTo={navigateTo} />
+        <main className={styles.mainContent}>
+          <div className={styles.breadcrumb}>
+            <span>SIGAM</span>
+            <FiChevronRight className={styles.breadcrumbArrow} />
+            <span>Manage Documents</span>
           </div>
           
-          <div className={styles.searchContainer}>
-            <div className={styles.flex + ' ' + styles.itemsCenter}>
-              <FiSearch className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Rechercher un dossier ou document..."
-                className={styles.searchInput}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')}
-                  className={styles.searchClear}
+          <div className={styles.container}>
+            <div className={styles.contentWrapper}>
+              {/* Enhanced Header */}
+              <header className={styles.header}>
+                <div>
+                  <h1 className={styles.headerTitle}>
+                    <FiFolder className={styles.headerIcon} />
+                    Gestion des Dossiers
+                  </h1>
+                  <p className={styles.headerSubtitle}>
+                    Administration centralisée des dossiers et documents
+                  </p>
+                </div>
+                
+                <div className={styles.searchContainer}>
+                  <div className={`${styles.flex} ${styles.itemsCenter}`}>
+                    <FiSearch className={styles.searchIcon} />
+                    <input
+                      type="text"
+                      placeholder="Rechercher un dossier ou document..."
+                      className={styles.searchInput}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className={styles.searchClear}
+                      >
+                        <FiX />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </header>
+
+              {/* Premium Tabs */}
+              <div className={styles.tabsContainer}>
+                <button
+                  className={`${styles.tab} ${activeTab === 'dossiers' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('dossiers')}
                 >
-                  <FiX />
+                  <FiFolder className={styles.ml1} />
+                  Dossiers
                 </button>
-              )}
-            </div>
-          </div>
-        </header>
+                <button
+                  className={`${styles.tab} ${activeTab === 'documents' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('documents')}
+                >
+                  <FiFileText className={styles.ml1} />
+                  Documents
+                </button>
+              </div>
 
-        {/* Premium Tabs */}
-        <div className={styles.tabsContainer}>
-          <button
-            className={`${styles.tab} ${activeTab === 'dossiers' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('dossiers')}
-          >
-            <FiFolder className={styles.ml1} />
-            Dossiers
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'documents' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('documents')}
-          >
-            <FiFileText className={styles.ml1} />
-            Documents
-          </button>
-        </div>
-
-        {/* Main Content */}
-        {isLoading ? (
-          <div className={styles.loadingContainer}>
-            <div className={styles.spinner}></div>
-          </div>
-        ) : (
-          <>
-            {/* Creation Card - Glass Morphism Effect */}
+              {/* Main Content */}
+              {isLoading ? (
+                <div className={styles.loadingContainer}>
+                  <div className={styles.spinner}></div>
+                </div>
+              ) : (
+                <>
+                  {/* Creation Card */}
+                  <div className={styles.card}>
+                    <div className={styles.cardHeader}>
+                      <h2 className={styles.cardTitle}>
+                        {activeTab === 'dossiers' ? (
+                          <>
+                            <FiPlus className={styles.ml1} />
+                            Créer un nouveau dossier
+                          </>
+                        ) : (
+                          <>
+                            <FiFileText className={styles.ml1} />
+                            Ajouter un document
+                          </>
+                        )}
+                      </h2>
+                    </div>
+                    
+                    <div className={styles.cardBody}>
+                       {/* Creation Card - Glass Morphism Effect */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>
@@ -355,12 +394,12 @@ return (
                     
                     <div className={`${styles.flex} ${styles.justifyEnd} ${styles.mt1}`}>
                       <button 
-                        className={styles.button + ' ' + styles.buttonPrimary}
-                        onClick={handleCreateDossier}
-                      >
-                        <FiPlus className={styles.ml1} />
-                        Créer Dossier
-                      </button>
+  className={`${styles.actionButton} ${styles.addButton} ${styles.withText}`}
+  onClick={handleCreateDossier}
+>
+  <FiPlus className={styles.buttonIcon} />
+  <span>Créer Dossier</span>
+</button>
                     </div>
                   </div>
                 ) : (
@@ -426,262 +465,258 @@ return (
                 )}
               </div>
             </div>
+                    </div>
+                  </div>
 
-            {/* Data Tables - Premium Design */}
-            {activeTab === 'dossiers' ? (
-              <div className={styles.tableContainer}>
-                <div className={styles.tableHeader}>
-                  <h2 className={styles.tableTitle}>
-                    <FiFolder className={styles.ml1} />
-                    Liste des Dossiers
-                  </h2>
-                  <span className={styles.tableCount}>
-                    {filteredDossiers.length} {filteredDossiers.length === 1 ? 'dossier' : 'dossiers'}
-                  </span>
-                </div>
-                
-                <div className="overflow-x-auto">
-                  <table className={styles.table}>
-                    <thead className={styles.tableHead}>
-                      <tr>
-                        <th className={styles.th}>ID</th>
-                        <th className={styles.th}>Type Permis</th>
-                        <th className={styles.th}>Type Procédure</th>
-                        <th className={styles.th}>Documents</th>
-                        <th className={styles.th}>Date</th>
-                        <th className={styles.th}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDossiers.length > 0 ? (
-                        filteredDossiers.map((dossier) => (
-                          <tr key={`dossier-${dossier.id_dossier}`} className={styles.tr}>
-                            <td className={`${styles.td} ${styles.tdPrimary}`}>
-                              #{dossier.id_dossier}
-                            </td>
-                            <td className={styles.td}>
-                              <span className="font-medium">{dossier.typePermis?.lib_type}</span>
-                              <span className="text-gray-400 ml-1">({dossier.typePermis?.code_type})</span>
-                            </td>
-                            <td className={styles.td}>
-                              {dossier.typeProcedure?.libelle}
-                            </td>
-                            <td className={styles.td}>
-                              <div className={`${styles.flex} ${styles.flexWrap} ${styles.gap2} ${styles.itemsCenter}`}>
-                                {dossier.dossierDocuments?.map((doc) => (
-                                  <span 
-                                    key={`docspan-${doc.document.id_doc}`} 
-                                    className={styles.badge + ' ' + styles.badgeBlue}
-                                  >
-                                    {doc.document.nom_doc}
-                                    <button 
-                                      className={styles.ml1}
-                                      onClick={() => handleRemoveDocumentFromDossier(dossier.id_dossier, doc.document.id_doc)}
+                  {/* Data Tables */}
+                  {activeTab === 'dossiers' ? (
+                    <div className={styles.tableContainer}>
+                      <div className={styles.tableHeader}>
+                        <h2 className={styles.tableTitle}>
+                          <FiFolder className={styles.ml1} />
+                          Liste des Dossiers
+                        </h2>
+                        <span className={styles.tableCount}>
+                          {filteredDossiers.length} {filteredDossiers.length === 1 ? 'dossier' : 'dossiers'}
+                        </span>
+                      </div>
+                      
+                      <div className={styles.responsiveTableWrapper}>
+                        <table className={styles.table}>
+                          <thead className={styles.tableHead}>
+                            <tr>
+                              <th className={styles.th}>ID</th>
+                              <th className={styles.th}>Type Permis</th>
+                              <th className={styles.th}>Type Procédure</th>
+                              <th className={styles.th}>Documents</th>
+                              <th className={styles.th}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredDossiers.length > 0 ? (
+                              filteredDossiers.map((dossier) => (
+                                <tr key={`dossier-${dossier.id_dossier}`} className={styles.tr}>
+                                  <td className={`${styles.td} ${styles.tdPrimary}`}>
+                                    #{dossier.id_dossier}
+                                  </td>
+                                  <td className={styles.td}>
+                                    <span className="font-medium">{dossier.typePermis?.lib_type}</span>
+                                    <span className="text-gray-400 ml-1">({dossier.typePermis?.code_type})</span>
+                                  </td>
+                                  <td className={styles.td}>
+                                    {dossier.typeProcedure?.libelle}
+                                  </td>
+                                  <td className={styles.td}>
+                                    <div className={styles.documentList}>
+                                      {dossier.dossierDocuments?.map(({ document }) => (
+                                        <DocumentBadge 
+                                          key={`doc-${document.id_doc}`}
+                                          doc={document}
+                                          dossierId={dossier.id_dossier}
+                                          onRemove={handleRemoveDocumentFromDossier}
+                                        />
+                                      ))}
+                                    </div>
+                                    <div className={styles.mt1}>
+                                      <select
+                                        className={styles.formControl}
+                                        onChange={(e) => handleAddDocumentToDossier(dossier.id_dossier, e.target.value)}
+                                        defaultValue=""
+                                      >
+                                        <option value="" disabled>Ajouter document...</option>
+                                        {documents
+                                          .filter(doc => !dossier.dossierDocuments?.some(d => d.document.id_doc === doc.id_doc))
+                                          .map((doc) => (
+                                            <option key={`docopt-${doc.id_doc}`} value={doc.id_doc}>
+                                              {doc.nom_doc}
+                                            </option>
+                                          ))}
+                                      </select>
+                                    </div>
+                                  </td>
+                                  
+                                  <td className={styles.td}>
+  <div className={styles.actionsContainer}>
+    <button 
+      className={`${styles.actionButton} ${styles.editButton}`}
+      onClick={() => setSelectedDossier(dossier)}
+      title="Edit"
+    >
+      <FiEdit className={styles.buttonIcon} />
+    </button>
+    
+    <button
+      className={`${styles.actionButton} ${styles.deleteButton}`}
+      onClick={() => handleDeleteDossier(dossier.id_dossier)}
+      title="Delete"
+    >
+      <FiTrash2 className={styles.buttonIcon} />
+    </button>
+  </div>
+</td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={6} className={`${styles.td} text-center`}>
+                                  Aucun dossier trouvé
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.tableContainer}>
+                      <div className={styles.tableHeader}>
+                        <h2 className={styles.tableTitle}>
+                          <FiFileText className={styles.ml1} />
+                          Liste des Documents
+                        </h2>
+                        <span className={styles.tableCount}>
+                          {filteredDocuments.length} {filteredDocuments.length === 1 ? 'document' : 'documents'}
+                        </span>
+                      </div>
+                      
+                      <div className={styles.responsiveTableWrapper}>
+                        <table className={styles.table}>
+                          <thead className={styles.tableHead}>
+                            <tr>
+                              <th className={styles.th}>ID</th>
+                              <th className={styles.th}>Nom</th>
+                              <th className={styles.th}>Description</th>
+                              <th className={styles.th}>Format</th>
+                              <th className={styles.th}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredDocuments.length > 0 ? (
+                              filteredDocuments.map((doc) => (
+                                <tr key={`doc-${doc.id_doc}`} className={styles.tr}>
+                                  <td className={`${styles.td} ${styles.tdPrimary}`}>
+                                    #{doc.id_doc}
+                                  </td>
+                                  <td className={`${styles.td} ${styles.tdPrimary}`}>
+                                    {doc.nom_doc}
+                                  </td>
+                                  <td className={styles.td}>
+                                    <div className={styles.tooltip}>
+                                      <div className={styles.lineClamp2}>
+                                        {doc.description || 'Aucune description'}
+                                      </div>
+                                      {doc.description && doc.description.length > 50 && (
+                                        <div className={styles.tooltipText}>
+                                          {doc.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className={styles.td}>
+                                    <span className={`${styles.badge} ${
+                                      doc.format === 'PDF' ? styles.badgeRed :
+                                      doc.format === 'DOCX' ? styles.badgeBlue :
+                                      doc.format === 'XLSX' ? styles.badgeGreen :
+                                      styles.badgeGray
+                                    }`}>
+                                      {doc.format}
+                                    </span>
+                                  </td>
+                                  
+                                  <td className={styles.td}>
+                                    <button
+                                      onClick={() => handleDeleteDocument(doc.id_doc)}
+                                      className={`${styles.actionButton} ${styles.deleteButton}`}
+                                      title="Supprimer"
                                     >
-                                      <FiX size={12} />
+                                      <FiTrash2 size={18} />
                                     </button>
-                                  </span>
-                                ))}
-                              </div>
-                              <div className={styles.mt1}>
-                                <select
-                                  className={styles.formControl}
-                                  onChange={(e) => handleAddDocumentToDossier(dossier.id_dossier, e.target.value)}
-                                  defaultValue=""
-                                >
-                                  <option value="" disabled>Ajouter document...</option>
-                                  {documents
-                                    .filter(doc => !dossier.dossierDocuments?.some(d => d.document.id_doc === doc.id_doc))
-                                    .map((doc) => (
-                                      <option key={`docopt-${doc.id_doc}`} value={doc.id_doc}>
-                                        {doc.nom_doc}
-                                      </option>
-                                    ))}
-                                </select>
-                              </div>
-                            </td>
-                            <td className={styles.td}>
-                              {dossier.createdAt ? new Date(dossier.createdAt).toLocaleDateString() : '-'}
-                            </td>
-                            <td className={styles.td}>
-                              <div className={`${styles.flex} ${styles.justifyEnd} ${styles.gap2}`}>
-                                <button
-                                  onClick={() => setSelectedDossier(dossier)}
-                                  className="text-blue-600 hover:text-blue-900 p-1.5 rounded-md hover:bg-blue-50 transition-colors"
-                                  title="Modifier"
-                                >
-                                  <FiEdit size={18} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteDossier(dossier.id_dossier)}
-                                  className="text-red-600 hover:text-red-900 p-1.5 rounded-md hover:bg-red-50 transition-colors"
-                                  title="Supprimer"
-                                >
-                                  <FiTrash2 size={18} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className={`${styles.td} text-center`}>
-                            Aucun dossier trouvé
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.tableContainer}>
-                <div className={styles.tableHeader}>
-                  <h2 className={styles.tableTitle}>
-                    <FiFileText className={styles.ml1} />
-                    Liste des Documents
-                  </h2>
-                  <span className={styles.tableCount}>
-                    {filteredDocuments.length} {filteredDocuments.length === 1 ? 'document' : 'documents'}
-                  </span>
-                </div>
-                
-                <div className="overflow-x-auto">
-                  <table className={styles.table}>
-                    <thead className={styles.tableHead}>
-                      <tr>
-                        <th className={styles.th}>ID</th>
-                        <th className={styles.th}>Nom</th>
-                        <th className={styles.th}>Description</th>
-                        <th className={styles.th}>Format</th>
-                        <th className={styles.th}>Date</th>
-                        <th className={styles.th}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDocuments.length > 0 ? (
-                        filteredDocuments.map((doc) => (
-                          <tr key={`doc-${doc.id_doc}`} className={styles.tr}>
-                            <td className={`${styles.td} ${styles.tdPrimary}`}>
-                              #{doc.id_doc}
-                            </td>
-                            <td className={`${styles.td} ${styles.tdPrimary}`}>
-                              {doc.nom_doc}
-                            </td>
-                            <td className={styles.td}>
-                              <div className={styles.lineClamp2}>
-                                {doc.description}
-                              </div>
-                            </td>
-                            <td className={styles.td}>
-                              <span className={`${styles.badge} ${
-                                doc.format === 'PDF' ? styles.badgeRed :
-                                doc.format === 'DOCX' ? styles.badgeBlue :
-                                doc.format === 'XLSX' ? styles.badgeGreen :
-                                styles.badgeGray
-                              }`}>
-                                {doc.format}
-                              </span>
-                            </td>
-                            <td className={styles.td}>
-                              {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}
-                            </td>
-                            <td className={styles.td}>
-                              <button
-                                onClick={() => handleDeleteDocument(doc.id_doc)}
-                                className="text-red-600 hover:text-red-900 p-1.5 rounded-md hover:bg-red-50 transition-colors"
-                                title="Supprimer"
-                              >
-                                <FiTrash2 size={18} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className={`${styles.td} text-center`}>
-                            Aucun document trouvé
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={6} className={`${styles.td} text-center`}>
+                                  Aucun document trouvé
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
-        {/* Enhanced Modal */}
-        {selectedDossier && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <div className={styles.modalHeader}>
-                <h3 className={styles.modalTitle}>Modifier Dossier</h3>
-                <button 
-                  className={styles.modalClose}
-                  onClick={() => setSelectedDossier(null)}
-                >
-                  <FiX size={24} />
-                </button>
-              </div>
-              
-              <div className={styles.modalBody}>
-                <div className="space-y-4">
-                  <div>
-                    <label className={styles.formLabel}>Type Permis</label>
-                    <p className="mt-1 text-gray-900 font-medium">
-                      {selectedDossier.typePermis.lib_type} ({selectedDossier.typePermis.code_type})
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className={styles.formLabel}>Type Procédure</label>
-                    <p className="mt-1 text-gray-900 font-medium">
-                      {selectedDossier.typeProcedure.libelle}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className={styles.formLabel}>Remarques</label>
-                    <textarea
-                      className={styles.formControl}
-                      rows={3}
-                      value={selectedDossier.remarques || ''}
-                      onChange={(e) => setSelectedDossier({
-                        ...selectedDossier,
-                        remarques: e.target.value
-                      })}
-                    />
+              {/* Enhanced Modal */}
+              {selectedDossier && (
+                <div className={styles.modalOverlay}>
+                  <div className={styles.modal}>
+                    <div className={styles.modalHeader}>
+                      <h3 className={styles.modalTitle}>Modifier Dossier</h3>
+                      <button 
+                        className={styles.modalClose}
+                        onClick={() => setSelectedDossier(null)}
+                      >
+                        <FiX size={24} />
+                      </button>
+                    </div>
+                    
+                    <div className={styles.modalBody}>
+                      <div className="space-y-4">
+                        <div>
+                          <label className={styles.formLabel}>Type Permis</label>
+                          <p className="mt-1 text-gray-900 font-medium">
+                            {selectedDossier.typePermis.lib_type} ({selectedDossier.typePermis.code_type})
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <label className={styles.formLabel}>Type Procédure</label>
+                          <p className="mt-1 text-gray-900 font-medium">
+                            {selectedDossier.typeProcedure.libelle}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <label className={styles.formLabel}>Remarques</label>
+                          <textarea
+                            className={styles.formControl}
+                            rows={3}
+                            value={selectedDossier.remarques || ''}
+                            onChange={(e) => setSelectedDossier({
+                              ...selectedDossier,
+                              remarques: e.target.value
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className={styles.modalFooter}>
+                      <button
+                        type="button"
+                        className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
+                        onClick={() => setSelectedDossier(null)}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.modalButton} ${styles.modalButtonPrimary}`}
+                        onClick={handleUpdateDossier}
+                      >
+                        Enregistrer
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className={styles.modalFooter}>
-                <button
-                  type="button"
-                  className={styles.modalButton + ' ' + styles.modalButtonSecondary}
-                  onClick={() => setSelectedDossier(null)}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className={styles.modalButton + ' ' + styles.modalButtonPrimary}
-                  onClick={handleUpdateDossier}
-                >
-                  Enregistrer
-                </button>
-              </div>
+              )}
             </div>
           </div>
-        )}
+        </main>
       </div>
-    </div>
-    </main>
-    </div>
     </div>
   );
 }
-
-
