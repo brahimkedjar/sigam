@@ -44,7 +44,22 @@ async getDemandeByProcedure(@Param('id_proc', ParseIntPipe) id_proc: number) {
           }
         }
       },
-      expertMinier: true 
+      expertMinier: true,
+      procedure: {
+        include: {
+          typeProcedure: true,
+          ProcedureEtape: {
+            include: {
+              etape: true
+            },
+            orderBy: {
+              etape: {
+                ordre_etape: 'asc'
+              }
+            }
+          }
+        }
+      }
     }
   });
 }

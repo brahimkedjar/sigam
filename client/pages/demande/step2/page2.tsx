@@ -65,10 +65,14 @@ export default function Step5_Documents() {
   const [selectedCahierDoc, setSelectedCahierDoc] = useState<DocumentWithStatus | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
   const currentStep = 1;
+  const [statutProc, setStatutProc] = useState<string | null>(null);
 
 useEffect(() => {
+  if (!idProc || !statutProc  || window.self !== window.top) return;
+
+  if (statutProc === 'TERMINEE') return; 
+
   const activateStep = async () => {
-    if (!idProc || window.self !== window.top) return; // Skip if inside iframe
     try {
       await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/2`);
     } catch (err) {
@@ -77,7 +81,9 @@ useEffect(() => {
   };
 
   activateStep();
-}, [idProc]);
+}, [idProc, statutProc]);
+
+
 
 
   const handleOpenCahierForm = (doc: DocumentWithStatus) => {
@@ -111,10 +117,11 @@ useEffect(() => {
     if (!idProc) return;
 
     axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
-      .then(res => {
-        setIdDemande(res.data.id_demande.toString());
-        setCodeDemande(res.data.code_demande);
-      })
+  .then(res => {
+    setIdDemande(res.data.id_demande.toString());
+    setCodeDemande(res.data.code_demande);
+    setStatutProc(res.data.procedure.statut_proc); 
+  })
       .catch(err => {
         console.error("Erreur lors de la récupération de la demande", err);
         setError("Impossible de récupérer la demande");
@@ -286,24 +293,30 @@ useEffect(() => {
   };
 
   const handleSaveEtape = async () => {
-    if (!idProc) {
-      setEtapeMessage("ID procedure introuvable !");
-      return;
-    }
+  if (!idProc) {
+    setEtapeMessage("ID procedure introuvable !");
+    return;
+  }
 
-    setSavingEtape(true);
-    setEtapeMessage(null);
+  if (statutProc === 'TERMINEE') {
+    setEtapeMessage("Procédure déjà terminée.");
+    return;
+  }
 
-    try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/2`);
-      setEtapeMessage("Étape 5 enregistrée avec succès !");
-    } catch (err) {
-      console.error(err);
-      setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
-    } finally {
-      setSavingEtape(false);
-    }
-  };
+  setSavingEtape(true);
+  setEtapeMessage(null);
+
+  try {
+    await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/2`);
+    setEtapeMessage("Étape 2 enregistrée avec succès !");
+  } catch (err) {
+    console.error(err);
+    setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
+  } finally {
+    setSavingEtape(false);
+  }
+};
+
 
   return (
     <div className={styles['app-container']}>
@@ -379,6 +392,7 @@ useEffect(() => {
                   <div className={styles['demande-actions']}>
                     <div className={styles['reject-section']}>
                       <input
+                      disabled={statutProc === 'TERMINEE'}
                         type="text"
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
@@ -388,6 +402,7 @@ useEffect(() => {
                       <button
                         className={styles['reject-btn']}
                         onClick={rejectDemande}
+                        disabled={statutProc === 'TERMINEE' || !statutProc}
                       >
                         Rejeter la demande
                       </button>
@@ -395,6 +410,7 @@ useEffect(() => {
                     <button
                       className={styles['approve-btn']}
                       onClick={approveDemande}
+                      disabled={statutProc === 'TERMINEE' || !statutProc}
                     >
                       demande Accepté
                     </button>
@@ -450,6 +466,7 @@ useEffect(() => {
                           </div>
                           <div className={styles['document-actions']}>
                             <button
+                            disabled={statutProc === 'TERMINEE' || !statutProc}
                               className={`${styles['status-btn']} ${status === "present" ? styles['active'] : ""}`}
                               onClick={() => toggleStatus(doc.id_doc, "present")}
                             >
@@ -457,6 +474,7 @@ useEffect(() => {
                               Présent
                             </button>
                             <button
+                              disabled={statutProc === 'TERMINEE' || !statutProc}
                               className={`${styles['status-btn']} ${status === "manquant" ? styles['active'] : ""}`}
                               onClick={() => toggleStatus(doc.id_doc, "manquant")}
                             >
@@ -464,11 +482,15 @@ useEffect(() => {
                               Manquant
                             </button>
                             <div className={styles['upload-section']}>
-                              <label htmlFor={`file-upload-${doc.id_doc}`} className={styles['upload-btn']}>
-                                <FiUpload className={styles['btn-icon']} />
-                                {fileUrl ? "Modifier" : "Upload"}
-                              </label>
-                            </div>
+  <label
+    htmlFor={`file-upload-${doc.id_doc}`}
+    className={`${styles['upload-btn']} ${styles['btn-outline']} ${statutProc === 'TERMINEE' || !statutProc ? styles['disabled'] : ''}`}
+  >
+    <FiUpload className={styles['btn-icon']} />
+    {fileUrl ? "Modifier" : "Upload"}
+  </label>
+</div>
+
                             {doc.nom_doc === "Cahier des charges renseigné" && (
                               <button
                                 className={styles['cahier-btn']}
@@ -537,7 +559,7 @@ useEffect(() => {
                 <button
                   className={styles['btnSave']}
                   onClick={handleSaveEtape}
-                  disabled={savingEtape || isSubmitting}
+                  disabled={savingEtape || isSubmitting || statutProc === 'TERMINEE' || !statutProc}
                 >
                   <BsSave className={styles['btnIcon']} />
                   {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}

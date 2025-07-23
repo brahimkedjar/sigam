@@ -791,3 +791,72 @@
 .cahier-btn:hover {
   background-color: #45a049;
 }
+
+/* documents.module.css */
+
+.approve-btn {
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.approve-btn:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.reject-btn {
+  background-color: #dc3545;
+  color: white;
+  cursor: pointer;
+}
+
+.reject-btn:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.status-btn {
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+.status-btn:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.upload-btn:disabled {
+  background-color: #e0e0e0;
+  color: #888;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btnSave:disabled {
+  background-color: #999;
+  color: #eee;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.btn:disabled,
+.btn-primary:disabled,
+.btn-outline:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}

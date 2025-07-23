@@ -16,7 +16,8 @@ export class CapacitesService {
       capital_social_disponible: parseFloat(data.capital_social),
       budget_prevu: parseFloat(data.budget),
       description_travaux: data.description,
-      sources_financement: data.financement
+      sources_financement: data.financement,
+      date_demarrage_prevue: new Date(data.date_demarrage_prevue),
     }
   });
 

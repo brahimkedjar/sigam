@@ -20,6 +20,7 @@ import SummaryModal from "../popup/page6_popup";
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import { useActivateEtape } from '@/hooks/useActivateEtape';
 
 type Substance = {
   id_sub: number;
@@ -59,7 +60,8 @@ type Commune = {
 export default function Step4_Substances() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const idProc = searchParams?.get('id');
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [idDemande, setIdDemande] = useState<number | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -102,19 +104,23 @@ export default function Step4_Substances() {
   const [showModal, setShowModal] = useState(false);
   const [existingCoords, setExistingCoords] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-  const activateStep = async () => {
-    if (!idProc) return;
-    try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/5`);
-    } catch (err) {
-      console.error("Échec de l'activation de l'étape");
-    }
-  };
+  useActivateEtape({ idProc, etapeNum: 5, statutProc });
 
-  activateStep();
-}, [idProc]);
+  /*useEffect(() => {
+    if (!idProc || from === 'suivi') return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/5`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
+
+    activateStep();
+  }, [idProc, from]);*/
+
 
 
   useEffect(() => {
@@ -132,6 +138,7 @@ export default function Step4_Substances() {
         console.log('ssssssssssssssss:',demande);
         setIdDemande(demande.id_demande);
         setCodeDemande(demande.code_demande);
+        setStatutProc(res.data.procedure.statut_proc);
         if (demande.coordonnees) setPoints(demande.coordonnees);
 
         // Set initial values
@@ -508,12 +515,14 @@ export default function Step4_Substances() {
 
   
   const handleBack = () => {
-    if (!idProc) {
-      setError("Procedure ID missing");
-      return;
-    }
-    router.push(`/demande/step4/page4?id=${idProc}`);
-  };
+  if (!idProc) {
+    setError("ID procédure manquant");
+    return;
+  }
+
+       router.push(`/demande/step4/page4?id=${idProc}`);
+
+};
 
   if (!idProc) {
     return (
@@ -599,6 +608,7 @@ export default function Step4_Substances() {
                               </td>
                               <td>
                                 <input
+                                disabled={statutProc === 'TERMINEE'}
                                   type="text"
                                   className={styles['form-input']}
                                   placeholder="500"
@@ -609,6 +619,7 @@ export default function Step4_Substances() {
                               <td>
                                 {points.length > 1 && (
                                   <button
+                                  disabled={statutProc === 'TERMINEE' || !statutProc}
                                     className={styles['btn-remove-row']}
                                     onClick={() => removeCoordinateRow(index)}
                                   >
@@ -624,6 +635,7 @@ export default function Step4_Substances() {
                       {/* Add/Save Buttons */}
                       <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'space-between', marginBottom: '6px' }}>
                         <button
+                        disabled={statutProc === 'TERMINEE' || !statutProc}
                           className={styles['btn-add-row']}
                           onClick={() => addPoint()}
                         >
@@ -632,7 +644,7 @@ export default function Step4_Substances() {
                         </button>
 
                         <>
-      <button  className={styles['btn-save']} onClick={saveCoordinatesToBackend} disabled={isSaving}>
+      <button  className={styles['btn-save']} onClick={saveCoordinatesToBackend} disabled={isSaving || statutProc === 'TERMINEE' || !statutProc}>
         Enregistrer les coordonnées  <FiSave className={styles['btn-icon']} />
       </button>
 
@@ -673,6 +685,7 @@ export default function Step4_Substances() {
                       Wilaya
                     </label>
                     <select
+                    disabled={statutProc === 'TERMINEE'}
                       className={styles['form-select']}
                       value={selectedWilaya}
                       onChange={(e) => setSelectedWilaya(e.target.value)}
@@ -695,7 +708,7 @@ export default function Step4_Substances() {
                       className={styles['form-select']}
                       value={selectedDaira}
                       onChange={(e) => setSelectedDaira(e.target.value)}
-                      disabled={!selectedWilaya}
+                      disabled={!selectedWilaya || statutProc === 'TERMINEE'}
                     >
                       <option value="">Sélectionner une daïra</option>
                       {dairas.map((d) => (
@@ -715,7 +728,7 @@ export default function Step4_Substances() {
                       className={styles['form-select']}
                       value={selectedCommune}
                       onChange={(e) => setSelectedCommune(e.target.value)}
-                      disabled={!selectedDaira}
+                      disabled={!selectedDaira || statutProc === 'TERMINEE'}
                     >
                       <option value="">Sélectionner une commune</option>
                       {communes.map((c) => (
@@ -741,6 +754,7 @@ export default function Step4_Substances() {
                       Statut Juridique
                     </label>
                     <select
+                    disabled={statutProc === 'TERMINEE'}
                       className={styles['form-select']}
                       value={statutJuridique}
                       onChange={(e) => setStatutJuridique(e.target.value)}
@@ -758,6 +772,7 @@ export default function Step4_Substances() {
                       Occupant Légal
                     </label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       className={styles['form-input']}
                       value={occupantLegal}
@@ -771,6 +786,7 @@ export default function Step4_Substances() {
                       Lieu Dit
                     </label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       className={styles['form-input']}
                       value={lieuDitFr}
@@ -784,6 +800,7 @@ export default function Step4_Substances() {
                       Superficie (Ha)
                     </label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="number"
                       className={styles['form-input']}
                       value={superficie}
@@ -807,6 +824,7 @@ export default function Step4_Substances() {
                     <div className={styles['form-group']}>
                       <label className={styles['form-label']}>Filtrer par famille</label>
                       <select
+                      disabled={statutProc === 'TERMINEE'}
                         className={styles['form-select']}
                         onChange={(e) => setFamille(e.target.value)}
                         value={famille}
@@ -823,6 +841,7 @@ export default function Step4_Substances() {
                       <div className={styles['search-container']}>
                         <FiSearch className={styles['search-icon']} />
                         <input
+                        disabled={statutProc === 'TERMINEE'}
                           type="text"
                           placeholder="Rechercher..."
                           className={styles['search-input']}
@@ -844,6 +863,7 @@ export default function Step4_Substances() {
                           <li key={sub.id_sub} className={styles['substance-item']}>
                             <label className={styles['substance-label']}>
                               <input
+                              disabled={statutProc === 'TERMINEE'}
                                 type="checkbox"
                                 className={styles['substance-checkbox']}
                                 checked={isChecked(sub.id_sub)}
@@ -882,6 +902,7 @@ export default function Step4_Substances() {
                             <span className={styles['substance-category']}>{sub.catégorie_sub}</span>
                           </div>
                           <button
+                          disabled={statutProc === 'TERMINEE' || !statutProc}
                             className={styles['remove-btn']}
                             onClick={() => handleSelect(sub)}
                           >
@@ -892,53 +913,6 @@ export default function Step4_Substances() {
                   </ul>
                 </div>
               </div>
-            {/* Work Information Card */}
-            <div className={styles['form-card']}>
-              <div className={styles['form-card-header']}>
-                <FiCalendar className={styles['card-icon']} />
-                <h3>Informations sur les Travaux</h3>
-              </div>
-              <div className={styles['form-card-body']}>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>
-                    <FiEdit2 className={styles['input-icon']} />
-                    Nature des Travaux
-                  </label>
-                  <input
-                    type="text"
-                    className={styles['form-input']}
-                    value={travaux}
-                    onChange={(e) => setTravaux(e.target.value)}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>
-                    <FiCalendar className={styles['input-icon']} />
-                    Durée (Mois)
-                  </label>
-                  <input
-                    type="number"
-                    className={styles['form-input']}
-                    value={dureeTravaux}
-                    onChange={(e) => setDureeTravaux(e.target.value)}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>
-                    <FiCalendar className={styles['input-icon']} />
-                    Date de Début Prévue
-                  </label>
-                  <input
-                    type="date"
-                    className={styles['form-input']}
-                    value={dateDebutPrevue}
-                    onChange={(e) => setDateDebutPrevue(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
 </div>
 
            
@@ -953,7 +927,7 @@ export default function Step4_Substances() {
               <button
                 className={styles['btnSave']}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles['btnIcon']} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>

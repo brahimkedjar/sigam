@@ -172,6 +172,7 @@ const handleNext = () => {
   }
 
   if (idProc) {
+    
     router.push(`/renouvellement/step4/page4?id=${idProc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
   } else {
     alert("ID procédure manquant.");

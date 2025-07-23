@@ -20,6 +20,7 @@ import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
+import { useActivateEtape } from '@/hooks/useActivateEtape';
 
 type AccordionItem = {
   id: string;
@@ -115,21 +116,13 @@ export default function Step2() {
   const router = useRouter();
   const [detenteurId, setDetenteurId] = useState<number | null>(null);
   const searchParams = useSearchParams();
-  const idProc = searchParams?.get('id');
   const [showTauxModal, setShowTauxModal] = useState(false);
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
+  
+  useActivateEtape({ idProc, etapeNum: 3, statutProc });
 
-  useEffect(() => {
-  const activateStep = async () => {
-    if (!idProc) return;
-    try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/3`);
-    } catch (err) {
-      console.error("Échec de l'activation de l'étape");
-    }
-  };
-
-  activateStep();
-}, [idProc]);
 
   const [tauxSummary, setTauxSummary] = useState<{ total: number; rep: number; actionnaires: number }>({
   total: 0,
@@ -157,19 +150,6 @@ const [toastType, setToastType] = useState<'success' | 'error' | null>(null);
   });
     const { currentView, navigateTo } = useViewNavigator();
     const currentStep = 2;  
-
-useEffect(() => {
-  const activateStep = async () => {
-    if (!idProc) return;
-    try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/3`);
-    } catch (err) {
-      console.error("Échec de l'activation de l'étape");
-    }
-  };
-
-  activateStep();
-}, [idProc]);
 
 
 
@@ -205,7 +185,7 @@ const handlePrevious = () => {
 
       setCodeDemande(demande.code_demande);
       setIdDemande(demande.id_demande.toString());
-
+      setStatutProc(res.data.procedure.statut_proc);
       if (demande.detenteur) {
         const fonctions = demande.detenteur.fonctions;
         const representant = fonctions.find((f: { type_fonction: string; }) => f.type_fonction === "Représentant légal");
@@ -543,7 +523,7 @@ const handleDeleteActionnaires = async () => {
             <button
               className={styles.btnSave}
               onClick={() => handleSaveSection('infos')}
-              disabled={isSaving.infos}
+              disabled={isSaving.infos || statutProc === 'TERMINEE' || !statutProc}
             >
               {isSaving.infos ? (
                 <>
@@ -558,6 +538,7 @@ const handleDeleteActionnaires = async () => {
           ) : (
             <button
               className={styles.btnModify}
+              disabled={statutProc === 'TERMINEE' || !statutProc}
               onClick={() => handleModifySection('infos')}
             >
               <FiEdit /> Modifier
@@ -579,7 +560,7 @@ const handleDeleteActionnaires = async () => {
             <button
               className={styles.btnSave}
               onClick={() => handleSaveSection('repLegal')}
-              disabled={isSaving.repLegal}
+              disabled={isSaving.repLegal || statutProc === 'TERMINEE' || !statutProc}
             >
               {isSaving.repLegal ? (
                 <>
@@ -594,6 +575,7 @@ const handleDeleteActionnaires = async () => {
           ) : (
             <button
               className={styles.btnModify}
+              disabled={statutProc === 'TERMINEE' || !statutProc}
               onClick={() => handleModifySection('repLegal')}
             >
               <FiEdit /> Modifier
@@ -615,7 +597,7 @@ const handleDeleteActionnaires = async () => {
             <button
               className={styles.btnSave}
               onClick={() => handleSaveSection('rcDetails')}
-              disabled={isSaving.rcDetails}
+              disabled={isSaving.rcDetails || statutProc === 'TERMINEE' || !statutProc}
             >
               {isSaving.rcDetails ? (
                 <>
@@ -630,6 +612,7 @@ const handleDeleteActionnaires = async () => {
           ) : (
             <button
               className={styles.btnModify}
+              disabled={statutProc === 'TERMINEE' || !statutProc}
               onClick={() => handleModifySection('rcDetails')}
             >
               <FiEdit /> Modifier
@@ -653,7 +636,7 @@ const handleDeleteActionnaires = async () => {
       <button
         className={styles.btnSave}
         onClick={() => handleSaveSection('actionnaires')}
-        disabled={isSaving.actionnaires}
+        disabled={isSaving.actionnaires || statutProc === 'TERMINEE' || !statutProc}
       >
         {isSaving.actionnaires ? (
           <>
@@ -668,6 +651,7 @@ const handleDeleteActionnaires = async () => {
     ) : (
       <button
         className={styles.btnModify}
+        disabled={statutProc === 'TERMINEE' || !statutProc}
         onClick={() => handleModifySection('actionnaires')}
       >
         <FiEdit /> Modifier
@@ -677,6 +661,7 @@ const handleDeleteActionnaires = async () => {
     {/* ✅ Bouton Supprimer Actionnaires */}
     <button
       className={styles.btnDelete}
+      disabled={statutProc === 'TERMINEE' || !statutProc}
       onClick={handleDeleteActionnaires}
       style={{ marginLeft: '10px', backgroundColor: '#dc3545', color: '#fff' }}
     >
@@ -701,7 +686,7 @@ const handleDeleteActionnaires = async () => {
               <button
                 className={styles.btnSave}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles.btnIcon} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>

@@ -14,13 +14,15 @@ import { BsSave } from 'react-icons/bs';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
+import { useActivateEtape } from '@/hooks/useActivateEtape';
 if (typeof window !== 'undefined') {
   Modal.setAppElement('#__next');
 }
 
 const Step10GeneratePermis = () => {
   const searchParams = useSearchParams();
-  const idProc = searchParams?.get('id');
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
@@ -33,19 +35,22 @@ const Step10GeneratePermis = () => {
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
   const currentStep = 8;
-  
-  useEffect(() => {
-      const activateStep = async () => {
-        if (!idProc) return;
-        try {
-          await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/9`);
-        } catch (err) {
-          console.error("Échec de l'activation de l'étape");
-        }
-      };
-    
-      activateStep();
-    }, [idProc]);
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+        
+      useActivateEtape({ idProc, etapeNum: 8, statutProc });
+  /*useEffect(() => {
+    if (!idProc ) return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/9`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
+
+    activateStep();
+  }, [idProc]);*/
+
 
 
     const handleNext = () => {
@@ -100,6 +105,7 @@ const Step10GeneratePermis = () => {
       .then(res => {
         setIdDemande(res.data.id_demande?.toString());
         setCodeDemande(res.data.code_demande!);
+        setStatutProc(res.data.procedure.statut_proc);
       })
       .catch(err => {
         console.error("Erreur lors de la récupération de la demande", err);
@@ -170,6 +176,7 @@ const Step10GeneratePermis = () => {
       <button
         onClick={handleSaveToDatabase}
         className={`${styles.button} ${styles.buttonSuccess}`}
+        disabled={statutProc === 'TERMINEE' || !statutProc}
       >
         <FiSave className={styles.buttonIcon} /> Enregistrer le permis dans la base
       </button>
@@ -206,7 +213,7 @@ const Step10GeneratePermis = () => {
                 <button
                 className={styles['btnSave']}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles['btnIcon']} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>

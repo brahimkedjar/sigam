@@ -112,7 +112,7 @@ async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) 
       id_proc,
     },
     orderBy: {
-      date_debut: 'desc', // or use id_etape: 'desc' if needed
+      date_debut: 'asc', // or use id_etape: 'desc' if needed
     },
     include: { etape: true },
   });

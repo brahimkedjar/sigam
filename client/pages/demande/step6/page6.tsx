@@ -30,6 +30,7 @@ import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
+import { useActivateEtape } from '@/hooks/useActivateEtape';
 
 export default function CadastrePage() {
   const ArcGISMap = dynamic(() => import('../../../components/map/ArcGISMap'), {
@@ -64,7 +65,8 @@ export default function CadastrePage() {
   const [overlapDetected, setOverlapDetected] = useState(false);
   const [overlapPermits, setOverlapPermits] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const idProc = searchParams?.get("id");
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [error, setError] = useState<string | null>(null);
   const [savingEtape, setSavingEtape] = useState(false);
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
@@ -86,19 +88,22 @@ export default function CadastrePage() {
     commune: ''
   });
   const mapRef = useRef<any>(null);
-
-  useEffect(() => {
+    const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  
+    useActivateEtape({ idProc, etapeNum: 6, statutProc });
+  /*useEffect(() => {
+    if (!idProc || from === 'suivi') return;
     const activateStep = async () => {
-      if (!idProc) return;
       try {
         await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/6`);
       } catch (err) {
         console.error("Échec de l'activation de l'étape");
       }
     };
-  
+
     activateStep();
-  }, [idProc]);
+  }, [idProc, from]);*/
+
 
 
   useEffect(() => {
@@ -218,6 +223,7 @@ export default function CadastrePage() {
       try {
         const res = await axios.get(`http://localhost:3001/api/procedures/${id_proc}/demande`);
         setIdDemande(res.data.id_demande);
+        setStatutProc(res.data.procedure.statut_proc);
         console.log('🎯 Loaded id_demande:', res.data.id_demande);
       } catch (error) {
         console.error('❌ Failed to fetch demande:', error);
@@ -449,12 +455,12 @@ export default function CadastrePage() {
                       <button
                         className={`${styles['map-btn']} ${isDrawing ? styles['active'] : ''}`}
                         onClick={() => isCadastre && setIsDrawing(!isDrawing)}
-                        disabled={!isCadastre}
+                        disabled={!isCadastre || statutProc === 'TERMINEE' || !statutProc}
                       >
                         <FiEdit2 /> {isDrawing ? 'Mode dessin actif' : 'Dessiner un polygone'}
                       </button>
 
-                      <button className={styles['map-btn']} onClick={calculateArea} disabled={!isCadastre}>
+                      <button className={styles['map-btn']} onClick={calculateArea} disabled={!isCadastre || statutProc === 'TERMINEE' || !statutProc}>
                         <FiRefreshCw /> Calculer superficie
                       </button>
                     </div>
@@ -487,7 +493,7 @@ export default function CadastrePage() {
                       <strong>{superficie.toLocaleString()} ha</strong>
                     </div>
                     <div className={styles['map-export']}>
-                      <button className={styles['export-btn']} onClick={exportData}>
+                      <button className={styles['export-btn']} onClick={exportData} disabled={statutProc === 'TERMINEE' || !statutProc}>
                         <FiDownload /> Exporter
                       </button>
                       <label className={styles['import-btn']}>
@@ -504,6 +510,7 @@ export default function CadastrePage() {
                     <button
                       className={`${styles['tab-btn']} ${activeTab === 'coordinates' ? styles['active'] : ''}`}
                       onClick={() => setActiveTab('coordinates')}
+                      disabled={statutProc === 'TERMINEE' || !statutProc}
                     >
                       Coordonnées
                     </button>
@@ -527,7 +534,7 @@ export default function CadastrePage() {
                         <div className={styles['table-header']}>
                           <h3>Points du périmètre</h3>
                           {isCadastre && (
-                            <button className={styles['add-btn']} onClick={() => addPoint()}>
+                            <button className={styles['add-btn']} onClick={() => addPoint()} disabled={statutProc === 'TERMINEE' || !statutProc}>
                               <FiPlus /> Ajouter
                             </button>
                           )}
@@ -578,7 +585,7 @@ export default function CadastrePage() {
                                 <button
                                   className={styles['delete-btn']}
                                   onClick={() => removePoint(point.id)}
-                                  disabled={points.length <= 3 || !isCadastre}
+                                  disabled={points.length <= 3 || !isCadastre || statutProc === 'TERMINEE' || !statutProc}
                                   title={!isCadastre ? "Non autorisé" : points.length <= 3 ? "Un polygone doit avoir au moins 3 points" : "Supprimer ce point"}
                                 >
                                   <FiTrash2 />
@@ -711,18 +718,18 @@ export default function CadastrePage() {
                   </div>
 
                   <div className={styles['panel-actions']}>
-                    <button className={styles['secondary-btn']} disabled={!isCadastre}>
+                    <button className={styles['secondary-btn']} disabled={!isCadastre || statutProc === 'TERMINEE' || !statutProc}>
                       <FiChevronLeft /> Retour
                     </button>
 
                     <div className={styles['action-group']}>
-                      <button className={styles['secondary-btn']} disabled={!isCadastre}>
+                      <button className={styles['secondary-btn']} disabled={!isCadastre || statutProc === 'TERMINEE' || !statutProc}>
                         Enregistrer brouillon
                       </button>
 
                       <button
                         className={styles['primary-btn']}
-                        disabled={!polygonValid || !allFilled || !isCadastre}
+                        disabled={!polygonValid || !allFilled || !isCadastre || statutProc === 'TERMINEE' || !statutProc}
                         onClick={saveCoordinatesToBackend}
                       >
                         <FiSave /> Valider le périmètre
@@ -742,7 +749,7 @@ export default function CadastrePage() {
                   <button
                     className={styles['btnSave']}
                     onClick={handleSaveEtape}
-                    disabled={savingEtape}
+                    disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
                   >
                     <BsSave className={styles['btnIcon']} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
                   </button>

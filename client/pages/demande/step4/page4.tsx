@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useDemandeInfo } from '../../../utils/useDemandeInfo';
-import { FiChevronLeft, FiChevronRight, FiSave, FiUser, FiDollarSign, FiTool, FiCheck, FiFileText, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiSave, FiUser, FiDollarSign, FiTool, FiCheck, FiFileText, FiX, FiCalendar } from 'react-icons/fi';
 import styles from './capacites.module.css';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '../../../src/store/useAuthStore';
@@ -15,6 +15,7 @@ import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
+import { useActivateEtape } from '@/hooks/useActivateEtape';
 
 export default function Capacites() {
   const [form, setForm] = useState({
@@ -26,7 +27,8 @@ export default function Capacites() {
     nom_expert: '',
     fonction: '',
     num_registre: '',
-    organisme: ''
+    organisme: '',
+    date_demarrage_prevue:''
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -35,31 +37,34 @@ export default function Capacites() {
   const { isReady } = useDemandeInfo();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [idProc, setIdProc] = useState<string | null>(null);
   const [idDemande, setIdDemande] = useState<string | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
   const [savingEtape, setSavingEtape] = useState(false);
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
+  const [dateDebutPrevue, setDateDebutPrevue] = useState('');
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const currentStep = 3;    
+  /*useEffect(() => {
+    if (!idProc || from === 'suivi') return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/4`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
 
-  useEffect(() => {
-  const activateStep = async () => {
-    if (!idProc) return;
-    try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/4`);
-    } catch (err) {
-      console.error("Échec de l'activation de l'étape");
-    }
-  };
+    activateStep();
+  }, [idProc, from]);*/
+  useActivateEtape({ idProc, etapeNum: 4, statutProc });
 
-  activateStep();
-}, [idProc]);
 
 
   useEffect(() => {
   const proc = searchParams?.get('id');
-  setIdProc(proc!);
 
   if (proc) {
     axios.get(`http://localhost:3001/api/procedures/${proc}/demande`)
@@ -67,6 +72,7 @@ export default function Capacites() {
         const demande = res.data;
         setIdDemande(demande.id_demande.toString());
         setCodeDemande(demande.code_demande);
+        setStatutProc(res.data.procedure.statut_proc);
         console.log("ssssssssss",(demande))
         setForm({
   duree_travaux: demande.duree_travaux_estimee || '',
@@ -77,7 +83,8 @@ export default function Capacites() {
   nom_expert: demande.expertMinier?.nom_expert || '',
   fonction: demande.expertMinier?.fonction || '',
   num_registre: demande.expertMinier?.num_registre || '',
-  organisme: demande.expertMinier?.organisme || ''
+  organisme: demande.expertMinier?.organisme || '',
+  date_demarrage_prevue: demande.date_demarrage_prevue?.split('T')[0] || ''
 });
 
 
@@ -128,7 +135,7 @@ const handleSaveEtape = async () => {
     }
 
     try {
-      await axios.post(`http://localhost:3001/api/capacites`, {
+     await axios.post(`http://localhost:3001/api/capacites`, {
   id_demande: idDemande,
   duree_travaux: form.duree_travaux,
   capital_social: form.capital_social,
@@ -138,7 +145,9 @@ const handleSaveEtape = async () => {
   nom_expert: form.nom_expert,
   fonction: form.fonction,
   num_registre: form.num_registre,
-  organisme: form.organisme
+  organisme: form.organisme,
+  date_demarrage_prevue: form.date_demarrage_prevue 
+
 });
 
 
@@ -154,17 +163,16 @@ const handleSaveEtape = async () => {
       setError("Informations de la demande manquantes");
       return;
     }
-    router.push(`/demande/step5/page5?id=${idProc}`);
+         router.push(`/demande/step5/page5?id=${idProc}`);
   };
 
-  const handleBack = () => {
-    if (!idProc) {
-      setError("Informations de la demande manquantes");
-      return;
-    }
-    router.push(`/demande/step3/page3?id=${idProc}`);
-
-  };
+   const handleBack = () => {
+  if (!idProc) {
+    setError("ID procédure manquant");
+    return;
+  }
+      router.push(`/demande/step3/page3?id=${idProc}`);
+};
 
   if (!isReady) {
     return (
@@ -230,6 +238,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Durée estimée des travaux (mois)</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="duree_travaux"
                       className={styles.formInput}
@@ -241,6 +250,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Capital social disponible</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="capital_social"
                       className={styles.formInput}
@@ -252,6 +262,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Budget prévu</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="budget"
                       className={styles.formInput}
@@ -260,9 +271,26 @@ const handleSaveEtape = async () => {
                       placeholder="Ex: 2 000 000 DZD"
                     />
                   </div>
+                  <div className={styles.formGroup}>
+  <label className={styles.formLabel}>
+    <FiCalendar className={styles.inputIcon} />
+    Date de Début Prévue
+  </label>
+  <input
+  disabled={statutProc === 'TERMINEE'}
+  type="date"
+  name="date_demarrage_prevue"
+    className={styles.formInput}
+
+  value={form.date_demarrage_prevue}
+  onChange={handleChange}
+/>
+</div>
+
                   <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                     <label className={styles.formLabel}>Description des travaux techniques</label>
                     <textarea
+                    disabled={statutProc === 'TERMINEE'}
                       name="description"
                       className={styles.formTextarea}
                       onChange={handleChange}
@@ -283,6 +311,7 @@ const handleSaveEtape = async () => {
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Sources de financement</label>
                   <textarea
+                  disabled={statutProc === 'TERMINEE'}
                     name="financement"
                     className={styles.formTextarea}
                     onChange={handleChange}
@@ -303,6 +332,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Nom complet*</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="nom_expert"
                       className={styles.formInput}
@@ -315,6 +345,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Fonction*</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="fonction"
                       className={styles.formInput}
@@ -327,6 +358,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Numéro de registre</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="num_registre"
                       className={styles.formInput}
@@ -338,6 +370,7 @@ const handleSaveEtape = async () => {
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Organisme*</label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       name="organisme"
                       className={styles.formInput}
@@ -364,7 +397,7 @@ const handleSaveEtape = async () => {
               <button
                 className={styles.btnSave}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles.btnIcon} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>

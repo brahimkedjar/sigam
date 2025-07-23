@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL; // Always server-side in middleware
+const apiURL = process.env.NEXT_PUBLIC_API_URL; // Always server-side in middleware
 
 const protectedRoutes = [
   '/dashboard',
@@ -22,53 +22,59 @@ const routePermissionMap: Record<string, string> = {
 };
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 const token = req.cookies.get('token')?.value;
-  const pathname = req.nextUrl.pathname;
 
-  console.log('🟡 [Middleware] Request Path:', pathname);
-  console.log('🟡 [Middleware] API URL:', API_URL);
-
-  if (!token) {
-    console.warn('🟠 [Middleware] No token found in cookies.');
-    return NextResponse.redirect(new URL('/unauthorized/page?reason=no_token', req.url));
+  // Redirect authenticated users away from login page
+  if (pathname === '/' && token) {
+    return NextResponse.redirect(new URL('/permis_dashboard/PermisDashboard', req.url));
   }
 
-  try {
-    console.log('🟡 [Middleware] Sending request to /auth/me with token...');
-
-    const res = await fetch(`${API_URL}/auth/me`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      // Required in Edge Runtime
-      cache: 'no-store',
-    });
-
-    console.log('🟡 [Middleware] Response status:', res.status);
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error('🔴 [Middleware] Auth API returned error:', body);
-      return NextResponse.redirect(new URL(`/unauthorized/page?reason=${res.status}`, req.url));
+  // Check for protected route
+  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/unauthorized/page?reason=not_authenticated', req.url));
     }
 
-    const user = await res.json();
-    console.log('🟢 [Middleware] Authenticated user:', user);
+    try {
+      const res = await fetch(`${apiURL}/auth/me`, {
+  method: 'GET',
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+  cache: 'no-store',
+});
 
-    // Add user info to request if needed (optional)
-    return NextResponse.next();
-  } catch (err: any) {
-    console.error('❌ [Middleware] Fetch failed:', err.message);
-    console.error('❌ [Middleware] Full error:', err);
 
-    return NextResponse.redirect(new URL('/unauthorized/page?reason=fetch_failed', req.url));
+
+      if (!res.ok) throw new Error('Unauthorized');
+
+      const { user } = await res.json();
+
+      // Admin panel access check
+      if (pathname.startsWith('/admin_panel') && user.role !== 'admin') {
+        return NextResponse.redirect(new URL('/unauthorized/page?reason=insufficient_role', req.url));
+      }
+
+      // Permission check
+      for (const [route, requiredPermission] of Object.entries(routePermissionMap)) {
+        if (pathname.startsWith(route) && !user.permissions.includes(requiredPermission)) {
+          return NextResponse.redirect(new URL('/unauthorized/page?reason=missing_permissions', req.url));
+        }
+      }
+
+    } catch (err) {
+      console.error('❌ Middleware auth error:', err);
+      return NextResponse.redirect(new URL('/unauthorized/page?reason=auth_error', req.url));
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-   
+    '/',
     '/dashboard/:path*',
     '/admin_panel/:path*',
     '/demande/:path*',

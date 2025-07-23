@@ -11,6 +11,7 @@ import Navbar from '../../navbar/Navbar';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import router from 'next/router';
+import { useActivateEtape } from '@/hooks/useActivateEtape';
 
 interface Obligation {
   id: number;
@@ -40,7 +41,8 @@ interface RawPayment {
 
 const PaymentPage = () => {
   const searchParams = useSearchParams();
-  const idProc = searchParams?.get('id');
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [permisId, setPermisId] = useState<number | null>(null);
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [selectedObligation, setSelectedObligation] = useState<Obligation | null>(null);
@@ -52,13 +54,14 @@ const PaymentPage = () => {
   const currentStep = 9; // 9 for the 10th step (zero-based index)
   const totalSteps = STEP_LABELS.length;
   const progress = ((currentStep + 1) / totalSteps) * 100;
-
-      const statusStyles: Record<string, string> = {
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);     
+  const statusStyles: Record<string, string> = {
   'Payé': styles.paidStatus,
   'En retard': styles.overdueStatus,
   'Partiellement payé': styles.partialStatus,
   'A payer': styles.pendingStatus,
 };
+  useActivateEtape({ idProc, etapeNum: 8, statutProc });
 
 const handleTerminerProcedure = async () => {
   if (!idProc) return;
@@ -75,18 +78,19 @@ const handleTerminerProcedure = async () => {
   }
 };
 
-useEffect(() => {
-      const activateStep = async () => {
-        if (!idProc) return;
-        try {
-          await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/10`);
-        } catch (err) {
-          console.error("Échec de l'activation de l'étape");
-        }
-      };
-    
-      activateStep();
-    }, [idProc]);
+  /*useEffect(() => {
+    if (!idProc) return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/10`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
+
+    activateStep();
+  }, [idProc]);*/
+
     
   useEffect(() => {
     if (obligations.length > 0) {
@@ -162,6 +166,19 @@ useEffect(() => {
     await fetchPayments(obligation.id);
   };
 
+  useEffect(() => {
+    if (!idProc) return;
+
+    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
+      .then(res => {
+        setStatutProc(res.data.procedure.statut_proc);
+      })
+      .catch(err => {
+        console.error("Erreur lors de la récupération de la demande", err);
+        setError("Impossible de récupérer la demande");
+      });
+  }, [idProc]);
+
   const handlePaymentSubmit = async (paymentData: {
     amount: number;
     currency: string;
@@ -223,6 +240,7 @@ useEffect(() => {
   <button
     onClick={handleTerminerProcedure}
     className={styles['finalize-button']}
+    disabled={statutProc === 'TERMINEE' || !statutProc}
   >
     ✅ Terminer la procédure
   </button>

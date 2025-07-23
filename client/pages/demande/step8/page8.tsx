@@ -21,12 +21,13 @@ import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
+import { useActivateEtape } from "@/hooks/useActivateEtape";
 
 export default function AvisCd() {
   const router = useRouter();
     const searchParams = useSearchParams();
-  const idProc = searchParams?.get('id');
-
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [membres, setMembres] = useState<MembreComite[]>([]);
   const [idProcedure, setIdProcedure] = useState<number | null>(null);
   const [selectedMembres, setSelectedMembres] = useState<number[]>([]);
@@ -54,18 +55,22 @@ export default function AvisCd() {
     instructeur: "",
   });
 
-  useEffect(() => {
-      const activateStep = async () => {
-        if (!idProc) return;
-        try {
-          await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/8`);
-        } catch (err) {
-          console.error("Échec de l'activation de l'étape");
-        }
-      };
-    
-      activateStep();
-    }, [idProc]);
+    const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+      
+    useActivateEtape({ idProc, etapeNum: 8, statutProc });
+  /*useEffect(() => {
+    if (!idProc || from === 'suivi') return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/8`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
+
+    activateStep();
+  }, [idProc, from]);*/
+
  
 
   useEffect(() => {
@@ -75,6 +80,7 @@ export default function AvisCd() {
       .then(res => {
         setIdDemande(res.data.id_demande.toString());
         setCodeDemande(res.data.code_demande);
+        setStatutProc(res.data.procedure.statut_proc);
       })
       .catch(err => {
         console.error("Erreur lors de la récupération de la demande", err);
@@ -196,7 +202,7 @@ const handleBack = () => {
     try {
       await axios.post("http://localhost:3001/cd", {
         ...form,
-        id_procedure: idProcedure,
+        id_procedure: idProc,
         membre_ids: selectedMembres,
       });
       setSuccess("Décision enregistrée avec succès !");
@@ -213,18 +219,9 @@ const handleBack = () => {
 
  useEffect(() => {
   if (idProc) {
-    const numericId =
-      typeof idProc === "string" ? parseInt(idProc) :
-      Array.isArray(idProc) ? parseInt(idProc[0]) :
-      NaN;
 
-    if (!isNaN(numericId)) {
-      setIdProcedure(numericId);
       fetchMembres();
-      fetchDecision(numericId);
-    } else {
-      setError("Identifiant de procédure invalide.");
-    }
+      fetchDecision(idProc);
   }
 }, [idProc]);
 
@@ -259,10 +256,12 @@ const handleBack = () => {
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="Motif de rejet"
                         className={styles['reject-input']}
+                        disabled={statutProc === 'TERMINEE'}
                       />
                       <button
                         className={styles['reject-btn']}
                         onClick={rejectDemande}
+                        disabled={statutProc === 'TERMINEE' || !statutProc}
                       >
                         Rejeter la demande
                       </button>
@@ -275,6 +274,7 @@ const handleBack = () => {
                 <div className={styles['input-group']}>
                   <label className={styles['label']}>Ingénieur instructeur assigné *</label>
                   <input 
+                    disabled={statutProc === 'TERMINEE'}
                     className={styles['input']} 
                     placeholder="Nom complet de l'instructeur"
                     value={form.instructeur}
@@ -285,18 +285,21 @@ const handleBack = () => {
                 <div className={styles['input-group']}>
                   <label className={styles['label']}>Documents joints</label>
                   <input 
+                    disabled={statutProc === 'TERMINEE'}
                     className={styles['input']} 
                     placeholder="Lien fiche technique"
                     value={form.fiche_technique}
                     onChange={(e) => setForm({ ...form, fiche_technique: e.target.value })} 
                   />
                   <input 
+                    disabled={statutProc === 'TERMINEE'}
                     className={`${styles['input']} ${styles['mt-2']}`} 
                     placeholder="Carte projetée (URL)"
                     value={form.carte_projettee}
                     onChange={(e) => setForm({ ...form, carte_projettee: e.target.value })} 
                   />
                   <input 
+                    disabled={statutProc === 'TERMINEE'}
                     className={`${styles['input']} ${styles['mt-2']}`} 
                     placeholder="Rapport police (URL)"
                     value={form.rapport_police}
@@ -313,6 +316,7 @@ const handleBack = () => {
                   {membres.map((m) => (
                     <div key={m.id_membre} className={styles['member-item']}>
                       <input
+                      disabled={statutProc === 'TERMINEE'}
                         type="checkbox"
                         className={styles['member-checkbox']}
                         checked={selectedMembres.includes(m.id_membre)}
@@ -349,7 +353,8 @@ const handleBack = () => {
                 
                 <div className={styles['input-group']}>
                   <label className={styles['label']}>Date de réunion *</label>
-                  <input 
+                  <input
+                  disabled={statutProc === 'TERMINEE'} 
                     type="date"
                     className={styles['input']}
                     value={form.date_comite.slice(0, 10)}
@@ -360,6 +365,7 @@ const handleBack = () => {
                 <div className={styles['input-group']}>
                   <label className={styles['label']}>Numéro de décision *</label>
                   <input 
+                  disabled={statutProc === 'TERMINEE'}
                     className={styles['input']} 
                     placeholder="Ex: CD-2025-014"
                     value={form.numero_decision}
@@ -370,6 +376,7 @@ const handleBack = () => {
                 <div className={styles['input-group']}>
                   <label className={styles['label']}>Objet de la délibération *</label>
                   <input 
+                  disabled={statutProc === 'TERMINEE'}
                     className={styles['input']} 
                     placeholder="Ex: Attribution de permis d'exploitation de granit"
                     value={form.objet_deliberation}
@@ -380,6 +387,7 @@ const handleBack = () => {
                 <div className={styles['input-group']}>
                   <label className={styles['label']}>Résumé de la réunion</label>
                   <textarea 
+                  disabled={statutProc === 'TERMINEE'}
                     className={styles['textarea']} 
                     placeholder="Détails de la discussion et points abordés"
                     value={form.resume_reunion}
@@ -391,6 +399,7 @@ const handleBack = () => {
                   <button 
                     className={`${styles['decision-button']} ${styles['favorable']} ${form.decision_comite === 'favorable' ? styles['active'] : ''}`}
                     onClick={() => setForm({ ...form, decision_comite: 'favorable', motif: '' })}
+                    disabled={statutProc === 'TERMINEE' || !statutProc}
                   >
                     <FiCheck className={styles['btn-icon']} />
                     Acceptée
@@ -398,6 +407,7 @@ const handleBack = () => {
                   <button 
                     className={`${styles['decision-button']} ${styles['defavorable']} ${form.decision_comite === 'defavorable' ? styles['active'] : ''}`}
                     onClick={() => setForm({ ...form, decision_comite: 'defavorable' })}
+                    disabled={statutProc === 'TERMINEE' || !statutProc}
                   >
                     <FiX className={styles['btn-icon']} />
                     Refusée
@@ -408,6 +418,7 @@ const handleBack = () => {
                   <div className={styles['input-group']}>
                     <label className={styles['label']}>Motif du refus *</label>
                     <textarea 
+                    disabled={statutProc === 'TERMINEE'}
                       className={styles['textarea']} 
                       placeholder="Raison du refus (obligatoire)"
                       value={form.motif}
@@ -425,7 +436,7 @@ const handleBack = () => {
                 <button
                 className={styles['btnSave']}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles['btnIcon']} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>

@@ -14,6 +14,7 @@ import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
+import { useActivateEtape } from "@/hooks/useActivateEtape";
 
 type InteractionWali = {
   id_interaction: number;
@@ -28,7 +29,8 @@ type InteractionWali = {
 export default function AvisWaliStep() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const idProc = searchParams?.get("id");
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [idProcedure, setIdProcedure] = useState<number | null>(null);
   const [form, setForm] = useState({
     type_interaction: "reponse",
@@ -49,20 +51,23 @@ export default function AvisWaliStep() {
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const { currentView, navigateTo } = useViewNavigator();
-  const currentStep = 6;
-
-  useEffect(() => {
-      const activateStep = async () => {
-        if (!idProc) return;
-        try {
-          await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/7`);
-        } catch (err) {
-          console.error("Échec de l'activation de l'étape");
-        }
-      };
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
     
-      activateStep();
-    }, [idProc]);
+      useActivateEtape({ idProc, etapeNum: 7, statutProc });
+  const currentStep = 6;
+  /*useEffect(() => {
+    if (!idProc || from === 'suivi') return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/7`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
+
+    activateStep();
+  }, [idProc, from]);*/
+
       
 
       const rejectDemande = async () => {
@@ -93,6 +98,7 @@ export default function AvisWaliStep() {
       .then(res => {
         setIdDemande(res.data.id_demande.toString());
         setCodeDemande(res.data.code_demande);
+        setStatutProc(res.data.procedure.statut_proc);
       })
       .catch(err => {
         console.error("Erreur lors de la récupération de la demande", err);
@@ -379,7 +385,7 @@ projectFields.forEach(({ label, value }) => {
 
   useEffect(() => {
   if (idProc) {
-    const parsedId = parseInt(idProc);
+    const parsedId = idProc;
     if (!isNaN(parsedId)) {
       fetchIdProcedure(parsedId);
     }
@@ -451,6 +457,7 @@ projectFields.forEach(({ label, value }) => {
                         <div className={styles['demande-actions']}>
                     <div className={styles['reject-section']}>
                       <input
+                      disabled={statutProc === 'TERMINEE'}
                         type="text"
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
@@ -460,6 +467,7 @@ projectFields.forEach(({ label, value }) => {
                       <button
                         className={styles['reject-btn']}
                         onClick={rejectDemande}
+                        disabled={statutProc === 'TERMINEE' || !statutProc}
                       >
                         Rejeter la demande
                       </button>
@@ -491,7 +499,7 @@ projectFields.forEach(({ label, value }) => {
       <button 
         onClick={handleEnvoiInitial} 
         className={`${styles['btn']} ${styles['btn-primary']}`}
-        disabled={isLoading}
+        disabled={isLoading || statutProc === 'TERMINEE' || !statutProc}
       >
         <FiSend className={styles['btn-icon']} />
         Marquer comme envoyé au Wali
@@ -502,7 +510,7 @@ projectFields.forEach(({ label, value }) => {
       <button 
         onClick={handleGenerateLetter} 
         className={`${styles['btn']} ${styles['btn-secondary']}`}
-        disabled={isLoading || isGeneratingPdf}
+        disabled={isLoading || isGeneratingPdf || statutProc === 'TERMINEE' || !statutProc}
       >
         {isGeneratingPdf ? (
           <span className={styles['btn-loading']}>
@@ -532,7 +540,7 @@ projectFields.forEach(({ label, value }) => {
         <button 
           className={`${styles['btn']} ${styles['btn-warning']}`} 
           onClick={handleEnvoiInitial}
-          disabled={isLoading}
+          disabled={isLoading || statutProc === 'TERMINEE' || !statutProc}
         >
           <FiSend className={styles['btn-icon']} />
           Relancer la demande
@@ -551,6 +559,7 @@ projectFields.forEach(({ label, value }) => {
                                         <div className={styles['radio-group']}>
                                             <label className={`${styles['radio-option']} ${form.avis_wali === 'favorable' ? styles['selected'] : ''}`}>
                                                 <input
+                                                disabled={statutProc === 'TERMINEE'}
                                                     type="radio"
                                                     name="avis_wali"
                                                     value="favorable"
@@ -562,6 +571,7 @@ projectFields.forEach(({ label, value }) => {
                                             </label>
                                             <label className={`${styles['radio-option']} ${form.avis_wali === 'defavorable' ? styles['selected'] : ''}`}>
                                                 <input
+                                                disabled={statutProc === 'TERMINEE'}
                                                     type="radio"
                                                     name="avis_wali"
                                                     value="defavorable"
@@ -577,6 +587,7 @@ projectFields.forEach(({ label, value }) => {
                                     <div className={styles['form-group']}>
                                         <label className={styles['form-label']}>Contenu ou remarques</label>
                                         <textarea
+                                        disabled={statutProc === 'TERMINEE'}
                                             className={styles['form-textarea']}
                                             placeholder="Saisissez les détails de la réponse du Wali..."
                                             value={form.contenu}
@@ -588,7 +599,7 @@ projectFields.forEach(({ label, value }) => {
                                     <button 
                                         onClick={handleSubmit} 
                                         className={`${styles['btn']} ${styles['btn-success']}`}
-                                        disabled={isLoading}
+                                        disabled={isLoading || statutProc === 'TERMINEE' || !statutProc}
                                     >
                                         {isLoading ? (
                                             <span className={styles['btn-loading']}>
@@ -651,14 +662,14 @@ projectFields.forEach(({ label, value }) => {
                         )}
 
                         <div className={styles['navigation-buttons']}>
-                            <button className={`${styles['btn']} ${styles['btn-outline']}`} onClick={handleBack}>
+                            <button className={`${styles['btn']} ${styles['btn-outline']}`} onClick={handleBack} >
                                 <FiChevronLeft className={styles['btn-icon']} />
                                 Précédent
                             </button>
                             <button
                 className={styles['btnSave']}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles['btnIcon']} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>
@@ -687,6 +698,7 @@ projectFields.forEach(({ label, value }) => {
                                         <button 
                                             onClick={() => setPdfPreviewVisible(false)} 
                                             className={styles['close-button']}
+                                            disabled={statutProc === 'TERMINEE' || !statutProc}
                                         >
                                             <FiX />
                                         </button>
@@ -704,6 +716,7 @@ projectFields.forEach(({ label, value }) => {
                                         <button 
                                             onClick={handleDownloadPdf}
                                             className={styles['download-button']}
+                                            disabled={statutProc === 'TERMINEE' || !statutProc}
                                         >
                                             <FiDownload className={styles['button-icon']} />
                                             Télécharger le PDF
@@ -711,6 +724,7 @@ projectFields.forEach(({ label, value }) => {
                                         <button 
                                             onClick={() => setPdfPreviewVisible(false)} 
                                             className={styles['cancel-button']}
+                                            disabled={statutProc === 'TERMINEE' || !statutProc}
                                         >
                                             Fermer
                                         </button>

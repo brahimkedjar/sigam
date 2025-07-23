@@ -322,7 +322,7 @@ useEffect(() => {
 
     try {
       await axios.post(`http://localhost:3001/api/procedure-etape/finish/${id_proc}/2`);
-      setEtapeMessage("Étape 5 enregistrée avec succès !");
+      setEtapeMessage("Étape 2 enregistrée avec succès !");
     } catch (err) {
       console.error(err);
       setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
@@ -568,14 +568,7 @@ useEffect(() => {
               )}
 
               <div className={styles['navigation-buttons']}>
-                <button
-                  className={`${styles['btn']} ${styles['btn-outline']}`}
-                  onClick={handleBack}
-                  disabled={isLoading || isSubmitting}
-                >
-                  <FiChevronLeft className={styles['btn-icon']} />
-                  Précédent
-                </button>
+                
 
                 <button
                   className={styles['btnSave']}
