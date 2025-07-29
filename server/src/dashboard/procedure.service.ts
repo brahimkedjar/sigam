@@ -77,7 +77,7 @@ async getProceduresEnCours() {
 }
 
 
-async deleteProcedureAndRelatedData(procedureId: number) {
+async deleteProcedureAndRelatedData(procedureId: number) { 
   return this.prisma.$transaction(async (prisma) => {
     // First get all related demandes for this procedure
     const demandes = await prisma.demande.findMany({
@@ -107,50 +107,103 @@ async deleteProcedureAndRelatedData(procedureId: number) {
       where: { id_demande: { in: demandeIds } }
     });
 
-    // 2. Delete related SubstanceAssocieeDemande records
+    // 3. Delete related SubstanceAssocieeDemande records
     await prisma.substanceAssocieeDemande.deleteMany({
       where: { id_proc: procedureId }
     });
 
-    // 3. Delete related InteractionWali records
+    // 4. Delete related InteractionWali records
     await prisma.interactionWali.deleteMany({
       where: { id_procedure: procedureId }
     });
 
-    // 4. Delete related ComiteDirection records (and their members through the relation)
-    const comites = await prisma.comiteDirection.findMany({
-      where: { id_procedure: procedureId },
-      select: { id_comite: true }
-    });
-    
-    await prisma.membresComite.deleteMany({
-      where: {
-        comites: {
-          some: { id_procedure: procedureId }
+    // Handle Comité de Direction related data
+    // 1. Get all seances related to the procedure
+    const seances = await prisma.seanceCDPrevue.findMany({
+  where: {
+    comites: {
+      some: { 
+        id_procedure: procedureId 
+      }
+    }
+  },
+  select: { 
+    id_seance: true 
+  }
+});
+
+    const seanceIds = seances.map(s => s.id_seance);
+
+    if (seanceIds.length > 0) {
+      // 2. Get all comites related to these seances AND the procedure's demandes
+      const comites = await prisma.comiteDirection.findMany({
+        where: {
+          id_seance: { in: seanceIds },
+        },
+        select: { id_comite: true }
+      });
+
+      const comiteIds = comites.map(c => c.id_comite);
+
+      // 3. Delete all decisions of these comites
+      await prisma.decisionCD.deleteMany({
+        where: {
+          id_comite: { in: comiteIds }
+        }
+      });
+
+      // 4. Delete all comites related to this procedure's demandes
+      await prisma.comiteDirection.deleteMany({
+        where: {
+          id_seance: { in: seanceIds },
+        }
+      });
+
+      // 5. Check if seances are used by other procedures before deleting
+      for (const seanceId of seanceIds) {
+  const otherProceduresCount = await prisma.procedure.count({
+    where: {
+      id_proc: { not: procedureId },
+      id_seance: seanceId // ✅ correct way
+    }
+  });
+
+        if (otherProceduresCount === 0) {
+          // Only delete seance if no other procedures are using it
+          await prisma.seanceCDPrevue.delete({
+            where: { id_seance: seanceId }
+          });
         }
       }
-    });
-    
-    await prisma.comiteDirection.deleteMany({
-      where: { id_procedure: procedureId }
-    });
+    }
 
-    // 5. Delete related ProcedureEtape records
+    // 6. Delete related ProcedureEtape records
     await prisma.procedureEtape.deleteMany({
       where: { id_proc: procedureId }
     });
 
-    // 6. Delete related Coordonnee records
-    await prisma.coordonnee.deleteMany({
-      where: { id_demande: { in: demandeIds } }
+    // 7. Delete related Coordonnee records
+    const links = await prisma.procedureCoord.findMany({
+      where: { id_proc: procedureId },
+      select: { id_coordonnees: true }
     });
 
-    // 7. Delete the Demandes
+    const coordIds = links.map(l => l.id_coordonnees);
+
+    await prisma.procedureCoord.deleteMany({
+      where: { id_proc: procedureId }
+    });
+
+    await prisma.coordonnee.deleteMany({
+      where: { id_coordonnees: { in: coordIds } }
+    });
+
+    // 8. Delete the Demandes
     await prisma.demande.deleteMany({
       where: { id_proc: procedureId }
     });
 
-    // 8. Check and delete DetenteurMorale if not referenced elsewhere
+    // 9. Check and delete DetenteurMorale if not referenced elsewhere
     const personnePhysiqueIdsToDelete: number[] = [];
     
     for (const detenteurId of detenteurIds) {
@@ -192,7 +245,7 @@ async deleteProcedureAndRelatedData(procedureId: number) {
       }
     }
 
-    // 9. Check and delete PersonnePhysique records if they're not referenced elsewhere
+    // 10. Check and delete PersonnePhysique records if they're not referenced elsewhere
     for (const personneId of personnePhysiqueIdsToDelete) {
       const otherFonctionReferences = await prisma.fonctionPersonneMoral.count({
         where: { id_personne: personneId }
@@ -205,7 +258,7 @@ async deleteProcedureAndRelatedData(procedureId: number) {
       }
     }
 
-    // 10. Check and delete ExpertMinier if not referenced elsewhere
+    // 11. Check and delete ExpertMinier if not referenced elsewhere
     for (const expertId of expertIds) {
       const otherReferences = await prisma.demande.count({
         where: { 
@@ -221,13 +274,12 @@ async deleteProcedureAndRelatedData(procedureId: number) {
       }
     }
 
-    // 11.5. Delete ProcedureRenouvellement if exists
-await prisma.procedureRenouvellement.deleteMany({
-  where: { id_proc: procedureId }
-});
+    // 12. Delete ProcedureRenouvellement if exists
+    await prisma.procedureRenouvellement.deleteMany({
+      where: { id_proc: procedureId }
+    });
 
-
-    // 12. Finally, delete the Procedure itself
+    // 13. Finally, delete the Procedure itself
     return prisma.procedure.delete({
       where: { id_proc: procedureId }
     });

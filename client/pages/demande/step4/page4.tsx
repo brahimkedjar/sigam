@@ -4,14 +4,12 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useDemandeInfo } from '../../../utils/useDemandeInfo';
-import { FiChevronLeft, FiChevronRight, FiSave, FiUser, FiDollarSign, FiTool, FiCheck, FiFileText, FiX, FiCalendar } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiUser, FiDollarSign, FiTool, FiFileText, FiCalendar } from 'react-icons/fi';
 import styles from './capacites.module.css';
 import { useSearchParams } from 'next/navigation';
-import { useAuthStore } from '../../../src/store/useAuthStore';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import { BsSave } from 'react-icons/bs';
-import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
@@ -42,16 +40,17 @@ export default function Capacites() {
   const [savingEtape, setSavingEtape] = useState(false);
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
-  const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const currentStep = 3;    
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
   /*useEffect(() => {
     if (!idProc || from === 'suivi') return;
     const activateStep = async () => {
       try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/4`);
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/4`);
       } catch (err) {
         console.error("Échec de l'activation de l'étape");
       }
@@ -67,7 +66,7 @@ export default function Capacites() {
   const proc = searchParams?.get('id');
 
   if (proc) {
-    axios.get(`http://localhost:3001/api/procedures/${proc}/demande`)
+    axios.get(`${apiURL}/api/procedures/${proc}/demande`)
       .then(res => {
         const demande = res.data;
         setIdDemande(demande.id_demande.toString());
@@ -112,8 +111,10 @@ const handleSaveEtape = async () => {
   setEtapeMessage(null);
 
   try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/4`);
-    setEtapeMessage("Étape 2 enregistrée avec succès !");
+      const currentUrl = window.location.pathname + window.location.search; 
+
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/4`);
+    setEtapeMessage("Étape 4 enregistrée avec succès !");
   } catch (err) {
     console.error(err);
     setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
@@ -135,7 +136,7 @@ const handleSaveEtape = async () => {
     }
 
     try {
-     await axios.post(`http://localhost:3001/api/capacites`, {
+     await axios.post(`${apiURL}/api/capacites`, {
   id_demande: idDemande,
   duree_travaux: form.duree_travaux,
   capital_social: form.capital_social,

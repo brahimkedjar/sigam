@@ -2,12 +2,16 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRenewalDto } from './create-renouvellement.dto';
 import { PaymentService } from 'src/demandes/paiement/payment.service';
+import { StatutProcedure } from '@prisma/client';
+import { ProcedureEtapeService } from '../procedure_etape/procedure-etape.service';
 
 @Injectable()
 export class ProcedureRenouvellementService {
-  constructor(private readonly prisma: PrismaService,private paymentService: PaymentService) {}
+  constructor(private readonly prisma: PrismaService,private paymentService: PaymentService , private readonly procedureEtapeService: ProcedureEtapeService,) {}
 
-  async startRenewalWithOriginalData(permisId: number, date_demande: string) {
+  async startRenewalWithOriginalData(permisId: number, date_demande: string , statut: StatutProcedure) {
+      const now = new Date();
+
   if (!date_demande || isNaN(Date.parse(date_demande))) {
     throw new BadRequestException('La date de la demande est invalide.');
   }
@@ -68,15 +72,9 @@ export class ProcedureRenouvellementService {
     }
   });
 
-  const etapes = await this.prisma.etapeProc.findMany();
-  await this.prisma.procedureEtape.createMany({
-    data: etapes.map(e => ({
-      id_proc: newProcedure.id_proc,
-      id_etape: e.id_etape,
-      statut: 'EN_ATTENTE',
-      date_debut: new Date()
-    }))
-  });
+
+
+
 
   return {
     original_demande_id: initialDemande?.id_demande,

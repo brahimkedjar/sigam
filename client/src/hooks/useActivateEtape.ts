@@ -10,12 +10,15 @@ interface UseActivateEtapeOptions {
 
 export const useActivateEtape = ({ idProc, etapeNum, statutProc }: UseActivateEtapeOptions) => {
   useEffect(() => {
-    if (!idProc || !statutProc ||  window.self !== window.top) return;
+    if (!idProc) return;
     if (statutProc === 'TERMINEE') return;
 
     const activate = async () => {
       try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/${etapeNum}`);
+        const currentUrl = window.location.pathname + window.location.search;
+        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/${etapeNum}`, {
+           link: currentUrl
+        });
       } catch (err) {
         console.error(`Échec de l'activation de l'étape ${etapeNum}`, err);
       }

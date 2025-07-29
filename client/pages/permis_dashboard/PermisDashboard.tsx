@@ -839,7 +839,7 @@ renderPermisModal('Permis expirant bientôt', expiringSoonPermis);
                     <th>Statut</th>
                     <th>Date Octroi</th>
                     <th>Date Expiration</th>
-                    <th>Surface (km²)</th>
+                    <th>Surface (HA)</th>
                     <th>Substances</th>
                     <th>Actions</th>
                   </tr>

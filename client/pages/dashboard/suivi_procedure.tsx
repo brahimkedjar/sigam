@@ -15,6 +15,7 @@ const Sidebar = dynamic(() => import('../sidebar/Sidebar'), { ssr: false });
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useViewNavigator } from '../../src/hooks/useViewNavigator';
 import { STEP_LABELS } from '../../src/constants/steps';
+import { useStepGuard } from '@/hooks/StepGuardContext';
 
 interface Demande {
   id_demande: number;
@@ -72,7 +73,7 @@ export default function SuiviDemandes() {
   const router = useRouter();
   const { auth, isLoaded, hasPermission } = useAuthStore();
   const [procedureToDelete, setProcedureToDelete] = useState<number | null>(null);
-
+  const { unlockStep } = useStepGuard();
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -108,24 +109,25 @@ export default function SuiviDemandes() {
     }
   }, [currentView]);
 
-  const goToEtape = async (idProc: number) => {
-    try {
-      setIsLoading(true);
-      const res = await axios.get(`http://localhost:3001/api/procedure-etape/current/${idProc}`);
-      const etape = res.data?.etape?.ordre_etape;
-
-      if (etape) {
-        router.push(`/demande/step${etape}/page${etape}?id=${idProc}`);
-      } else {
-        setError("Étape introuvable");
-      }
-    } catch (err) {
-      console.error("Erreur lors de la récupération de l'étape :", err);
-      setError("Impossible de récupérer l'étape actuelle");
-    } finally {
-      setIsLoading(false);
+ const goToEtape = async (idProc: number) => {
+  try {
+    setIsLoading(true);
+    const res = await axios.get(`http://localhost:3001/api/procedure-etape/current/${idProc}`);
+    const etape = res.data;
+    if (etape?.link) {
+      router.push(`${etape.link}`);
+    } else {
+      setError("Lien de l'étape introuvable");
     }
-  };
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'étape :", err);
+    setError("Impossible de récupérer l'étape actuelle");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
   function getCurrentPhase(etapes: any[]): any | undefined {
 

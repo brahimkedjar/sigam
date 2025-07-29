@@ -64,11 +64,12 @@ export default function CahierChargesDemande() {
   const searchParams = useSearchParams();
   const idProc = searchParams?.get('id');
   const [demandeId, setDemandeId] = useState<number | null>(null);
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;     
 
   useEffect(() => {
     const fetchDemandeFromProc = async (id_proc: string) => {
       try {
-        const res = await fetch(`http://localhost:3001/api/procedures/${id_proc}/demande`);
+        const res = await fetch(`${apiURL}/api/procedures/${id_proc}/demande`);
         const demande = await res.json();
         setDemandeId(demande.id_demande);
       } catch (err) {
@@ -82,7 +83,7 @@ export default function CahierChargesDemande() {
   useEffect(() => {
     const fetchCahier = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/demande/cahier/${demandeId}`);
+        const res = await fetch(`${apiURL}/api/demande/cahier/${demandeId}`);
         if (!res.ok) return;
         const cahier = await res.json();
         setFormData({
@@ -114,7 +115,7 @@ export default function CahierChargesDemande() {
     e.preventDefault();
     try {
       const method = isEditing ? 'PUT' : 'POST';
-      const res = await fetch(`http://localhost:3001/api/demande/cahier/${demandeId}`, {
+      const res = await fetch(`${apiURL}/api/demande/cahier/${demandeId}`, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -137,7 +138,7 @@ export default function CahierChargesDemande() {
   useEffect(() => {
   const fetchCahier = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/demande/cahier/${demandeId}`);
+      const res = await fetch(`${apiURL}/api/demande/cahier/${demandeId}`);
       if (!res.ok) return;
       const cahier = await res.json();
 
@@ -167,7 +168,7 @@ export default function CahierChargesDemande() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/demande/cahier/${demandeId}`, { method: 'DELETE' });
+      const res = await fetch(`${apiURL}/api/demande/cahier/${demandeId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Erreur suppression');
       setFormData(defaultForm);
       setIsEditing(false);

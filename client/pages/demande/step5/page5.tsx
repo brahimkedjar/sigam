@@ -4,22 +4,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import {
-  FiChevronLeft, FiChevronRight, FiMapPin, FiFileText, FiCheck, FiX,
-  FiMap, FiGlobe, FiHome, FiCalendar, FiHash, FiEdit2, FiSearch,
+  FiChevronLeft, FiChevronRight, FiMapPin, FiFileText, FiX,
+  FiMap, FiGlobe, FiHash, FiEdit2, FiSearch,
   FiSave
 } from 'react-icons/fi';
 import styles from './substances.module.css';
-import { useAuthStore } from '../../../src/store/useAuthStore';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import * as turf from '@turf/turf';
 import { BsSave } from 'react-icons/bs';
 import ConfirmReplaceModal from './ConfirmReplaceModal';
-import type { ViewType } from '../../../src/types/viewtype';
 import SummaryModal from "../popup/page6_popup";
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
+import { toast } from 'react-toastify';
 import { useActivateEtape } from '@/hooks/useActivateEtape';
 
 type Substance = {
@@ -105,23 +104,9 @@ export default function Step4_Substances() {
   const [existingCoords, setExistingCoords] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   useActivateEtape({ idProc, etapeNum: 5, statutProc });
-
-  /*useEffect(() => {
-    if (!idProc || from === 'suivi') return;
-    const activateStep = async () => {
-      try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/5`);
-      } catch (err) {
-        console.error("Échec de l'activation de l'étape");
-      }
-    };
-
-    activateStep();
-  }, [idProc, from]);*/
-
-
 
   useEffect(() => {
     if (!idProc) return;
@@ -129,11 +114,11 @@ export default function Step4_Substances() {
     const fetchDemandeData = async () => {
       try {
         // First load wilayas
-        const wilayasRes = await axios.get('http://localhost:3001/api/wilayas');
+        const wilayasRes = await axios.get(`${apiURL}/api/wilayas`);
         setWilayas(wilayasRes.data);
 
         // Then load the demande data
-        const res = await axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`);
+        const res = await axios.get(`${apiURL}/api/procedures/${idProc}/demande`);
         const demande = res.data;
         console.log('ssssssssssssssss:',demande);
         setIdDemande(demande.id_demande);
@@ -152,12 +137,12 @@ export default function Step4_Substances() {
         setCommune(demande.commune?.nom_commune || '');
         if (wilayaId) {
           setSelectedWilaya(wilayaId);
-          const dairasRes = await axios.get(`http://localhost:3001/api/wilayas/${wilayaId}/dairas`);
+          const dairasRes = await axios.get(`${apiURL}/api/wilayas/${wilayaId}/dairas`);
           setDairas(dairasRes.data);
 
           if (dairaId && dairasRes.data.some((d: { id_daira: { toString: () => any; }; }) => d.id_daira.toString() === dairaId)) {
             setSelectedDaira(dairaId);
-            const communesRes = await axios.get(`http://localhost:3001/api/dairas/${dairaId}/communes`);
+            const communesRes = await axios.get(`${apiURL}/api/dairas/${dairaId}/communes`);
             setCommunes(communesRes.data);
             if (communeId && communesRes.data.some((c: { id_commune: { toString: () => any; }; }) => c.id_commune.toString() === communeId)) {
               setSelectedCommune(communeId);
@@ -171,7 +156,6 @@ export default function Step4_Substances() {
         setSuperficie(demande.superficie?.toString() || '');
         setTravaux(demande.description_travaux || '');
         setDureeTravaux(demande.duree_travaux_estimee?.toString() || '');
-        setDateDebutPrevue(demande.date_demarrage_prevue?.split('T')[0] || '');
 
       } catch (err) {
         console.error('Error loading demande', err);
@@ -183,34 +167,46 @@ export default function Step4_Substances() {
   }, [idProc]);
 
   useEffect(() => {
-    if (!idDemande) return;
+  if (!idProc) return;
 
-    const fetchCoordinates = async () => {
-      try {
-        const res = await axios.get(`http://localhost:3001/coordinates/demande/${idDemande}`);
-        const coords = res.data;
+  const fetchCoordinates = async () => {
+  try {
+    const res = await axios.get(`${apiURL}/coordinates/procedure/${idProc}`);
+    const coords = res.data;
 
-        setPoints(
-          coords.map((c: any) => ({
-            x: c.x.toString(),
-            y: c.y.toString(),
-            z: c.z.toString(),
-          }))
-        );
-      } catch (err) {
-        console.error('❌ Failed to load coordinates:', err);
+    const safeCoords = (coords ?? []).filter((c: any, i: number) => {
+      const point = c?.coordonnee;
+      const isValid = typeof point?.x !== 'undefined' && typeof point?.y !== 'undefined';
+      if (!isValid) {
+        console.warn(`⚠️ Invalid coordinate at index ${i}:`, c);
       }
-    };
+      return isValid;
+    });
 
-    fetchCoordinates();
-  }, [idDemande]);
+    setPoints(
+      safeCoords.map((c: any) => ({
+        x: c.coordonnee.x?.toString() ?? '0',
+        y: c.coordonnee.y?.toString() ?? '0',
+        z: c.coordonnee.z?.toString() ?? '',
+      }))
+    );
+  } catch (err) {
+    console.error('❌ Failed to load coordinates:', err);
+  }
+};
+
+
+
+  fetchCoordinates();
+}, [idProc]);
+
 
 
   // Fetch all wilayas on component mount
   useEffect(() => {
     const fetchWilayas = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/wilayas');
+        const res = await axios.get(`${apiURL}/api/wilayas`);
         setWilayas(res.data);
       } catch (err) {
         console.error('Error loading wilayas', err);
@@ -229,7 +225,7 @@ export default function Step4_Substances() {
 
     const fetchDairas = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/wilayas/${selectedWilaya}/dairas`);
+        const res = await axios.get(`${apiURL}/api/wilayas/${selectedWilaya}/dairas`);
         setDairas(res.data);
       } catch (err) {
         console.error('Error loading dairas', err);
@@ -249,7 +245,7 @@ export default function Step4_Substances() {
 
     const fetchCommunes = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/dairas/${selectedDaira}/communes`);
+        const res = await axios.get(`${apiURL}/api/dairas/${selectedDaira}/communes`);
         setCommunes(res.data);
       } catch (err) {
         console.error('Error loading communes', err);
@@ -261,79 +257,105 @@ export default function Step4_Substances() {
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
-  const submitCoordinates = async () => {
-    setIsSaving(true);
-    const payload = {
-      id_demande: idDemande,
-      id_zone_interdite: null,
-      points: points.map((p) => ({
-        x: p.x,
-        y: p.y,
-        z: p.z,
-      })),
-    };
+  const submitCoordinates = async (statutCoord: 'DEMANDE_INITIALE'= 'DEMANDE_INITIALE') => {
+  setIsSaving(true);
 
-    try {
-      await fetch(`http://localhost:3001/coordinates/demande/${idDemande}`, {
-        method: 'DELETE',
-      });
-
-      const res = await fetch('http://localhost:3001/coordinates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await res.json();
-      alert('✅ Coordonnées enregistrées');
-    } catch (err) {
-      alert('❌ Erreur lors de l’enregistrement');
-    } finally {
-      setIsSaving(false);
-      setShowModal(false);
-    }
+  const payload = {
+    id_proc: idProc,
+    id_zone_interdite: null,
+    points: points.map((p) => ({
+      x: parseFloat(p.x),
+      y: parseFloat(p.y),
+      z: parseFloat(p.z),
+    })),
+    statut_coord: statutCoord,
   };
 
+  try {
+    const res = await fetch(`${apiURL}/coordinates/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-  const saveCoordinatesToBackend = async () => {
-    if (!idDemande) {
-      console.error('❌ id_demande not loaded yet');
-      return;
-    }
+    if (!res.ok) throw new Error('Erreur lors de la mise à jour');
 
-    const payload = {
-  id_demande: idDemande,
-  id_zone_interdite: null, // ← explicitement null si pas utilisé
-  points: points.map((p) => ({
-    x: p.x,
-    y: p.y,
-    z: p.z,
-  })),
+    const result = await res.json();
+    toast.success('✅ Coordonnées enregistrées avec succès');
+  } catch (err) {
+    console.error(err);
+    toast.error('❌ Erreur lors de l’enregistrement des coordonnées');
+  } finally {
+    setIsSaving(false);
+    setShowModal(false);
+  }
 };
 
 
-    console.log('📤 Sending payload:', payload);
+const saveCoordinatesToBackend = async () => {
+  if (!idProc) {
+    toast.error('ID de procédure introuvable');
+    return;
+  }
 
-    try {
-      const response = await fetch('http://localhost:3001/coordinates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+  const newPoints = points.map((p) => ({
+    x: parseFloat(p.x),
+    y: parseFloat(p.y),
+    z: parseFloat(p.z),
+  }));
+
+  try {
+    const existingRes = await fetch(`${apiURL}/coordinates/procedure/${idProc}`);
+    if (!existingRes.ok) throw new Error('Erreur lors de la récupération des coordonnées existantes');
+
+    const existing = await existingRes.json();
+
+    const existingPoints = existing.map((pc: any) => ({
+      x: parseFloat(pc.coordonnee.x),
+      y: parseFloat(pc.coordonnee.y),
+      z: parseFloat(pc.coordonnee.z),
+    }));
+
+    // Save to state to pass into modal if needed
+    setExistingCoords(existingPoints);
+
+    const areEqual =
+      newPoints.length === existingPoints.length &&
+      newPoints.every((np, index) => {
+        const ep = existingPoints[index];
+        return (
+          Math.abs(np.x - ep.x) < 0.00001 &&
+          Math.abs(np.y - ep.y) < 0.00001 &&
+          Math.abs(np.z - ep.z) < 0.00001
+        );
       });
 
-      const result = await response.json();
-      console.log('✅ Coordinates saved:', result);
-    } catch (error) {
-      console.error('❌ Failed to save coordinates:', error);
+    if (areEqual) {
+      toast.info('✅ Coordonnées identiques déjà enregistrées');
+      return;
     }
-  };
+
+    // Ask confirmation before replacing existing coordinates
+    if (existingPoints.length > 0) {
+      setShowModal(true);
+    } else {
+      await submitCoordinates();
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error('Erreur de vérification des coordonnées existantes');
+  }
+};
+
+
+
 
 
   // Substances functions
   const fetchSubstances = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get('http://localhost:3001/api/substances', {
+      const res = await axios.get(`${apiURL}/api/substances`, {
         params: { famille },
       });
       setAllSubstances(res.data);
@@ -348,7 +370,7 @@ export default function Step4_Substances() {
   useEffect(() => {
     if (!idDemande) return;
 
-    axios.get(`http://localhost:3001/api/substances/demande/${idDemande}`)
+    axios.get(`${apiURL}/api/substances/demande/${idDemande}`)
       .then(res => {
         setSelectedIds(res.data.map((item: any) => item.id_sub));
       })
@@ -370,11 +392,11 @@ export default function Step4_Substances() {
     try {
       if (isSelected) {
         await axios.delete(
-          `http://localhost:3001/api/substances/demande/${idDemande}/${sub.id_sub}`
+          `${apiURL}/api/substances/demande/${idDemande}/${sub.id_sub}`
         );
         setSelectedIds((prev) => prev.filter((id) => id !== sub.id_sub));
       } else {
-        await axios.post(`http://localhost:3001/api/substances/demande/${idDemande}`, {
+        await axios.post(`${apiURL}/api/substances/demande/${idDemande}`, {
           id_substance: sub.id_sub,
         });
         setSelectedIds((prev) => [...prev, sub.id_sub]);
@@ -449,8 +471,10 @@ export default function Step4_Substances() {
     setEtapeMessage(null);
 
     try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/5`);
-      setEtapeMessage("Étape 4 enregistrée avec succès !");
+      const currentUrl = window.location.pathname + window.location.search; 
+
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/5`);
+      setEtapeMessage("Étape 5 enregistrée avec succès !");
     } catch (err) {
       console.error(err);
       setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
@@ -489,16 +513,15 @@ export default function Step4_Substances() {
         // Work information
         description_travaux: travaux,
         duree_travaux_estimee: parseInt(dureeTravaux) || null,
-        date_demarrage_prevue: dateDebutPrevue ? new Date(dateDebutPrevue) : null,
 
       };
 
       // Save the demande information
-      await axios.put(`http://localhost:3001/demandes/${idDemande}`, demandeData);
+      await axios.put(`${apiURL}/demandes/${idDemande}`, demandeData);
 
       // Then mark the step as completed
-      await axios.post(`http://localhost:3001/api/procedure-etape/set/${idProc}/5`);
-      const res = await axios.get(`http://localhost:3001/api/demande/${idDemande}/summary`);
+      await axios.post(`${apiURL}/api/procedure-etape/set/${idProc}/5`);
+      const res = await axios.get(`${apiURL}/api/demande/${idDemande}/summary`);
       setSummaryData(res.data);
       setShowModal(true);
       setSuccess("Data saved successfully!");
@@ -519,7 +542,6 @@ export default function Step4_Substances() {
     setError("ID procédure manquant");
     return;
   }
-
        router.push(`/demande/step4/page4?id=${idProc}`);
 
 };

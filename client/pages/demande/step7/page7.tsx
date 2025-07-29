@@ -6,11 +6,9 @@ import { jsPDF } from "jspdf";
 import { format } from "date-fns";
 import { useSearchParams } from "next/navigation";
 import styles from  "./avis_wali.module.css";
-import { useAuthStore } from "../../../src/store/useAuthStore";
 import Navbar from "../../navbar/Navbar";
 import Sidebar from "../../sidebar/Sidebar";
 import { BsFilePerson, BsSave } from "react-icons/bs";
-import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
@@ -52,14 +50,16 @@ export default function AvisWaliStep() {
   const [rejectionReason, setRejectionReason] = useState("");
   const { currentView, navigateTo } = useViewNavigator();
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
-    
-      useActivateEtape({ idProc, etapeNum: 7, statutProc });
   const currentStep = 6;
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
+  useActivateEtape({ idProc, etapeNum: 7, statutProc });
+
   /*useEffect(() => {
     if (!idProc || from === 'suivi') return;
     const activateStep = async () => {
       try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/7`);
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/7`);
       } catch (err) {
         console.error("Échec de l'activation de l'étape");
       }
@@ -78,7 +78,7 @@ export default function AvisWaliStep() {
 
     try {
       await axios.put(
-        `http://localhost:3001/api/demande/${idDemande}/status`,
+        `${apiURL}/api/demande/${idDemande}/status`,
         { 
           statut_demande: 'rejete',
           motif_rejet: rejectionReason
@@ -94,7 +94,7 @@ export default function AvisWaliStep() {
    useEffect(() => {
     if (!idProc) return;
 
-    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
+    axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
       .then(res => {
         setIdDemande(res.data.id_demande.toString());
         setCodeDemande(res.data.code_demande);
@@ -116,7 +116,9 @@ export default function AvisWaliStep() {
   setEtapeMessage(null);
 
   try {
-    await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/7`);
+    const currentUrl = window.location.pathname + window.location.search; 
+
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/7`);
     setEtapeMessage("Étape 7 enregistrée avec succès !");
   } catch (err) {
     console.error(err);
@@ -129,7 +131,7 @@ export default function AvisWaliStep() {
   const generateWaliLetter = async (preview = false) => {
   setIsGeneratingPdf(true);
   try {
-    const response = await axios.get(`http://localhost:3001/api/demande/${idDemande}/summary`);
+    const response = await axios.get(`${apiURL}/api/demande/${idDemande}/summary`);
     const demande = response.data;
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -310,7 +312,7 @@ projectFields.forEach(({ label, value }) => {
   const fetchInteractions = async (procId: number) => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3001/interactions-wali/${procId}`);
+      const res = await axios.get(`${apiURL}/interactions-wali/${procId}`);
       setInteractions(res.data);
     } catch (error) {
       console.error("Erreur chargement interactions :", error);
@@ -340,7 +342,7 @@ projectFields.forEach(({ label, value }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:3001/interactions-wali", {
+      await axios.post(`${apiURL}/interactions-wali`, {
         ...form,
         id_procedure: idProcedure,
       });
@@ -366,7 +368,7 @@ projectFields.forEach(({ label, value }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:3001/interactions-wali", {
+      await axios.post(`${apiURL}/interactions-wali`, {
         id_procedure: idProcedure,
         type_interaction: "envoi",
         date_interaction: new Date().toISOString(),

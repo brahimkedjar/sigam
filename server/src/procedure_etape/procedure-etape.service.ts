@@ -40,7 +40,7 @@ export class ProcedureEtapeService {
   }
 }
 
-async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) {
+async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure , link?: string) {
   const now = new Date();
 
   const existing = await this.prisma.procedureEtape.findUnique({
@@ -49,21 +49,34 @@ async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) 
 
   // Close others if new step is EN_COURS
   if (statut === StatutProcedure.EN_COURS) {
-    await this.prisma.procedureEtape.updateMany({
-      where: { id_proc, statut: StatutProcedure.EN_COURS },
-      data: { statut: StatutProcedure.TERMINEE, date_fin: now },
-    });
-
-    await this.prisma.procedureEtape.updateMany({
-      where: {
-        id_proc,
-        id_etape: { gt: id_etape },
-      },
-      data: { statut: StatutProcedure.EN_ATTENTE },
-    });
+  // Don't update if this step is already EN_COURS
+  if (existing && existing.statut === StatutProcedure.EN_COURS) {
+    return existing;
   }
 
+  // Close other active steps (but not this one)
+  await this.prisma.procedureEtape.updateMany({
+    where: {
+      id_proc,
+      id_etape: { not: id_etape },
+      statut: StatutProcedure.EN_COURS,
+    },
+    data: { statut: StatutProcedure.TERMINEE, date_fin: now },
+  });
+
+  // Set future steps to EN_ATTENTE
+  await this.prisma.procedureEtape.updateMany({
+    where: {
+      id_proc,
+      id_etape: { gt: id_etape },
+    },
+    data: { statut: StatutProcedure.EN_ATTENTE },
+  });
+}
+
+
   const updateData: Partial<ProcedureEtape> = { statut };
+  if (link) updateData.link = link;
 
   if (!existing) {
     return this.prisma.procedureEtape.create({
@@ -73,6 +86,7 @@ async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) 
         statut,
         date_debut: statut === StatutProcedure.EN_COURS ? now : null!,
         date_fin: statut === StatutProcedure.TERMINEE ? now : null!,
+        link
       },
     });
   }
@@ -95,7 +109,7 @@ async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) 
 
 
   async getCurrentEtape(id_proc: number) {
-  // Step 1: Try to get the step in progress
+  // Try to get the step in progress
   const enCours = await this.prisma.procedureEtape.findFirst({
     where: {
       id_proc,
@@ -106,18 +120,19 @@ async setStepStatus(id_proc: number, id_etape: number, statut: StatutProcedure) 
 
   if (enCours) return enCours;
 
-  // Step 2: If none is in progress, return the most recently saved one
+  // If none in progress, get the most recent
   const lastSaved = await this.prisma.procedureEtape.findFirst({
     where: {
       id_proc,
     },
     orderBy: {
-      date_debut: 'asc', // or use id_etape: 'desc' if needed
+      date_debut: 'desc', // latest first
     },
     include: { etape: true },
   });
 
   return lastSaved;
 }
+
 
 }

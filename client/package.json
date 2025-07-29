@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start"
   },
   "browser": {
     "fs": false,
@@ -26,6 +25,7 @@
     "cookie-parser": "^1.4.7",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
+    "graceful-fs": "^4.2.11",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
@@ -61,18 +61,13 @@
     "@types/react-dom": "^19",
     "@types/react-modal": "^3.16.3",
     "@types/recharts": "^1.8.29",
-    "@typescript-eslint/eslint-plugin": "^8.35.0",
-    "@typescript-eslint/parser": "^8.35.0",
     "autoprefixer": "^10.4.21",
     "css-loader": "^7.1.2",
-    "eslint": "^9.29.0",
-    "eslint-config-next": "^15.3.4",
     "postcss": "^8.5.6",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-loader": "^8.1.1",
     "postcss-preset-env": "^10.2.4",
     "style-loader": "^4.0.0",
-    "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
 }

@@ -21,6 +21,7 @@ import { useAuthStore } from "../../../src/store/useAuthStore";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
+import { useStepGuard } from '@/hooks/StepGuardContext';
 
 type Document = {
   id_doc: number;
@@ -66,6 +67,9 @@ export default function Step5_Documents() {
   const { currentView, navigateTo } = useViewNavigator();
   const currentStep = 1;
   const [statutProc, setStatutProc] = useState<string | null>(null);
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  const [stepsReady, setStepsReady] = useState(false);
+  
 
 useEffect(() => {
   if (!idProc || !statutProc  || window.self !== window.top) return;
@@ -74,7 +78,11 @@ useEffect(() => {
 
   const activateStep = async () => {
     try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/2`);
+      const currentUrl = window.location.pathname + window.location.search;
+      console.log('rrrrrrrrrrrrrrr',currentUrl)
+      await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/2` , {
+         link: currentUrl
+      });
     } catch (err) {
       console.error("Échec de l'activation de l'étape");
     }
@@ -116,7 +124,7 @@ useEffect(() => {
   useEffect(() => {
     if (!idProc) return;
 
-    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
+    axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
   .then(res => {
     setIdDemande(res.data.id_demande.toString());
     setCodeDemande(res.data.code_demande);
@@ -136,7 +144,7 @@ useEffect(() => {
   const fetchDocuments = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3001/api/procedure/${idDemande}/documents`);
+      const res = await axios.get(`${apiURL}/api/procedure/${idDemande}/documents`);
 
       setDocuments(res.data.documents);
 
@@ -181,7 +189,7 @@ useEffect(() => {
 
     try {
       await axios.post(
-        `http://localhost:3001/api/demande/${idDemande}/dossier-fournis`,
+        `${apiURL}/api/demande/${idDemande}/dossier-fournis`,
         payload
       );
 
@@ -200,7 +208,7 @@ useEffect(() => {
   const approveDemande = async () => {
     try {
       await axios.put(
-        `http://localhost:3001/api/demande/${idDemande}/status`,
+        `${apiURL}/api/demande/${idDemande}/status`,
         { statut_demande: 'ACCEPTEE' }
       );
       setSuccess("Demande approuvée avec succès");
@@ -218,7 +226,7 @@ useEffect(() => {
 
     try {
       await axios.put(
-        `http://localhost:3001/api/demande/${idDemande}/status`,
+        `${apiURL}/api/demande/${idDemande}/status`,
         {
           statut_demande: 'REJETEE',
           motif_rejet: rejectionReason
@@ -237,7 +245,7 @@ useEffect(() => {
 
     try {
       const res = await axios.post(
-        `http://localhost:3001/api/demande/${idDemande}/document/${id}/upload`,
+        `${apiURL}/api/demande/${idDemande}/document/${id}/upload`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -272,7 +280,6 @@ useEffect(() => {
 
     setIsLoading(true);
     setError(null);
-
     try {
       const dossierSubmitted = await submitDossier();
       if (!dossierSubmitted) return;
@@ -307,7 +314,9 @@ useEffect(() => {
   setEtapeMessage(null);
 
   try {
-    await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/2`);
+     
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/2`);
+
     setEtapeMessage("Étape 2 enregistrée avec succès !");
   } catch (err) {
     console.error(err);
@@ -316,6 +325,7 @@ useEffect(() => {
     setSavingEtape(false);
   }
 };
+
 
 
   return (

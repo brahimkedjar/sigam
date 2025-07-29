@@ -28,8 +28,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: Request, payload: any) {
-    console.log('JWT Validation - Cookies:', req.cookies);
-    console.log('JWT Validation - Headers:', req.headers);
     return { 
       id: payload.sub,
       email: payload.email,

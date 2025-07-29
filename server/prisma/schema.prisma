@@ -129,7 +129,7 @@ model DossierDocument {
 
 model StatutPermis {
     id                Int       @id @default(autoincrement())
-    lib_statut        String //Actif - suspendu - annulé - rennoncé - expiré
+    lib_statut        String //Actif - suspendu - annulé - rennoncé - expiré - renouvellé
     description       String
     Permis Permis[]
 }
@@ -229,7 +229,7 @@ model ProcedureEtape {
   statut     StatutProcedure    // "en cours", "terminée", "en attente", etc.
   date_debut DateTime
   date_fin   DateTime?
-
+  link       String?
   procedure Procedure @relation(fields: [id_proc], references: [id_proc])
   etape     EtapeProc @relation(fields: [id_etape], references: [id_etape])
 
@@ -237,25 +237,30 @@ model ProcedureEtape {
   @@map("procedure_etape")
 }
 model Procedure {
-  id_proc           Int         @id @default(autoincrement())
-  id_typeproc       Int
-  num_proc          String      @unique
-  date_debut_proc   DateTime
-  date_fin_proc     DateTime?
-  statut_proc       StatutProcedure
-  resultat          String?
-  observations      String?
+  id_proc         Int         @id @default(autoincrement())
+  id_typeproc     Int
+  num_proc        String      @unique
+  date_debut_proc DateTime
+  date_fin_proc   DateTime?
+  statut_proc     StatutProcedure
+  resultat        String?
+  observations    String?
 
-  typeProcedure TypeProcedure @relation(fields: [id_typeproc], references: [id])
-  permis            Permis[]      @relation("PermisProcedure")
-  demandes      Demande[]
-  @@map("procedure")
+  typeProcedure   TypeProcedure @relation(fields: [id_typeproc], references: [id])
+  permis          Permis[]      @relation("PermisProcedure")
+  demandes        Demande[]
+  coordonnees     ProcedureCoord[]
+
   SubstanceAssocieeDemande SubstanceAssocieeDemande[]
   InteractionWali InteractionWali[]
-  CD ComiteDirection[]
+  id_seance      Int?
+  comites         ComiteDirection[]
   ProcedureEtape ProcedureEtape[]
-  renouvellement    ProcedureRenouvellement?
+  renouvellement  ProcedureRenouvellement?
+
+  @@map("procedure")
 }
+
 
 model Demande {
   id_demande                  Int      @id @default(autoincrement())
@@ -300,7 +305,6 @@ model Demande {
   dossiersFournis DossierFournis[]
 
   @@map("demande")
-  Coordonnee Coordonnee[]
   CahierCharge CahierCharge[]
 }
 
@@ -475,32 +479,54 @@ model RedevanceBareme {
   @@map("redevance_bareme")
 }
 
+model SeanceCDPrevue {
+  id_seance       Int               @id @default(autoincrement())
+  num_seance      String
+  date_seance     DateTime
+  exercice        Int
+  remarques       String?
+  comites         ComiteDirection[]
+  membres         MembresComite[]   @relation("SeanceMembres")
+}
+
 model ComiteDirection {
-  id_comite          Int              @id @default(autoincrement())
+  id_comite          Int             @id @default(autoincrement())
+  id_seance          Int
   id_procedure       Int
+  seance             SeanceCDPrevue  @relation(fields: [id_seance], references: [id_seance])
+  procedure          Procedure       @relation(fields: [id_procedure], references: [id_proc])
   date_comite        DateTime
   numero_decision    String
   objet_deliberation String
-  decision_comite    EnumDecisionComite
   resume_reunion     String
-  motif              String?
-  fiche_technique    String?  // lien ou fichier
+  fiche_technique    String?
   carte_projettee    String?
   rapport_police     String?
   instructeur        String?
-  procedure          Procedure        @relation(fields: [id_procedure], references: [id_proc])
-  membres            MembresComite[]  @relation("ComiteMembres") // 🔥 Supprimer `references`
+  decisionCDs        DecisionCD[]
+  
+  @@unique([id_seance, id_procedure])
+}
+
+model DecisionCD {
+  id_decision     Int              @id @default(autoincrement())
+  id_comite       Int
+  comite          ComiteDirection  @relation(fields: [id_comite], references: [id_comite])
+  
+  decision_cd     EnumDecisionComite
+  duree_decision  Int?
+  commentaires    String?
 }
 
 model MembresComite {
-  id_membre         Int               @id @default(autoincrement())
-  nom_membre        String
-  prenom_membre     String
-  fonction_membre   String
-  email_membre      String
-  comites           ComiteDirection[] @relation("ComiteMembres") // 🔥 toujours sans references
-}
+  id_membre        Int               @id @default(autoincrement())
+  nom_membre       String
+  prenom_membre    String
+  fonction_membre  String
+  email_membre     String
 
+  seances       SeanceCDPrevue[]  @relation("SeanceMembres")
+}
 
 enum EnumDecisionComite {
   favorable
@@ -518,6 +544,24 @@ model Ingenieur {
   email        String
 }
 
+enum StatutCoord {
+  DEMANDE_INITIALE
+  NOUVEAU
+  ANCIENNE
+}
+
+model ProcedureCoord {
+  id_procedureCoord Int            @id @default(autoincrement())
+  id_proc           Int
+  id_coordonnees    Int
+  statut_coord      StatutCoord
+
+  procedure         Procedure      @relation(fields: [id_proc], references: [id_proc])
+  coordonnee        Coordonnee     @relation(fields: [id_coordonnees], references: [id_coordonnees])
+
+  @@unique([id_proc, id_coordonnees]) // optional: avoid duplicates
+}
+
 
 model ZoneInterdite {
   id_zone         Int          @id @default(autoincrement())
@@ -530,17 +574,17 @@ model ZoneInterdite {
   coordonnees     Coordonnee[]
 }
 model Coordonnee {
-  id_coordonnees     Int             @id @default(autoincrement())
-  id_demande         Int
-  id_zone_interdite  Int?            // <- le ? rend le champ optionnel
-  point              String
-  x                  Float
-  y                  Float
-  z                  Float
+  id_coordonnees    Int             @id @default(autoincrement())
+  id_zone_interdite Int?
+  point             String
+  x                 Float
+  y                 Float
+  z                 Float
 
-  demande            Demande         @relation(fields: [id_demande], references: [id_demande])
-  zoneInterdite      ZoneInterdite?  @relation(fields: [id_zone_interdite], references: [id_zone])
+  zoneInterdite     ZoneInterdite?  @relation(fields: [id_zone_interdite], references: [id_zone])
+  procedureLinks    ProcedureCoord[] // many-to-many link
 }
+
 
 
 ///////////////////////////////////////////////

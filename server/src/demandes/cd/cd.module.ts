@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ComiteDirectionController } from './cd.controller';
-import { ComiteDirectionService } from './cd.service';
+import { CdController } from './cd.controller';
+import { CdService } from './cd.service';
 
 @Module({
-  controllers: [ComiteDirectionController],
-  providers: [ComiteDirectionService]
+  controllers: [CdController],
+  providers: [CdService]
 })
 export class ComiteDirectionModule {}
 

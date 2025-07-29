@@ -41,6 +41,7 @@
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "passport-jwt": "^4.0.1",
+    "pdf-lib": "^1.17.1",
     "pdfkit": "^0.17.1",
     "pdfmake": "^0.2.20",
     "react-icons": "^5.5.0",

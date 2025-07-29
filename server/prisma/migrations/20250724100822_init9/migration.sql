@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "StatutCoord" ADD VALUE 'DEMANDE_INITIALE';

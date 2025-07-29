@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, Get, Param, Post } from '@nestjs
 import { ProcedureRenouvellementService } from './procedure_renouvellemnt.service';
 import { CreateRenewalDto } from './create-renouvellement.dto';
 import { PaymentService } from 'src/demandes/paiement/payment.service';
+import { StatutProcedure } from '@prisma/client';
 @Controller('api/procedures')
 export class ProcedureRenouvellementController {
   constructor(private readonly proceduresService: ProcedureRenouvellementService, private readonly paymentService: PaymentService) {}
@@ -14,7 +15,7 @@ export class ProcedureRenouvellementController {
 
  @Post('renouvellement/start')
 async startRenewal(@Body() dto: CreateRenewalDto) {
-  return this.proceduresService.startRenewalWithOriginalData(dto.permisId, dto.date_demande);
+  return this.proceduresService.startRenewalWithOriginalData(dto.permisId, dto.date_demande,StatutProcedure.EN_COURS);
 }
 
 @Post('renouvellement/check-payments')

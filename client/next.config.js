@@ -1,9 +1,10 @@
-/** @type {import('next').NextConfig} */
+// next.config.js
 const nextConfig = {
-  turbopack: {
-    rules: {
-      '*.css': ['css'], // new format for handling CSS
-    },
+  
+  // Remove the turbopack section
+  webpack: (config, { isServer }) => {
+    
+    return config;
   },
 };
 

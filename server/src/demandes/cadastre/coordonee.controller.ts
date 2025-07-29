@@ -11,60 +11,66 @@ export class CoordonneesController {
     return await this.coordonneesService.getExistingPerimeters(); // ✅ Utilisation correcte du service
   }
 
-  @Post()
-  async createCoordonnees(
-    @Body() body: {
-      id_demande: number;
-      id_zone_interdite: number;
-      points: {
-        x: string;
-        y: string;
-        z: string;
-      }[];
-    },
-  ) {
-    return this.coordonneesService.createCoordonnees(
-      body.id_demande,
-      body.id_zone_interdite,
-      body.points,
-    );
+ @Post()
+async createCoordonnees(
+  @Body() body: {
+    id_proc: number;
+    id_zone_interdite: number;
+    points: {
+      x: string;
+      y: string;
+      z: string;
+    }[];
+    statut_coord?: 'NOUVEAU' | 'ANCIENNE';
   }
+) {
+  return this.coordonneesService.createCoordonnees(
+    body.id_proc,
+    body.id_zone_interdite,
+    body.points,
+    body.statut_coord
+  );
+}
 
-  @Get('/demande/:id')
-async getCoordonneesByDemande(@Param('id') id_demande: string) {
+  @Get('/procedure/:id')
+async getCoordonneesByProcedure(@Param('id') id_proc: string) {
   try {
-    const coords = await this.coordonneesService.getCoordonneesByDemande(Number(id_demande));
+    const coords = await this.coordonneesService.getCoordonneesByProcedure(Number(id_proc));
     return coords;
   } catch (error) {
     throw new HttpException('Failed to fetch coordinates', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
 
-@Delete('/demande/:id')
-async deleteCoordonneesByDemande(@Param('id') id_demande: string) {
+@Delete('/procedure/:id')
+async deleteCoordonneesByProcedure(@Param('id') id_proc: string) {
   try {
-    return await this.coordonneesService.deleteCoordonneesByDemande(Number(id_demande));
+    return await this.coordonneesService.deleteCoordonneesByProcedure(Number(id_proc));
   } catch (error) {
     throw new HttpException('Failed to delete coordinates', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
 
+
 @Post('/update')
 async updateCoordonnees(
   @Body() body: {
-    id_demande: number;
+    id_proc: number;
     id_zone_interdite: number;
     points: { x: string; y: string; z: string }[];
-    superficie?: number; // ✅ Add this line
+    statut_coord?: 'NOUVEAU' | 'ANCIENNE';
+    superficie?: number;
   },
 ) {
   return this.coordonneesService.updateCoordonnees(
-    body.id_demande,
+    body.id_proc,
     body.id_zone_interdite,
     body.points,
-    body.superficie // ✅ Pass it to the service
+    body.statut_coord,
+    body.superficie
   );
 }
+
 
 
 

@@ -14,7 +14,6 @@ import {
   FiSave,
   FiDownload,
   FiUpload,
-  FiCheck,
   FiChevronRight
 } from 'react-icons/fi';
 import * as turf from '@turf/turf';
@@ -26,7 +25,6 @@ import Sidebar from '../../sidebar/Sidebar';
 import { useAuthStore } from '../../../src/store/useAuthStore';
 import { useSearchParams } from 'next/navigation';
 import { BsSave } from 'react-icons/bs';
-import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
@@ -74,11 +72,12 @@ export default function CadastrePage() {
   const { auth, isLoaded, hasPermission } = useAuthStore();
   const isCadastre = auth.role === 'cadastre';
   const [isPolygonValid, setIsPolygonValid] = useState(true);
-  const hasUniqueCoords = new Set(points.map(p => `${p.x},${p.y}`)).size >= 4;
+  const hasUniqueCoords = new Set(points.map(p => `${p.x},${p.y}`)).size === points.length;
   const [demandeSummary, setDemandeSummary] = useState<any>(null);
   const { currentView, navigateTo } = useViewNavigator();
   const currentStep = 5;
   const [isLoading, setIsLoading] = useState(false);
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const [permitData, setPermitData] = useState<PermitData>({
     code: '',
     type: '',
@@ -88,14 +87,15 @@ export default function CadastrePage() {
     commune: ''
   });
   const mapRef = useRef<any>(null);
-    const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
-  
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+
+
     useActivateEtape({ idProc, etapeNum: 6, statutProc });
   /*useEffect(() => {
     if (!idProc || from === 'suivi') return;
     const activateStep = async () => {
       try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/6`);
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/6`);
       } catch (err) {
         console.error("Échec de l'activation de l'étape");
       }
@@ -111,7 +111,7 @@ export default function CadastrePage() {
 
     const fetchSummary = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/demande/${idDemande}/summary`);
+        const res = await axios.get(`${apiURL}/api/demande/${idDemande}/summary`);
         setDemandeSummary(res.data);
       } catch (error) {
         console.error("❌ Failed to fetch summary", error);
@@ -149,12 +149,13 @@ export default function CadastrePage() {
     return newPoint;
   }, []);
 
-  const [existingPolygons, setExistingPolygons] = useState<{ id_demande: number; code_demande: string; coordinates: [number, number][] }[]>([]);
+  const [existingPolygons, setExistingPolygons] = useState<{idProc:number; num_proc:string ;id_demande: number; code_demande: string; coordinates: [number, number][] }[]>([]);
   useEffect(() => {
     const fetchExisting = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/coordinates/existing');
+        const res = await axios.get(`${apiURL}/coordinates/existing`);
         setExistingPolygons(res.data);
+        console.log("existingPolygons passed to map:", existingPolygons);
       } catch (err) {
         console.error('❌ Failed to fetch existing polygons', err);
       }
@@ -163,54 +164,57 @@ export default function CadastrePage() {
   }, []);
 
   useEffect(() => {
-    if (!idDemande) return;
+  if (!idProc) return;
 
-    const fetchCoordinates = async () => {
-      try {
-        const res = await axios.get(`http://localhost:3001/coordinates/demande/${idDemande}`);
-        const points = res.data;
-
-        setPoints(
-          points.map((c: any) => ({
-            id: generateId(),
-            x: c.x.toString(),
-            y: c.y.toString(),
-            z: c.z.toString(),
-          }))
-        );
-      } catch (err) {
-        console.error('❌ Failed to load coordinates:', err);
-      }
-    };
-
-    fetchCoordinates();
-  }, [idDemande]);
-
-  const saveCoordinatesToBackend = async () => {
-    if (!points || points.length < 3) {
-      setError("Le polygone doit contenir au moins 3 points.");
-      setTimeout(() => setError(null), 4000);
-      return;
-    }
-
-    const url = 'http://localhost:3001/coordinates/update';
-
+  const fetchCoordinates = async () => {
     try {
-      await axios.post(url, {
-        id_demande: idDemande,
-        id_zone_interdite: null,
-        points,
-        superficie,
-      });
+      const res = await axios.get(`${apiURL}/coordinates/procedure/${idProc}`);
+      const points = res.data;
 
-      setSuccess("✅ Coordonnées sauvegardées avec succès !");
-      setTimeout(() => setSuccess(null), 4000);
+      setPoints(
+        points.map((c: any) => ({
+  id: generateId(),
+  x: c.coordonnee?.x?.toString() ?? '0',
+  y: c.coordonnee?.y?.toString() ?? '0',
+  z: c.coordonnee?.z?.toString() ?? '',
+}))
+
+      );
     } catch (err) {
-      console.error("❌ Erreur lors de la sauvegarde des coordonnées:", err);
-      setError("❌ Échec de la sauvegarde des coordonnées.");
-      setTimeout(() => setError(null), 4000);
+      console.error('❌ Failed to load coordinates:', err);
     }
   };
+
+  fetchCoordinates();
+}, [idProc]);
+
+
+  const saveCoordinatesToBackend = async () => {
+  if (!points || points.length < 3) {
+    setError("Le polygone doit contenir au moins 3 points.");
+    setTimeout(() => setError(null), 4000);
+    return;
+  }
+
+  const url = `${apiURL}/coordinates/update`;
+
+  try {
+    await axios.post(url, {
+      id_proc: idProc,
+      id_zone_interdite: null,
+      points,
+      superficie,
+    });
+
+    setSuccess("✅ Coordonnées sauvegardées avec succès !");
+    setTimeout(() => setSuccess(null), 4000);
+  } catch (err) {
+    console.error("❌ Erreur lors de la sauvegarde des coordonnées:", err);
+    setError("❌ Échec de la sauvegarde des coordonnées.");
+    setTimeout(() => setError(null), 4000);
+  }
+};
+
 
 
 
@@ -221,7 +225,7 @@ export default function CadastrePage() {
 
     const fetchDemande = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/procedures/${id_proc}/demande`);
+        const res = await axios.get(`${apiURL}/api/procedures/${id_proc}/demande`);
         setIdDemande(res.data.id_demande);
         setStatutProc(res.data.procedure.statut_proc);
         console.log('🎯 Loaded id_demande:', res.data.id_demande);
@@ -241,7 +245,7 @@ export default function CadastrePage() {
 
     setSavingEtape(true);
     setEtapeMessage(null); try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/6`);
+      await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/6`);
       setSuccess("Étape 6 enregistrée avec succès !");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -267,88 +271,201 @@ export default function CadastrePage() {
 
   // na7asbo lmisa7a ta3 lpolygone avec Turf.js
   const calculateArea = useCallback(() => {
-    const validPoints = points.filter(p =>
-      p.x && p.y && !isNaN(parseFloat(p.x)) && !isNaN(parseFloat(p.y))
+  // Filter out invalid points
+  const validPoints = points.filter(p =>
+    p.x && p.y && !isNaN(parseFloat(p.x)) && !isNaN(parseFloat(p.y))
+  );
+
+  // Minimum 3 points required for a polygon
+  if (validPoints.length < 3) {
+    setSuperficie(0);
+    setIsPolygonValid(false);
+    return 0;
+  }
+
+  try {
+    // Convert to coordinate array
+    let coordinates = validPoints.map(p => [parseFloat(p.x), parseFloat(p.y)]);
+    
+    // Remove consecutive duplicate points
+    coordinates = coordinates.filter((coord, index) => 
+      index === 0 || 
+      !(coord[0] === coordinates[index-1][0] && coord[1] === coordinates[index-1][1])
     );
 
-    if (validPoints.length < 3) {
+    // Check if we still have enough points after cleaning
+    if (coordinates.length < 3) {
+      setIsPolygonValid(false);
       setSuperficie(0);
       return 0;
     }
 
-    try {
-      const coordinates = validPoints.map(p => [parseFloat(p.x), parseFloat(p.y)]);
-      coordinates.push([...coordinates[0]]);
-
-      const polygon = turf.polygon([coordinates]);
-
-      // hna nvalidiw la geomitrie
-      if (!turf.booleanValid(polygon)) {
-        console.warn('⚠️ Polygon is not geometrically valid');
-        setIsPolygonValid(false);
-        setSuperficie(0);
-        return 0;
-      }
-      setIsPolygonValid(true);
-
-
-      const area = turf.area(polygon);
-      const areaHectares = area / 10000;
-
-      setSuperficie(parseFloat(areaHectares.toFixed(2)));
-      return areaHectares;
-    } catch (err) {
-      console.error('Area calculation error:', err);
-      setSuperficie(0);
-      return 0;
-    }
-  }, [points]);
-
-
-
-  // Check for overlaps with other permits (mock implementation)
-  const checkForOverlaps = useCallback(() => {
-    const validPoints = points.filter(
-      p =>
-        p.x &&
-        p.y &&
-        !isNaN(parseFloat(p.x)) &&
-        !isNaN(parseFloat(p.y))
-    );
-
-    if (validPoints.length < 3) return;
-
-    const coordinates = validPoints.map(p => [
-      parseFloat(p.x),
-      parseFloat(p.y)
-    ]);
-
-    // Ensure first and last are the same
+    // Ensure polygon is closed (first and last points equal)
     const first = coordinates[0];
     const last = coordinates[coordinates.length - 1];
     if (first[0] !== last[0] || first[1] !== last[1]) {
       coordinates.push([...first]);
     }
 
-    const newPoly = turf.polygon([coordinates]);
-    const overlappingSites: string[] = [];
+    // Create the polygon
+    const polygon = turf.polygon([coordinates]);
 
-    for (const { id_demande, code_demande, coordinates: existingCoords } of existingPolygons) {
-      if (id_demande === idDemande) continue;
-
-      const existingPoly = turf.polygon([existingCoords]);
-      const overlap =
-        turf.booleanOverlap(newPoly, existingPoly) ||
-        turf.booleanIntersects(newPoly, existingPoly);
-
-      if (overlap) {
-        overlappingSites.push(code_demande);
-      }
+    // Basic validation
+    if (!turf.booleanValid(polygon)) {
+      console.warn('Invalid polygon geometry');
+      setIsPolygonValid(false);
+      setSuperficie(0);
+      return 0;
     }
 
-    setOverlapDetected(overlappingSites.length > 0);
-    setOverlapPermits(overlappingSites);
-  }, [points, existingPolygons]);
+    // Advanced validation - check for self-intersections
+    const isSimple = isPolygonSimple(coordinates);
+    if (!isSimple) {
+      console.warn('Polygon has self-intersections');
+      setIsPolygonValid(false);
+      setSuperficie(0);
+      return 0;
+    }
+
+    // Calculate area if all validations pass
+    setIsPolygonValid(true);
+    const area = turf.area(polygon);
+    const areaHectares = area / 10000;
+    setSuperficie(parseFloat(areaHectares.toFixed(2)));
+    return areaHectares;
+  } catch (err) {
+    console.error('Area calculation error:', err);
+    setIsPolygonValid(false);
+    setSuperficie(0);
+    return 0;
+  }
+}, [points]);
+
+// Helper function to detect self-intersections
+function isPolygonSimple(coordinates: number[][]) {
+  // Implementation of the Bentley-Ottmann algorithm for detecting line segment intersections
+  const segments = [];
+  
+  // Create line segments from coordinates
+  for (let i = 0; i < coordinates.length - 1; i++) {
+    segments.push({
+      p1: coordinates[i],
+      p2: coordinates[i+1]
+    });
+  }
+
+  // Check all pairs of non-adjacent segments for intersections
+  for (let i = 0; i < segments.length; i++) {
+    for (let j = i + 2; j < segments.length; j++) {
+      // Skip checking the last segment with the first segment
+      if (i === 0 && j === segments.length - 1) continue;
+      
+      if (doSegmentsIntersect(segments[i], segments[j])) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+}
+
+// Helper function to check if two line segments intersect
+function doSegmentsIntersect(s1: {p1: number[], p2: number[]}, s2: {p1: number[], p2: number[]}) {
+  const [x1, y1] = s1.p1;
+  const [x2, y2] = s1.p2;
+  const [x3, y3] = s2.p1;
+  const [x4, y4] = s2.p2;
+
+  // Calculate orientation values
+  const orient1 = (y2 - y1) * (x3 - x2) - (x2 - x1) * (y3 - y2);
+  const orient2 = (y2 - y1) * (x4 - x2) - (x2 - x1) * (y4 - y2);
+  const orient3 = (y4 - y3) * (x1 - x4) - (x4 - x3) * (y1 - y4);
+  const orient4 = (y4 - y3) * (x2 - x4) - (x4 - x3) * (y2 - y4);
+
+  // General case of line segments intersecting
+  if ((orient1 * orient2 < 0) && (orient3 * orient4 < 0)) {
+    return true;
+  }
+
+  // Special cases (colinear points, etc.)
+  if (orient1 === 0 && isPointOnSegment(s1, s2.p1)) return true;
+  if (orient2 === 0 && isPointOnSegment(s1, s2.p2)) return true;
+  if (orient3 === 0 && isPointOnSegment(s2, s1.p1)) return true;
+  if (orient4 === 0 && isPointOnSegment(s2, s1.p2)) return true;
+
+  return false;
+}
+
+// Helper function to check if a point lies on a segment
+function isPointOnSegment(seg: {p1: number[], p2: number[]}, point: number[]) {
+  const [x, y] = point;
+  const [x1, y1] = seg.p1;
+  const [x2, y2] = seg.p2;
+  
+  // Check if point is within the bounding box of the segment
+  if (x <= Math.max(x1, x2) && x >= Math.min(x1, x2) &&
+      y <= Math.max(y1, y2) && y >= Math.min(y1, y2)) {
+    // Check if point is colinear with segment
+    const area = (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1);
+    return Math.abs(area) < 1e-9; // Account for floating point precision
+  }
+  return false;
+}
+
+
+  // Check for overlaps with other permits (mock implementation)
+  const checkForOverlaps = useCallback(() => {
+  const validPoints = points.filter(
+    p =>
+      p.x &&
+      p.y &&
+      !isNaN(parseFloat(p.x)) &&
+      !isNaN(parseFloat(p.y))
+  );
+
+  if (validPoints.length < 3) return;
+
+  const coordinates = validPoints.map(p => [
+    parseFloat(p.x),
+    parseFloat(p.y)
+  ]);
+
+  // Ensure first and last are the same
+  const first = coordinates[0];
+  const last = coordinates[coordinates.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) {
+    coordinates.push([...first]);
+  }
+
+  const newPoly = turf.polygon([coordinates]);
+  const overlappingSites: string[] = [];
+
+  for (const { idProc, num_proc, coordinates: existingCoords } of existingPolygons) {
+  if (idProc === idDemande) continue;
+
+  try {
+  const existingPoly = turf.polygon([existingCoords]);
+  const isSame = turf.booleanEqual(newPoly, existingPoly);
+  if (isSame) continue;
+
+  const overlap =
+    turf.booleanOverlap(newPoly, existingPoly) ||
+    turf.booleanIntersects(newPoly, existingPoly);
+
+  if (overlap) {
+    overlappingSites.push(num_proc);
+  }
+} catch (e) {
+  console.warn('Invalid polygon skipped:', existingCoords, e);
+}
+
+}
+
+
+  setOverlapDetected(overlappingSites.length > 0);
+  setOverlapPermits(overlappingSites);
+}, [points, existingPolygons, idDemande]);
+
 
 
 
@@ -482,9 +599,13 @@ export default function CadastrePage() {
                         })));
                       }
                     }}
+                    
                     existingPolygons={Object.fromEntries(
-                      existingPolygons.map(p => [p.code_demande, p.coordinates])
-                    )}
+                      
+  existingPolygons.map((p, index) => [p.num_proc || `unknown-${index}`, p.coordinates])
+)}
+
+
                   />
 
                   <div className={styles['map-footer']}>

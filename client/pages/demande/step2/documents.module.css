@@ -627,9 +627,12 @@
 }
 
 .etapeMessage {
-  margin-left: 2rem;
-  font-size: 0.875rem;
-  color: #2ecc71;
+    margin-top: 5px;
+    display: flex;
+    margin-left: 2rem;
+    font-size: 0.875rem;
+    color: #2ecc71;
+    justify-content: center;
 }
 
 .dossier-status-section {

@@ -1,5 +1,5 @@
 
-import { Controller, Param, Post, Get } from '@nestjs/common';
+import { Controller, Param, Post, Get, Body } from '@nestjs/common';
 import { ProcedureEtapeService } from './procedure-etape.service';
 import { StatutProcedure } from '@prisma/client';
 
@@ -17,15 +17,21 @@ setCurrent(
 
 // Set a step as "EN_COURS"
 @Post('start/:id_proc/:id_etape')
-startStep(@Param('id_proc') id_proc: string, @Param('id_etape') id_etape: string) {
-  return this.service.setStepStatus(+id_proc, +id_etape, StatutProcedure.EN_COURS);
+startStep(@Param('id_proc') id_proc: string, @Param('id_etape') id_etape: string ,   @Body('link') link?: string
+) {
+  return this.service.setStepStatus(+id_proc, +id_etape, StatutProcedure.EN_COURS,link);
 }
 
 // Mark a step as "TERMINEE"
+// controller
 @Post('finish/:id_proc/:id_etape')
-finishStep(@Param('id_proc') id_proc: string, @Param('id_etape') id_etape: string) {
+finishStep(
+  @Param('id_proc') id_proc: string,
+  @Param('id_etape') id_etape: string,
+) {
   return this.service.setStepStatus(+id_proc, +id_etape, StatutProcedure.TERMINEE);
 }
+
 
 
 

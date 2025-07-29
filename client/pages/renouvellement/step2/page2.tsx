@@ -21,6 +21,7 @@ import { useAuthStore } from "../../../src/store/useAuthStore";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
+import { useActivateEtape } from "@/hooks/useActivateEtape";
 
 type Document = {
   id_doc: number;
@@ -47,7 +48,8 @@ export default function Step5_Documents() {
   const router = useRouter();
   const originalId  = searchParams?.get("originalDemandeId");
   const originalprocid  = searchParams?.get("original_proc_id");
-  const id_proc  = searchParams?.get("id");
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [idDemande, setIdDemande] = useState<string | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentWithStatus[]>([]);
@@ -68,20 +70,38 @@ export default function Step5_Documents() {
   const { currentView, navigateTo } = useViewNavigator();
   const currentStep = 1;
   const [showOriginalDocs, setShowOriginalDocs] = useState(false);
-
+  const [statutProc, setStatutProc] = useState<string | null>(null);
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
 useEffect(() => {
+  if (!idProc  || window.self !== window.top) return;
   const activateStep = async () => {
-    if (!id_proc) return;
     try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${id_proc}/2`);
+      const currentUrl = window.location.pathname + window.location.search;
+      await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/2` , {
+         link: currentUrl
+      });
     } catch (err) {
       console.error("Échec de l'activation de l'étape");
     }
   };
 
   activateStep();
-}, [id_proc]);
+}, [idProc]);
+
+
+useEffect(() => {
+  const activateStep = async () => {
+    if (!idProc) return;
+    try {
+      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/2`);
+    } catch (err) {
+      console.error("Échec de l'activation de l'étape");
+    }
+  };
+
+  activateStep();
+}, [idProc]);
 
   const handleOpenCahierForm = (doc: DocumentWithStatus) => {
     setSelectedCahierDoc(doc);
@@ -102,7 +122,7 @@ useEffect(() => {
         </div>
         <div className={styles['modal-body']}>
           <iframe
-            src={`/demande/step11/page11?id=${id_proc}`}
+            src={`/demande/step11/page11?id=${idProc}`}
             className={styles['cahier-iframe']}
           />
         </div>
@@ -134,18 +154,19 @@ useEffect(() => {
 
 
   useEffect(() => {
-    if (!id_proc) return;
+    if (!idProc) return;
 
-    axios.get(`http://localhost:3001/api/procedures/${id_proc}/demande`)
+    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
       .then(res => {
         setIdDemande(res.data.id_demande.toString());
         setCodeDemande(res.data.code_demande);
+       /* setStatutProc(res.data.procedure.statut_proc);*/
       })
       .catch(err => {
         console.error("Erreur lors de la récupération de la demande", err);
         setError("Impossible de récupérer la demande");
       });
-  }, [id_proc]);
+  }, [idProc]);
 
   useEffect(() => {
     if (!idDemande) return;
@@ -295,7 +316,7 @@ useEffect(() => {
     try {
       const dossierSubmitted = await submitDossier();
       if (!dossierSubmitted) return;
-      router.push(`/renouvellement/step3/page3?id=${id_proc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
+      router.push(`/renouvellement/step3/page3?id=${idProc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
 
 
     } catch (err) {
@@ -307,29 +328,36 @@ useEffect(() => {
   };
 
   const handleBack = () => {
-    if (!id_proc) return;
-    router.push(`/demande/step1/page1?id=${id_proc}`);
+    if (!idProc) return;
+    router.push(`/demande/step1/page1?id=${idProc}`);
   };
 
-  const handleSaveEtape = async () => {
-    if (!id_proc) {
-      setEtapeMessage("ID procedure introuvable !");
-      return;
-    }
 
-    setSavingEtape(true);
-    setEtapeMessage(null);
+   const handleSaveEtape = async () => {
+  if (!idProc) {
+    setEtapeMessage("ID procedure introuvable !");
+    return;
+  }
 
-    try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/finish/${id_proc}/2`);
-      setEtapeMessage("Étape 2 enregistrée avec succès !");
-    } catch (err) {
-      console.error(err);
-      setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
-    } finally {
-      setSavingEtape(false);
-    }
-  };
+  if (statutProc === 'TERMINEE') {
+    setEtapeMessage("Procédure déjà terminée.");
+    return;
+  }
+
+  setSavingEtape(true);
+  setEtapeMessage(null);
+
+  try {
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/2`);
+
+    setEtapeMessage("Étape 2 enregistrée avec succès !");
+  } catch (err) {
+    console.error(err);
+    setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
+  } finally {
+    setSavingEtape(false);
+  }
+};
 
   return (
     <div className={styles['app-container']}>
@@ -445,9 +473,7 @@ useEffect(() => {
               ) : (
                 <>
                   <div className={styles['documents-overview']}>
-                    <div className={styles['overview-card']}>
-                      <h3 className={styles['overview-title']}>Documents requis</h3>
-                       {originalprocid && (
+                    {originalprocid && (
   <button
     className={styles['btn']}
     onClick={() => setShowOriginalDocs(true)}
@@ -455,6 +481,9 @@ useEffect(() => {
     Afficher les documents de la demande originale
   </button>
 )}
+                    <div className={styles['overview-card']}>
+                      <h3 className={styles['overview-title']}>Documents requis</h3>
+                       
                       <div className={styles['overview-value']}>{total}</div>
                     </div>
                   </div>

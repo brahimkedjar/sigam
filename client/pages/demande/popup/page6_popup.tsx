@@ -16,6 +16,7 @@ import {
   FiHash
 } from "react-icons/fi";
 import styles from "./SummaryModal.module.css";
+import { useStepGuard } from "@/hooks/StepGuardContext";
 
 interface Document {
   nom_doc: string;

@@ -15,6 +15,7 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useStepGuard } from '@/hooks/StepGuardContext';
 
 type TypePermis = {
   id: number;
@@ -37,12 +38,12 @@ export default function DemandeStart() {
   const { currentView, navigateTo } = useViewNavigator('nouvelle-demande');
   const currentStep = 0;
   const [dateSoumission, setDateSoumission] = useState<Date | null>(new Date());
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Load permis types on component mount
   useEffect(() => {
     const loadPermisTypes = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/type-permis');
+        const response = await axios.get(`${apiURL}/type-permis`);
         setPermisOptions(response.data);
       } catch (error) {
         console.error('Failed to load permis types:', error);
@@ -53,7 +54,7 @@ export default function DemandeStart() {
 
   const handlePermisChange = async (permisId: number) => {
     try {
-      const response = await axios.get(`http://localhost:3001/type-permis/${permisId}`);
+      const response = await axios.get(`${apiURL}/type-permis/${permisId}`);
       setSelectedPermis(response.data);
     } catch (error) {
       console.error('Failed to load permis details:', error);
@@ -97,7 +98,7 @@ export default function DemandeStart() {
   try {
     cleanLocalStorageForNewDemande();
 
-    const res = await axios.post('http://localhost:3001/demandes', {
+    const res = await axios.post(`${apiURL}/demandes`, {
   id_typepermis: selectedPermis.id,
   objet_demande: 'Instruction initialisée',
   date_demande: dateSoumission?.toISOString(),         
@@ -119,7 +120,6 @@ export default function DemandeStart() {
       duree_renouv_max: selectedPermis.duree_renouv_max,
       superficie_max: selectedPermis.superficie_max
     }));
-
     router.push(`/demande/step2/page2?id=${res.data.procedure.id_proc}`);
   } catch (err) {
     alert("Erreur lors de la création de la demande.");

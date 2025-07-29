@@ -1,554 +1,980 @@
-/* Base Styles */
-.app-container {
+/* Main Layout */
+.appContainer {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f8fafc;
-  color: #343a40;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.5;
+  background-color: #f5f7fa;
 }
 
-.app-content {
+.appContent {
   display: flex;
   flex: 1;
 }
 
-.main-content {
+.mainContent {
   flex: 1;
   padding: 2rem;
-  background-color: #fff;
-  transition: all 0.3s ease;
+  overflow-y: auto;
+  background-color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
-
-/* Container */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-/* Progress Steps */
-.progress-container {
-  margin-bottom: 2.5rem;
-}
-
-.progress-steps {
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-  margin-bottom: 1rem;
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  z-index: 1;
-  flex: 1;
-}
-
-.step-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #e9ecef;
-  color: #6c757d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.step-icon {
-  font-size: 1.2rem;
-}
-
-.step.active .step-circle {
-  background-color: #4361ee;
-  color: white;
-  box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.2);
-}
-
-.step.completed .step-circle {
-  background-color: #2ecc71;
-  color: white;
-}
-
-.step-label {
-  font-size: 0.75rem;
-  text-align: center;
-  color: #6c757d;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100px;
-}
-
-.step.active .step-label {
-  color: #4361ee;
-  font-weight: 600;
-}
-
-.step.completed .step-label {
-  color: #2ecc71;
-}
-
-.step-connector {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  right: -50%;
-  height: 2px;
-  background-color: #e9ecef;
-  z-index: -1;
-}
-
-.step.completed + .step .step-connector {
-  background-color: #2ecc71;
-}
-
-.progress-bar {
-  height: 6px;
-  background-color: #e9ecef;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 1rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #4361ee;
-  transition: width 0.4s ease;
-}
-
-/* Content */
-.content-wrapper {
-  background-color: white;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
+/* Header */
 .header {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  color: #343a40;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.step-number {
-  background-color: #4361ee;
-  color: white;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.63rem;
-  font-weight: bold;
-}
-
-/* Messages */
-.error-message {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background-color: rgba(231, 76, 60, 0.1);
-  border-radius: 8px;
-  color: #e74c3c;
-  margin-bottom: 1.5rem;
-}
-
-.success-message {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background-color: rgba(46, 204, 113, 0.1);
-  border-radius: 8px;
-  color: #2ecc71;
-  margin-bottom: 1.5rem;
-}
-
-.error-icon,
-.success-icon {
-  font-size: 1.2rem;
-}
-
-/* Sections */
-.section {
-  margin-top: 10px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e9ecef;
-}
-
-.section-title {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  color: #4361ee;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-}
-
-.section-title:after {
-  content: "";
-  flex: 1;
-  margin-left: 1rem;
-  height: 1px;
-  background-color: #e9ecef;
-}
-
-.section-subtitle {
-  color: #6c757d;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
-}
-
-/* Form Elements */
-.input-group {
+  color: #1e293b;
   margin-bottom: 1.5rem;
 }
 
-.label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #343a40;
-}
-
-.label:after {
-  content: " *";
-  color: #e74c3c;
-  opacity: 0;
-}
-
-.label.required:after {
-  opacity: 1;
-}
-
-.input, .textarea {
-  margin-bottom: 15px;
-  width: 93%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.input:focus, .textarea:focus {
-  outline: none;
-  border-color: #4361ee;
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-}
-
-.textarea {
-  min-height: 120px;
-  resize: vertical;
-}
-
-/* Members List */
-.members-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.member-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-}
-
-.member-item:hover {
-  background-color: #f1f3f5;
-}
-
-.member-checkbox {
-  margin-right: 0.75rem;
-  margin-top: 0.25rem;
-  accent-color: #4361ee;
-}
-
-.member-info {
-  flex: 1;
-}
-
-.member-name {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.member-role {
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin-bottom: 0.25rem;
-}
-
-.member-email {
-  font-size: 0.8rem;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
-}
-
-.signature-type {
-  display: inline-block;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  background-color: rgba(67, 97, 238, 0.1);
-  color: #4361ee;
-}
-
-.signature-type.manuelle {
-  background-color: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-}
-
-.presence-count {
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin-top: 1.5rem;
-  text-align: right;
-}
-
-.presence-count .warning {
-  color: #e74c3c;
-  margin-left: 0.5rem;
-}
-
-/* Decision Buttons */
-.decision-buttons {
-  display: flex;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.decision-button {
-  flex: 1;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
+.stepNumber {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  background-color: #f8f9fa;
-  color: #6c757d;
-}
-
-.decision-button:hover {
-  background-color: #e9ecef;
-}
-
-.decision-button.favorable.active {
-  background-color: #2ecc71;
+  width: 2rem;
+  height: 2rem;
+  background-color: #3b82f6;
   color: white;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  font-size: 1rem;
 }
 
-.decision-button.defavorable.active {
-  background-color: #e74c3c;
-  color: white;
+/* Cards */
+.card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
 }
 
-.btn-icon {
-  font-size: 1.1rem;
-}
-
-/* Action Buttons */
-.action-buttons {
+.cardHeader {
   display: flex;
   justify-content: space-between;
-  margin-top: 2rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
-.btn {
-  display: inline-flex;
+.cardTitle {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cardTitle svg {
+  margin-right: 0.5rem;
+  color: #3b82f6;
+}
+
+/* Reject Section */
+.rejectSection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.rejectInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  transition: border-color 0.2s;
+}
+
+.rejectInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.rejectBtn {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  font-size: 1rem;
+  transition: background-color 0.2s;
 }
 
-.btnSave {
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: #4361ee;
-  color: #fff;
-  transition: all 0.3s ease;
-  border: none;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.75rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  display: inline-flex;
+.rejectBtn:hover {
+  background-color: #dc2626;
 }
 
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid #6c757d;
-  color: #6c757d;
+.rejectBtn svg {
+  margin-right: 0.5rem;
 }
 
-.btn-outline:hover {
-  background-color: #e9ecef;
-  color: #343a40;
-}
-
-.btn-primary {
-  background-color: #4361ee;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #3a56d4;
-}
-
-.btn-primary:disabled {
-  background-color: #e9ecef;
-  color: #6c757d;
+.rejectBtn:disabled {
+  background-color: #94a3b8;
   cursor: not-allowed;
 }
 
-.btn-loading {
+/* Tabs */
+.tabs {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
 }
 
-.spinner-small {
-  width: 16px;
-  height: 16px;
+.tabButton {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabButton svg {
+  margin-right: 0.5rem;
+}
+
+.tabButton:hover {
+  color: #3b82f6;
+}
+
+.tabButton.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.tabButton:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.tabContent {
+  margin-top: 1rem;
+}
+
+/* Seance List */
+.seanceList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.seanceItem {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.seanceItem:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+}
+
+.seanceItem.selected {
+  border-color: #3b82f6;
+  background-color: #f0f7ff;
+}
+
+.seanceInfo {
+  margin-bottom: 0.5rem;
+}
+
+.seanceInfo h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.seanceInfo p {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0;
+}
+
+.seanceRemarks {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+/* Members Grid */
+.membersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.memberCard {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background-color: #f8fafc;
+}
+
+.memberName {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.memberFunction {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-bottom: 0.25rem;
+}
+
+.memberEmail {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  margin-bottom: 0.5rem;
+}
+
+.signatureBadge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.signatureBadge.electronic {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.signatureBadge.manual {
+  background-color: #f0fdf4;
+  color: #166534;
+}
+
+/* Comite List */
+.comiteList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.comiteItem {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.comiteItem:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+}
+
+.comiteItem.selected {
+  border-color: #3b82f6;
+  background-color: #f0f7ff;
+}
+
+.comiteHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comiteHeader h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.comiteDate {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.comiteObject {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.comiteStats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.comiteStats span:first-child {
+  color: #166534;
+}
+
+.comiteStats span:last-child {
+  color: #b91c1c;
+}
+
+/* Comite Details */
+.comiteDetails {
+  margin-top: 1rem;
+}
+
+.detailRow {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.detailItem {
+  margin-bottom: 1rem;
+}
+
+.detailItem strong {
+  color: #1e293b;
+  margin-right: 0.5rem;
+}
+
+.subTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 1.5rem 0 1rem;
+}
+
+.documentsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.documentLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f1f5f9;
+  color: #3b82f6;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.documentLink:hover {
+  background-color: #e2e8f0;
+}
+
+/* Decisions Grid */
+.decisionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.decisionCard {
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.decisionCard.favorable {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.decisionCard.defavorable {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.decisionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.decisionHeader h4 {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.decisionHeader h4 svg {
+  margin-right: 0.5rem;
+}
+
+.favorable .decisionHeader h4 {
+  color: #166534;
+}
+
+.defavorable .decisionHeader h4 {
+  color: #b91c1c;
+}
+
+.durationBadge {
+  padding: 0.25rem 0.5rem;
+  background-color: white;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.favorable .durationBadge {
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.defavorable .durationBadge {
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.decisionComment {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-top: 0.5rem;
+}
+
+/* Form Styles */
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.formGroup label[for]::after {
+  content: ' *';
+  color: #ef4444;
+  display: none;
+}
+
+.formGroup label[for].required::after {
+  display: inline;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="number"],
+.formGroup input[type="date"],
+.formGroup input[type="email"],
+.formGroup input[type="password"],
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.formGroup textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.mt2 {
+  margin-top: 0.5rem;
+}
+
+/* Members Selection */
+.membersSelection {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.memberCheckbox {
+  display: flex;
+  align-items: center;
+}
+
+.memberCheckbox input {
+  margin-right: 0.5rem;
+}
+
+.memberCheckbox label {
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.selectedCount {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Decision Form */
+.decisionForm {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  background-color: #f8fafc;
+}
+
+.decisionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.decisionButton {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.decisionButton svg {
+  margin-right: 0.5rem;
+}
+
+.decisionButton:hover {
+  border-color: #3b82f6;
+}
+
+.decisionButton.active {
+  border-color: transparent;
+}
+
+.decisionButton.active.favorable {
+  background-color: #f0fdf4;
+  color: #166534;
+}
+
+.decisionButton.active.defavorable {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.removeDecision {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.removeDecision svg {
+  margin-right: 0.25rem;
+}
+
+.removeDecision:hover {
+  color: #ef4444;
+}
+
+.addDecision {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f1f5f9;
+  border: none;
+  border-radius: 0.375rem;
+  color: #3b82f6;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 1.5rem;
+}
+
+.addDecision svg {
+  margin-right: 0.5rem;
+}
+
+.addDecision:hover {
+  background-color: #e2e8f0;
+}
+
+/* Form Actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.cancelButton {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  border-color: #94a3b8;
+}
+
+.saveButton {
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 0.375rem;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover {
+  background-color: #2563eb;
+}
+
+.saveButton:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Buttons */
+.addButton {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 0.375rem;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.addButton svg {
+  margin-right: 0.5rem;
+}
+
+.addButton:hover {
+  background-color: #2563eb;
+}
+
+.addButton:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.actionButton {
+      margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionButton svg {
+  margin-right: 0.5rem;
+}
+
+.actionButton:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.actionButton:disabled {
+  color: #cbd5e1;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnIcon {
+  margin: 0 0.5rem;
+}
+
+.btnOutline {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.btnOutline:hover {
+  border-color: #94a3b8;
+}
+
+.btnPrimary {
+  background-color: #3b82f6;
+  border: none;
+  color: white;
+}
+
+.btnPrimary:hover {
+  background-color: #2563eb;
+}
+
+.btnPrimary:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btnSave {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-color: #10b981;
+  border: none;
+  border-radius: 0.375rem;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnSave:hover {
+  background-color: #059669;
+}
+
+.btnSave:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btnLoading {
+  display: flex;
+  align-items: center;
+}
+
+.spinnerSmall {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top-color: white;
   animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-  
-  .progress-steps {
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .step {
-    flex: 0 0 calc(33.333% - 1rem);
-  }
-
-  .step-connector {
-    display: none;
-  }
-  
-  .members-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .decision-buttons {
-    flex-direction: column;
-  }
-  
-  .action-buttons {
-    flex-direction: column-reverse;
-    gap: 1rem;
-  }
-
-  .btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .step {
-    flex: 0 0 calc(50% - 1rem);
-  }
-
-  .content-wrapper {
-    padding: 1.5rem;
-  }
+/* No Data */
+.noData {
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
 }
 
 /* Etape Save Section */
 .etapeSaveSection {
-  margin: 1rem 0 2rem;
-  text-align: center;
+  margin-top: 1rem;
 }
 
 .etapeMessage {
-  margin-left: 2rem;
+  padding: 1rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
-  color: #2ecc71;
 }
 
-.demande-actions {
+.etapeMessage.success {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.etapeMessage.error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .mainContent {
+    padding: 1.5rem;
+  }
+  
+  .contentWrapper {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 1rem;
+  }
+  
+  .contentWrapper {
+    padding: 1rem;
+  }
+  
+  .detailRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tabButton {
+    justify-content: center;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+  }
+  
+  .tabButton.active {
+    border-bottom: none;
+    border-left-color: #3b82f6;
+  }
+  
+  .seanceList,
+  .comiteList,
+  .membersGrid,
+  .decisionsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .membersSelection {
+    grid-template-columns: 1fr;
+  }
+  
+  .decisionButtons {
+    flex-direction: column;
+  }
+  
+  .decisionButton {
+    justify-content: center;
+  }
+}
+
+/* Seance List Styles */
+.seanceListContainer {
+  margin-bottom: 2rem;
+}
+
+.listControls {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
   gap: 1rem;
 }
 
-.reject-section {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.reject-input {
+.searchInput {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #d1d5db;
-  font-size: 1rem;
-  min-width: 200px;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-width: 400px;
 }
 
-.reject-btn {
-  background-color: #ef4444;
-  color: white;
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.paginationControls button {
   padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
-.reject-btn:hover {
-  background-color: #dc2626;
+.paginationControls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.noResults {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+/* Comité Stats Styles */
+.comiteStats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.comiteStats span {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+}
+
+.comiteStats span:first-child {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.comiteStats span:last-child {
+  background-color: #fee2e2;
+  color: #b91c1c;
 }

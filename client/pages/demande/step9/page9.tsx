@@ -5,11 +5,10 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Modal from 'react-modal';
-import { FiCheck, FiChevronLeft, FiChevronRight, FiDownload, FiFileText, FiSave } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiDownload, FiFileText, FiSave } from 'react-icons/fi';
 import styles from './permis.module.css';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
-import { useAuthStore } from '../../../src/store/useAuthStore';
 import { BsSave } from 'react-icons/bs';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
@@ -30,19 +29,19 @@ const Step10GeneratePermis = () => {
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [savingEtape, setSavingEtape] = useState(false);
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
   const currentStep = 8;
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
-        
-      useActivateEtape({ idProc, etapeNum: 8, statutProc });
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+ useActivateEtape({ idProc, etapeNum: 9, statutProc });
+
   /*useEffect(() => {
     if (!idProc ) return;
     const activateStep = async () => {
       try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/9`);
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/9`);
       } catch (err) {
         console.error("Échec de l'activation de l'étape");
       }
@@ -75,8 +74,8 @@ const Step10GeneratePermis = () => {
   setEtapeMessage(null);
 
   try {
-    await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/9`);
-    setEtapeMessage("Étape 8 enregistrée avec succès !");
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/9`);
+    setEtapeMessage("Étape 9 enregistrée avec succès !");
   } catch (err) {
     console.error(err);
     setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
@@ -89,7 +88,7 @@ const Step10GeneratePermis = () => {
 
   const handleSaveToDatabase = async () => {
     try {
-      const response = await axios.post(`http://localhost:3001/api/permis/generate/${idDemande}`);
+      const response = await axios.post(`${apiURL}/api/permis/generate/${idDemande}`);
       alert('✅ Permis enregistré avec succès !');
       console.log('Saved permis:', response.data);
     } catch (error) {
@@ -101,7 +100,7 @@ const Step10GeneratePermis = () => {
   useEffect(() => {
     if (!idProc) return;
 
-    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
+    axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
       .then(res => {
         setIdDemande(res.data.id_demande?.toString());
         setCodeDemande(res.data.code_demande!);
@@ -116,7 +115,7 @@ const Step10GeneratePermis = () => {
   useEffect(() => {
   if (!idDemande) return;
 
-  axios.get(`http://localhost:3001/api/demande/${idDemande}/summary`)
+  axios.get(`${apiURL}/api/demande/${idDemande}/summary`)
     .then((res) => {
       setData(res.data);
     })
@@ -132,7 +131,7 @@ const Step10GeneratePermis = () => {
   };
 
   const handleDownload = (lang: 'fr' | 'ar') => {
-    window.open(`http://localhost:3001/api/procedure/${idProc}/generate-pdf?lang=${lang}`, '_blank');
+    window.open(`${apiURL}/api/procedure/${idProc}/generate-pdf?lang=${lang}`, '_blank');
   };
 
   if (!data) return <div className={styles.loading}>Chargement...</div>;

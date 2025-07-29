@@ -54,21 +54,22 @@ const PaymentPage = () => {
   const currentStep = 9; // 9 for the 10th step (zero-based index)
   const totalSteps = STEP_LABELS.length;
   const progress = ((currentStep + 1) / totalSteps) * 100;
-  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);     
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;     
   const statusStyles: Record<string, string> = {
   'Payé': styles.paidStatus,
   'En retard': styles.overdueStatus,
   'Partiellement payé': styles.partialStatus,
   'A payer': styles.pendingStatus,
 };
-  useActivateEtape({ idProc, etapeNum: 8, statutProc });
+  useActivateEtape({ idProc, etapeNum: 10, statutProc });
 
 const handleTerminerProcedure = async () => {
   if (!idProc) return;
   
   try {
-    const res = await axios.put(`http://localhost:3001/api/procedures/terminer/${idProc}`);
-    await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/10`);
+    const res = await axios.put(`${apiURL}/api/procedures/terminer/${idProc}`);
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/10`);
     alert('Procédure terminée avec succès');
     router.push(`/demande/Timeline/Timeline?id=${idProc}`); 
     /*router.push(`/demande/step10/page10?id=${idProc}`);*/
@@ -82,7 +83,7 @@ const handleTerminerProcedure = async () => {
     if (!idProc) return;
     const activateStep = async () => {
       try {
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/10`);
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/10`);
       } catch (err) {
         console.error("Échec de l'activation de l'étape");
       }
@@ -107,7 +108,7 @@ const handleTerminerProcedure = async () => {
 
       try {
         setLoading(true);
-        const procedureResponse = await axios.get(`http://localhost:3001/payments/procedures/${idProc}`);
+        const procedureResponse = await axios.get(`${apiURL}/payments/procedures/${idProc}`);
 
         if (!procedureResponse.data.permis) throw new Error('Aucun permis associé');
 
@@ -115,13 +116,13 @@ const handleTerminerProcedure = async () => {
         setPermisId(currentPermisId);
 
         const obligationsResponse = await axios.get(
-          `http://localhost:3001/payments/obligations/${currentPermisId}`
+          `${apiURL}/payments/obligations/${currentPermisId}`
         );
 
         if (obligationsResponse.data.length === 0) {
-          await axios.post(`http://localhost:3001/payments/initialize/${currentPermisId}`);
+          await axios.post(`${apiURL}/payments/initialize/${currentPermisId}`);
           const newObligationsResponse = await axios.get(
-            `http://localhost:3001/payments/obligations/${currentPermisId}`
+            `${apiURL}/payments/obligations/${currentPermisId}`
           );
           setObligations(newObligationsResponse.data);
           setSelectedObligation(newObligationsResponse.data[0]);
@@ -142,7 +143,7 @@ const handleTerminerProcedure = async () => {
   const fetchPayments = async (obligationId: number) => {
     try {
       const response = await axios.get<RawPayment[]>(
-        `http://localhost:3001/payments/payments/${obligationId}`
+        `${apiURL}/payments/payments/${obligationId}`
       );
 
       setSelectedObligation((prev) =>
@@ -169,7 +170,7 @@ const handleTerminerProcedure = async () => {
   useEffect(() => {
     if (!idProc) return;
 
-    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
+    axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
       .then(res => {
         setStatutProc(res.data.procedure.statut_proc);
       })
@@ -190,7 +191,7 @@ const handleTerminerProcedure = async () => {
     try {
       if (!selectedObligation) return;
 
-      await axios.post('http://localhost:3001/payments', {
+      await axios.post(`${apiURL}/payments`, {
         ...paymentData,
         obligationId: selectedObligation.id,
       });
@@ -198,7 +199,7 @@ const handleTerminerProcedure = async () => {
       await fetchPayments(selectedObligation.id);
 
       const obligationsResponse = await axios.get<Obligation[]>(
-        `http://localhost:3001/payments/obligations/${permisId}`
+        `${apiURL}/payments/obligations/${permisId}`
       );
 
       setObligations(obligationsResponse.data);

@@ -5,82 +5,105 @@ import { PrismaService } from '../../prisma/prisma.service'; // adjust the path 
 export class CoordonneesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createCoordonnees(
-    id_demande: number,
-    id_zone_interdite: number,
-    points: {
-      x: string;
-      y: string;
-      z: string;
-      point?: string;
-    }[]
-  ) {
-    try {
-      const created = await this.prisma.$transaction(
-        points.map((p) =>
-          this.prisma.coordonnee.create({
-            data: {
-              id_demande,
-              id_zone_interdite,
-              x: parseFloat(p.x),
-              y: parseFloat(p.y),
-              z: parseFloat(p.z),
-              point: JSON.stringify(p.point || { x: p.x, y: p.y, z: p.z }),
-            },
-          }),
-        ),
-      );
-      return {
-        message: 'Coordonnées enregistrées avec succès.',
-        data: created,
-      };
-    } catch (error) {
-      console.error('Erreur lors de la création des coordonnées:', error);
-      throw new InternalServerErrorException('Erreur serveur lors de la sauvegarde.');
-    }
+async createCoordonnees(
+  id_proc: number,
+  id_zone_interdite: number,
+  points: {
+    x: string;
+    y: string;
+    z: string;
+    point?: string;
+  }[],
+  statut_coord: 'NOUVEAU' | 'ANCIENNE' | 'DEMANDE_INITIALE' = 'NOUVEAU'
+) {
+  try {
+    const procedure = await this.prisma.procedure.findUnique({
+      where: { id_proc },
+      include: { typeProcedure: true },
+    });
+console.log('procedure.typeProcedure.libelle =', procedure?.typeProcedure?.libelle);
+
+const libelle = procedure?.typeProcedure?.libelle?.toLowerCase() ?? '';
+const isDemandeInitiale = libelle === 'demande';
+const effectiveStatut = isDemandeInitiale ? 'DEMANDE_INITIALE' : (statut_coord ?? 'NOUVEAU');
+
+    const createdCoords = await this.prisma.$transaction(async (tx) => {
+      const coords = await Promise.all(points.map(p =>
+        tx.coordonnee.create({
+          data: {
+            id_zone_interdite,
+            x: parseFloat(p.x),
+            y: parseFloat(p.y),
+            z: parseFloat(p.z),
+            point: JSON.stringify(p.point || { x: p.x, y: p.y, z: p.z }),
+          }
+        })
+      ));
+
+      await Promise.all(coords.map(coord =>
+        tx.procedureCoord.create({
+          data: {
+            id_proc,
+            id_coordonnees: coord.id_coordonnees,
+            statut_coord: effectiveStatut,
+          }
+        })
+      ));
+
+      return coords;
+    });
+
+    return {
+      message: 'Coordonnées liées à la procédure avec succès.',
+      data: createdCoords,
+    };
+  } catch (error) {
+    console.error('Erreur lors de la création des coordonnées:', error);
+    throw new InternalServerErrorException('Erreur serveur lors de la sauvegarde.');
   }
+}
+
+
 
   async getExistingPerimeters() {
   try {
-    const raw = await this.prisma.coordonnee.findMany({
+    const raw = await this.prisma.procedureCoord.findMany({
       include: {
-        demande: {
+        procedure: {
           select: {
-            id_demande: true,
-            code_demande: true,
-          }
-        }
+            id_proc: true,
+            num_proc: true,
+          },
+        },
+        coordonnee: true
       }
     });
 
-    const grouped = raw.reduce((acc, coord) => {
-      const id = coord.demande.id_demande;
-      const code = coord.demande.code_demande;
+    const grouped = raw.reduce((acc, entry) => {
+      const id = entry.procedure.id_proc;
+      const code = entry.procedure.num_proc;
       if (!acc[id]) {
         acc[id] = {
-          id_demande: id,
-          code_demande: code,
+          id_proc: id,
+          num_proc: code,
           coordinates: []
         };
       }
-      acc[id].coordinates.push([coord.x, coord.y]);
+      acc[id].coordinates.push([entry.coordonnee.x, entry.coordonnee.y]);
       return acc;
-    }, {} as Record<number, { id_demande: number, code_demande: string, coordinates: [number, number][] }>);
+    }, {} as Record<number, { id_proc: number; num_proc: string; coordinates: [number, number][] }>);
 
-    // Close the polygons
-    const result = Object.values(grouped).map((poly) => {
+    return Object.values(grouped).map((poly) => {
       const { coordinates } = poly;
       if (
         coordinates.length >= 3 &&
         (coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
          coordinates[0][1] !== coordinates[coordinates.length - 1][1])
       ) {
-        coordinates.push(coordinates[0]); // Close the polygon
+        coordinates.push(coordinates[0]);
       }
       return poly;
     });
-
-    return result;
   } catch (error) {
     console.error('Erreur lors de la récupération des périmètres existants:', error);
     throw new InternalServerErrorException('Erreur serveur lors de la récupération.');
@@ -88,64 +111,125 @@ export class CoordonneesService {
 }
 
 
-async getCoordonneesByDemande(id_demande: number) {
-  return await this.prisma.coordonnee.findMany({
-    where: { id_demande },
-    orderBy: { id_coordonnees: 'asc' },
+
+async getCoordonneesByProcedure(id_proc: number) {
+  return await this.prisma.procedureCoord.findMany({
+    where: { id_proc },
+    include: {
+      coordonnee: true
+    },
+    orderBy: {
+      id_coordonnees: 'asc'
+    }
   });
 }
 
-async deleteCoordonneesByDemande(id_demande: number) {
+async deleteCoordonneesByProcedure(id_proc: number) {
+  // Step 1: Find all coord IDs linked to this procedure
+  const links = await this.prisma.procedureCoord.findMany({
+    where: { id_proc },
+    select: { id_coordonnees: true }
+  });
+
+  const coordIds = links.map(link => link.id_coordonnees);
+
+  // Step 2: Delete all procedureCoord links
+  await this.prisma.procedureCoord.deleteMany({
+    where: { id_proc }
+  });
+
+  // Step 3: Delete the coordonnee records
   return await this.prisma.coordonnee.deleteMany({
-    where: { id_demande },
+    where: { id_coordonnees: { in: coordIds } }
   });
 }
+
 
 async updateCoordonnees(
-  id_demande: number,
+  id_proc: number,
   id_zone_interdite: number,
   points: { x: string; y: string; z: string; point?: string }[],
-  superficie?: number // ✅ Add superficie here
-) {
+  statut_coord: 'DEMANDE_INITIALE' | 'NOUVEAU' | 'ANCIENNE' = 'NOUVEAU',
+  superficie?: number
+)
+ {
   try {
-    // Delete old coordinates
-    await this.prisma.coordonnee.deleteMany({ where: { id_demande } });
+    // STEP 1: Check if any coordinates already exist for this procedure
+    const existingCoords = await this.prisma.procedureCoord.findMany({
+      where: { id_proc },
+      select: { id_coordonnees: true },
+    });
 
-    // Insert new coordinates
-    const updatedCoords = await this.prisma.$transaction(
-      points.map(p =>
-        this.prisma.coordonnee.create({
-          data: {
-            id_demande,
-            id_zone_interdite,
-            x: parseFloat(p.x),
-            y: parseFloat(p.y),
-            z: parseFloat(p.z),
-            point: JSON.stringify(p.point || { x: p.x, y: p.y, z: p.z }),
-          },
-        })
-      )
-    );
+    const coordIds = existingCoords.map((l) => l.id_coordonnees);
 
-    // ✅ Update superficie in demande table if provided
+    // STEP 2: Determine the correct statut_coord if not provided
+    const finalStatutCoord: 'DEMANDE_INITIALE' | 'NOUVEAU' | 'ANCIENNE' = 
+      statut_coord ??
+      (existingCoords.length === 0 ? 'DEMANDE_INITIALE' : 'NOUVEAU');
+
+    // STEP 3: Delete existing links and coords (soft delete if you want history)
+    if (coordIds.length > 0) {
+      await this.prisma.procedureCoord.deleteMany({
+        where: { id_proc },
+      });
+
+      await this.prisma.coordonnee.deleteMany({
+        where: { id_coordonnees: { in: coordIds } },
+      });
+    }
+
+    // STEP 4: Create new coords + link them
+    const created = await this.prisma.$transaction(async (tx) => {
+      const newCoords = await Promise.all(
+        points.map((p) =>
+          tx.coordonnee.create({
+            data: {
+              id_zone_interdite,
+              x: parseFloat(p.x),
+              y: parseFloat(p.y),
+              z: parseFloat(p.z),
+              point: JSON.stringify(p.point || { x: p.x, y: p.y, z: p.z }),
+            },
+          })
+        )
+      );
+
+      await Promise.all(
+        newCoords.map((coord) =>
+          tx.procedureCoord.create({
+            data: {
+              id_proc,
+              id_coordonnees: coord.id_coordonnees,
+              statut_coord: finalStatutCoord,
+            },
+          })
+        )
+      );
+
+      return newCoords;
+    });
+
+    // STEP 5: Optional update superficie
     if (superficie !== undefined) {
-      await this.prisma.demande.update({
-        where: { id_demande },
-        data: { superficie },
+      await this.prisma.procedure.update({
+        where: { id_proc },
+        data: {
+          observations: `Superficie mise à jour: ${superficie} m²`,
+        },
       });
     }
 
     return {
-      message: 'Coordonnées et superficie mises à jour avec succès.',
-      data: updatedCoords,
+      message: 'Coordonnées mises à jour avec succès.',
+      data: created,
     };
   } catch (err) {
     console.error('Erreur update:', err);
-    throw new InternalServerErrorException('Erreur lors de la mise à jour.');
+    throw new InternalServerErrorException(
+      'Erreur lors de la mise à jour des coordonnées.'
+    );
   }
 }
-
-
 
 
 

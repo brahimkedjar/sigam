@@ -217,7 +217,7 @@ const handleSubmitDate = async () => {
   try {
     const res = await axios.post('http://localhost:3001/api/procedures/renouvellement/start', {
       permisId: pendingPermisId,
-      date_demande: selectedDate.toISOString().split('T')[0], // 👈 ensure ISO date without time
+      date_demande: selectedDate.toISOString().split('T')[0], 
     });
 
     const { original_demande_id, original_proc_id, new_proc_id } = res.data;
@@ -527,6 +527,41 @@ const handleSubmitDate = async () => {
     </div>
   </div>
 )}
+
+{showDateModal && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h2 className={styles.modalTitle}>Choisir une date de demande</h2>
+
+      <input
+        type="date"
+        value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+        onChange={(e) => setSelectedDate(new Date(e.target.value))}
+        className={styles.modalDateInput}
+      />
+
+      <div className={styles.modalFooter}>
+        <button
+          onClick={() => {
+            setShowDateModal(false);
+            setSelectedDate(null);
+          }}
+          className={styles.modalSecondaryButton}
+        >
+          Annuler
+        </button>
+        <button
+          onClick={handleSubmitDate}
+          disabled={!selectedDate}
+          className={styles.modalPrimaryButton}
+        >
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
   </div>
 );
 }

@@ -9,14 +9,12 @@ import  DetailsRC from './DetailsRC';
 import axios from 'axios';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiCheck, FiX, FiFileText, FiChevronRight, FiChevronLeft, FiEdit, FiLoader } from 'react-icons/fi';
+import { FiX, FiFileText, FiChevronRight, FiChevronLeft, FiEdit, FiLoader } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
-import { useAuthStore } from '../../../src/store/useAuthStore';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import { BsSave } from 'react-icons/bs';
 import TauxWarningModal from '../../../src/hooks/taux_warning';
-import type { ViewType } from '../../../src/types/viewtype';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
@@ -120,9 +118,9 @@ export default function Step2() {
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
-  
-  useActivateEtape({ idProc, etapeNum: 3, statutProc });
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
+  useActivateEtape({ idProc, etapeNum: 3, statutProc });
 
   const [tauxSummary, setTauxSummary] = useState<{ total: number; rep: number; actionnaires: number }>({
   total: 0,
@@ -180,7 +178,7 @@ const handlePrevious = () => {
  // Update fetchDemandeFromProc to set disabled sections
   const fetchDemandeFromProc = async (id_proc: string) => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/procedures/${id_proc}/demande`);
+      const res = await axios.get(`${apiURL}/api/procedures/${id_proc}/demande`);
       const demande = res.data;
 
       setCodeDemande(demande.code_demande);
@@ -284,8 +282,8 @@ const handleSaveEtape = async () => {
   setEtapeMessage(null);
 
   try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/finish/${idProc}/3`);
-    setEtapeMessage("Étape 2 enregistrée avec succès !");
+    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/3`);
+    setEtapeMessage("Étape 3 enregistrée avec succès !");
   } catch (err) {
     console.error(err);
     setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
@@ -325,14 +323,14 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
     switch(section) {
       case 'infos':
         if (detenteurId) {
-          response = await axios.put(`http://localhost:3001/api/detenteur-morale/${detenteurId}`, formData.infos);
+          response = await axios.put(`${apiURL}/api/detenteur-morale/${detenteurId}`, formData.infos);
         } else {
-          response = await axios.post(`http://localhost:3001/api/detenteur-morale`, formData.infos);
+          response = await axios.post(`${apiURL}/api/detenteur-morale`, formData.infos);
           const newId = response.data?.id_detenteur;
           if (newId) {
             setDetenteurId(newId);
             if (idDemande) {
-              await axios.put(`http://localhost:3001/api/demande/${idDemande}/link-detenteur`, {
+              await axios.put(`${apiURL}/api/demande/${idDemande}/link-detenteur`, {
                 id_detenteur: newId
               });
             }
@@ -347,7 +345,7 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
   try {
     // 🟡 Tenter de mettre à jour (cas où la personne existe)
     response = await axios.put(
-      `http://localhost:3001/api/representant-legal/${formData.repLegal.nin}`,
+      `${apiURL}/api/representant-legal/${formData.repLegal.nin}`,
       {
         ...formData.repLegal,
         id_detenteur: detenteurId
@@ -357,7 +355,7 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
     // 🔴 Si la personne n'existe pas (404), la créer
     if (axios.isAxiosError(err) && err.response?.status === 404) {
       response = await axios.post(
-        `http://localhost:3001/api/representant-legal`,
+        `${apiURL}/api/representant-legal`,
         {
           ...formData.repLegal,
           id_detenteur: detenteurId
@@ -376,7 +374,7 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
   try {
     // 🟡 Tenter de mettre à jour
     response = await axios.put(
-      `http://localhost:3001/api/registre-commerce/${detenteurId}`,
+      `${apiURL}/api/registre-commerce/${detenteurId}`,
       {
         ...formData.rcDetails,
         id_detenteur: detenteurId
@@ -386,7 +384,7 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
     if (axios.isAxiosError(err) && err.response?.status === 404) {
       // 🔴 S'il n'existe pas, créer le registre
       response = await axios.post(
-        `http://localhost:3001/api/registre-commerce`,
+        `${apiURL}/api/registre-commerce`,
         {
           ...formData.rcDetails,
           id_detenteur: detenteurId
@@ -401,7 +399,7 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
       case 'actionnaires':
         if (!detenteurId) throw new Error("Détenteur non défini !");
         response = await axios.put(
-          `http://localhost:3001/api/actionnaires/${detenteurId}`,
+          `${apiURL}/api/actionnaires/${detenteurId}`,
           {
             actionnaires: formData.actionnaires,
             id_detenteur: detenteurId
@@ -435,7 +433,7 @@ const handleDeleteActionnaires = async () => {
   if (!detenteurId) return;
   
   try {
-    await axios.delete(`http://localhost:3001/api/actionnaires/${detenteurId}`);
+    await axios.delete(`${apiURL}/api/actionnaires/${detenteurId}`);
     setFormData(prev => ({ ...prev, actionnaires: [] }));
     setToastType('success');
     setToastMessage('Actionnaires supprimés avec succès');
