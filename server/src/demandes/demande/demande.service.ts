@@ -59,7 +59,6 @@ export class DemandeService {
     const finalCode = data.code_demande || `${typePermis.code_type}-${currentYear}-${
       (await this.prisma.demande.count({
         where: {
-          type_permis_demande: typePermis.code_type,
           date_demande: {
             gte: new Date(`${currentYear}-01-01`),
             lte: new Date(`${currentYear}-12-31`),
@@ -77,16 +76,12 @@ export class DemandeService {
     statut_proc: 'EN_COURS',
   }
 });
-console.log('CREATE DEMANDE DATES:', {
-  date_demande: data.date_demande,
-  date_instruction: data.date_instruction
-});
+
     // Create demande
    return this.prisma.demande.create({
     data: {
       id_proc: createdProc.id_proc,
       code_demande: finalCode,
-      type_permis_demande: typePermis.code_type,
       objet_demande: data.objet_demande,
       id_detenteur: data.id_detenteur,
       id_typePermis: data.id_typepermis,
@@ -149,7 +144,6 @@ console.log('CREATE DEMANDE DATES:', {
     const year = new Date().getFullYear();
     const count = await this.prisma.demande.count({
       where: {
-        type_permis_demande: typePermis.code_type,
         date_demande: {
           gte: new Date(`${year}-01-01`),
           lte: new Date(`${year}-12-31`),

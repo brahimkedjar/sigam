@@ -13,9 +13,7 @@ export function useSessionLoader() {
       const res = await axios.get('http://localhost:3001/auth/me', {
         withCredentials: true,
       });
-
-      console.log('✅ /auth/me response:', res.data);
-
+      
       login({
         token: null,
         role: res.data.user.role,

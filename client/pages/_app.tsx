@@ -2,7 +2,7 @@
 import type { AppProps } from 'next/app';
 import '../styles/globals.css';
 import ClientLayout from '../utils/ClientLayout';
-import { StepGuardProvider } from '@/hooks/StepGuardContext';
+import { StepGuardProvider } from '@/src/hooks/StepGuardContext';
 import { ConfigProvider } from 'antd';
 function MyApp({ Component, pageProps }: AppProps) {
   return (

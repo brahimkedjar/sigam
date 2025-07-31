@@ -307,8 +307,6 @@ const ModernMiningForm = () => {
       if (!formData.exercice || !formData.dateRemise) {
         throw new Error('Les champs obligatoires doivent être remplis');
       }
-      
-      console.log('Form data saved:', formData);
       setSuccessMessage('Rapport enregistré avec succès!');
       setIsEditing(false);
     } catch (error) {
@@ -321,7 +319,6 @@ const ModernMiningForm = () => {
 
   const handleDelete = () => {
     if (confirm('Voulez-vous vraiment supprimer ce rapport?')) {
-      console.log('Report deleted');
       setFormData(initialFormData);
       setIsEditing(false);
       setSuccessMessage('Rapport supprimé avec succès');

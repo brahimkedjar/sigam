@@ -104,7 +104,6 @@ async function main9() {
       { name: 'controle_minier'},
       { name: 'dashboard'},
       { name: 'Payments'},
-      { name: 'manage_users'},
       { name: 'manage_documents'}
 
     ],
@@ -205,7 +204,8 @@ async function main11() {
         code_type: 'PPM',
         regime: 'mine',
         duree_initiale: 3,
-        duree_renouv_max: 2,
+        nbr_renouv_max: 2,
+        duree_renouv: 1/2,
         delai_renouv: 90,
         superficie_max: 100
       },
@@ -216,7 +216,8 @@ async function main11() {
         code_type: 'PEM',
         regime: 'mine',
         duree_initiale: 5,
-        duree_renouv_max: 1,
+        nbr_renouv_max: 1,
+        duree_renouv: 2,
         delai_renouv: 180,
         superficie_max: 500
       },
@@ -227,7 +228,8 @@ async function main11() {
         code_type: 'PEX',
         regime: 'mine',
         duree_initiale: 25,
-        duree_renouv_max: 3,
+        nbr_renouv_max: 3,
+        duree_renouv: 10,
         delai_renouv: 365,
         superficie_max: 1000
       },
@@ -238,7 +240,8 @@ async function main11() {
         code_type: 'PPM',
         regime: 'mine',
         duree_initiale: 10,
-        duree_renouv_max: 2,
+        nbr_renouv_max: 2,
+        duree_renouv: 0,
         delai_renouv: 180,
         superficie_max: 50
       },
@@ -251,7 +254,8 @@ async function main11() {
         code_type: 'PRC',
         regime: 'carriere',
         duree_initiale: 3,
-        duree_renouv_max: 1,
+        nbr_renouv_max: 1,
+        duree_renouv: 10,
         delai_renouv: 90,
         superficie_max: 50
       },
@@ -262,7 +266,8 @@ async function main11() {
         code_type: 'PEC',
         regime: 'carriere',
         duree_initiale: 15,
-        duree_renouv_max: 2,
+        nbr_renouv_max: 2,
+        duree_renouv: 4,
         delai_renouv: 180,
         superficie_max: 100
       },
@@ -275,7 +280,8 @@ async function main11() {
         code_type: 'ARM',
         regime: 'mine',
         duree_initiale: 2,
-        duree_renouv_max: 3,
+        nbr_renouv_max: 3,
+        duree_renouv: 0,
         delai_renouv: 60,
         superficie_max: 5
       },
@@ -286,7 +292,8 @@ async function main11() {
         code_type: 'ARC',
         regime: 'carriere',
         duree_initiale: 2,
-        duree_renouv_max: 3,
+        nbr_renouv_max: 3,
+        duree_renouv: 0,
         delai_renouv: 60,
         superficie_max: 2
       },
@@ -299,7 +306,8 @@ async function main11() {
         code_type: 'PRA',
         regime: 'mine',
         duree_initiale: 1,
-        duree_renouv_max: 5,
+        nbr_renouv_max: 5,
+        duree_renouv: 0,
         delai_renouv: 30,
         superficie_max: null
       },
@@ -310,7 +318,8 @@ async function main11() {
         code_type: 'PTM',
         regime: 'mine',
         duree_initiale: 5,
-        duree_renouv_max: 5,
+        nbr_renouv_max: 5,
+        duree_renouv: 0,
         delai_renouv: 90,
         superficie_max: null
       }

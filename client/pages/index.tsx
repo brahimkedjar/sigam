@@ -26,7 +26,6 @@ export default function LoginPage() {
         'http://localhost:3001/auth/debug-headers',
         { withCredentials: true }
       );
-      console.log('Debug Headers:', debug.data);
 
       document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 
@@ -43,14 +42,10 @@ export default function LoginPage() {
         throw new Error('Login failed');
       }
 
-      console.log('Login Response Headers:', loginResponse.headers);
-      console.log('Login Response Data:', loginResponse.data);
-
       const cookieTest = await axios.get(
         'http://localhost:3001/auth/debug-cookies',
         { withCredentials: true }
       );
-      console.log('Cookie Test:', cookieTest.data);
 
       const meResponse = await axios.get('http://localhost:3001/auth/me', {
         withCredentials: true,

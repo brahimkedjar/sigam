@@ -32,19 +32,20 @@ export class GeneratePermisService {
       id_detenteur: demande.detenteur.id_detenteur,
       id_statut: 1,
       code_permis: demande.code_demande,
-      date_adjudication: new Date(),
+      date_adjudication: null,
       date_octroi: new Date(),
       date_expiration: expirationDate,
       duree_validite: demande.typePermis.duree_initiale,
       lieu_dit: demande.lieu_dit || '',
       mode_attribution: demande.objet_demande || '',
       superficie: demande.superficie || 0,
-      utilisation: demande.type_permis_demande || '',
+      utilisation: '',
       statut_juridique_terrain: demande.statut_juridique_terrain || '',
       duree_prevue_travaux: demande.duree_travaux_estimee || null,
       date_demarrage_travaux: demande.date_demarrage_prevue || null,
       statut_activites: demande.procedure.statut_proc || '',
-      commentaires: null
+      commentaires: null,
+      nombre_renouvellements:0,
     }
   });
 

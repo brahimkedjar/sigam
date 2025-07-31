@@ -34,8 +34,6 @@ export default function DemandeStart() {
       });
 
       const demande = res.data;
-      console.log('Demande créée :', demande);
-
       // Rediriger vers l’étape suivante
       router.push(`/demande/step2?id=${demande.id_demande}`);
     } catch (err) {

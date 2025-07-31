@@ -92,7 +92,6 @@ CREATE TABLE "demande" (
     "id_expert" INTEGER,
     "code_demande" TEXT NOT NULL,
     "date_demande" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "type_permis_demande" TEXT NOT NULL,
     "objet_demande" TEXT,
     "date_enregistrement" TIMESTAMP(3),
     "date_instruction" TIMESTAMP(3),

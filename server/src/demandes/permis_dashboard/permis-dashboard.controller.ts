@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { PermisDashboardService } from './permis-dashboard.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
@@ -27,4 +27,5 @@ export class PermisDashboardController {
   async getTypes() {
     return this.dashboardService.getPermisTypesDistribution();
   }
+
 }

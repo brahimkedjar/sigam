@@ -6,7 +6,8 @@ export class CreateTypePermisDto {
   code_type: string;
   regime: string;
   duree_initiale: number;
-  duree_renouv_max: number;
+  nbr_renouv_max: number;
+  duree_renouv: number;
   delai_renouv: number;
   superficie_max?: number;
 }
@@ -16,7 +17,8 @@ export class UpdateTypePermisDto {
   code_type?: string;
   regime?: string;
   duree_initiale?: number;
-  duree_renouv_max?: number;
+  nbr_renouv_max?: number;
+  duree_renouv?: number;
   delai_renouv?: number;
   superficie_max?: number;
 }
@@ -27,7 +29,8 @@ export class TypePermisResponseDto {
   code_type: string;
   regime: string;
   duree_initiale: number;
-  duree_renouv_max: number;
+  nbr_renouv_max: number;
+  duree_renouv: number;
   delai_renouv: number;
   superficie_max?: number;
   createdAt: Date;

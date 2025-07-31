@@ -24,7 +24,6 @@ async getMe(@Req() req: Request) {
 
 @Get('debug-cookies')
 getCookies(@Req() req: Request, @Res() res: Response) {
-  console.log('Received cookies:', req.cookies);
   return res.json({
     cookies: req.cookies,
     headers: req.headers
@@ -39,18 +38,14 @@ async login(
   @Body() body: { email: string; password: string },
   @Res({ passthrough: true }) res: Response
 ) {
-  console.log('🔵 Received /auth/login:', body);
   const user = await this.authService.validateUser(body.email, body.password);
   const loginData = await this.authService.login(user, res);
-  console.log('✅ Sending login response:', loginData);
   return loginData;
 }
  
 // auth.controller.ts
 @Get('debug-headers')
 debugHeaders(@Req() req: Request) {
-  console.log('Request Headers:', req.headers);
-  console.log('Request Cookies:', req.cookies);
   return {
     headers: req.headers,
     cookies: req.cookies

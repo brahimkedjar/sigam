@@ -21,7 +21,6 @@ async createCoordonnees(
       where: { id_proc },
       include: { typeProcedure: true },
     });
-console.log('procedure.typeProcedure.libelle =', procedure?.typeProcedure?.libelle);
 
 const libelle = procedure?.typeProcedure?.libelle?.toLowerCase() ?? '';
 const isDemandeInitiale = libelle === 'demande';

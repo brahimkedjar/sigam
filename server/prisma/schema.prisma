@@ -129,7 +129,7 @@ model DossierDocument {
 
 model StatutPermis {
     id                Int       @id @default(autoincrement())
-    lib_statut        String //Actif - suspendu - annulé - rennoncé - expiré - renouvellé
+    lib_statut        String    @unique   //Actif - suspendu - annulé - rennoncé - expiré - renouvellé
     description       String
     Permis Permis[]
 }
@@ -141,8 +141,9 @@ model TypePermis {
   lib_type          String    @unique   //Permis de prospection / Permis d'exploration ...
   code_type         String    @unique // ppm / PEM / PXC ...
   regime            String    // mines / carriere
-  duree_initiale    Int       // in years
-  duree_renouv_max  Int       // max renewal times
+  duree_initiale    Float       // in years
+  nbr_renouv_max  Int  
+  duree_renouv    Float     // max renewal times
   delai_renouv      Int       // days before expiration
   superficie_max    Float?
   permis            Permis[]
@@ -187,6 +188,7 @@ model Permis {
   duree_prevue_travaux      Int?
   date_demarrage_travaux    DateTime?
   statut_activites          String?
+  nombre_renouvellements    Int
   commentaires              String?
 
   // Relations
@@ -270,7 +272,6 @@ model Demande {
   id_typePermis               Int
   code_demande                String   @unique
   date_demande                DateTime @default(now())
-  type_permis_demande         String
   objet_demande               String?
   date_enregistrement         DateTime?
   date_instruction            DateTime?
@@ -311,7 +312,6 @@ model Demande {
 model ProcedureRenouvellement {
   id_renouvellement       Int       @id @default(autoincrement())
   id_proc                 Int       @unique
-  nombre_renouvellement   Int
   num_decision            String?
   date_decision       DateTime? // Optional (set later)
   date_debut_validite DateTime? // Set when finalized

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import styles from './Register.module.css';
+import styles from './register.module.css';
 
 export default function Register() {
   const [form, setForm] = useState({ email: '', password: '', role: '' });
@@ -70,7 +70,7 @@ export default function Register() {
             id="role"
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
-          >
+           >
             {roles.map((role) => (
               <option key={role.id} value={role.name}>
                 {role.name.charAt(0).toUpperCase() + role.name.slice(1)}

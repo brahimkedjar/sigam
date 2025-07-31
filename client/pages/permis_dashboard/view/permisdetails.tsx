@@ -10,6 +10,44 @@ import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import NotificationBanner from '../../../components/NotificationBanner';
 
+interface RenewalInfo {
+  id: number;
+  num_decision: string;
+  date_decision: Date | null;
+  date_debut_validite: Date | null;
+  date_fin_validite: Date | null;
+  duree_renouvellement: number;
+  commentaire: string;
+  nombre_renouvellements?: number; 
+}
+
+// Then update your PermisDetails interface
+interface PermisDetails {
+  id: number;
+  code_permis: string;
+  date_octroi: Date | null;
+  date_expiration: Date | null;
+  date_annulation: Date | null;
+  date_renonciation: Date | null;
+  superficie: number | null;
+  nombre_renouvellements: number | null;
+  statut: {
+    lib_statut: string;
+  } | null;
+  typePermis: {
+    lib_type: string;
+    code_type: string;
+    duree_renouv: number;
+    nbr_renouv_max: number;
+  };
+  detenteur: {
+    nom_sociétéFR: string;
+  } | null;
+  procedures: Procedure[];
+  renewals: RenewalInfo[]; // Add this line
+}
+
+
 interface Procedure {
   id_proc: number;
   num_proc: string;
@@ -39,55 +77,76 @@ interface Procedure {
   }[];
 }
 
-interface PermisDetails {
-  id: number;
-  code_permis: string;
-  date_octroi: Date | null;
-  date_expiration: Date | null;
-  date_annulation: Date | null;
-  date_renonciation: Date | null;
-  superficie: number | null;
-  statut: {
-    lib_statut: string;
-  } | null;
-  typePermis: {
-    lib_type: string;
-    code_type: string;
-  };
-  detenteur: {
-    nom_sociétéFR: string;
-  } | null;
-  procedures: Procedure[];
-}
+
 
 interface Props {
   permis: PermisDetails;
 }
+console.log('--- PAGE LOADING ---');
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+
   const id = context.query.id;
 
   try {
     const res = await fetch(`http://localhost:3001/Permisdashboard/${id}`);
-    if (!res.ok) throw new Error('Failed');
-
+    if (!res.ok) throw new Error('Failed to fetch permit');
     const permis = await res.json();
+     // Ensure typePermis includes all required fields
+    if (!permis.typePermis.nbr_renouv_max) {
+      const typeRes = await fetch(`http://localhost:3001/api/typepermis/${permis.id_typePermis}`);
+      const typeData = await typeRes.json();
+      permis.typePermis = {
+        ...permis.typePermis,
+        ...typeData
+      };
+    }
+    const renewalsRes = await fetch(`http://localhost:3001/api/procedures/${id}/renewals`);
+    const renewalsData = renewalsRes.ok ? await renewalsRes.json() : [];
+    
+    console.log('Raw renewals data:', renewalsData); // Debug
+
+    // Transform the data to match RenewalInfo
+    const formattedRenewals = renewalsData.map((proc: any) => {
+  // Ensure we have a valid renewal object
+  if (!proc.renouvellement) return null;
+  
+  return {
+    id: proc.id_proc,
+    num_decision: proc.renouvellement.num_decision || null,
+    date_decision: proc.renouvellement.date_decision || null,
+    date_debut_validite: proc.renouvellement.date_debut_validite || null,
+    date_fin_validite: proc.renouvellement.date_fin_validite || null,
+    duree_renouvellement: proc.renouvellement.nombre_renouvellements || 0,
+    commentaire: proc.renouvellement.commentaire || '',
+  };
+}).filter(Boolean); // Remove any null entries
     return {
-      props: { permis },
+      props: { 
+        permis: {
+          ...permis,
+          renewals: formattedRenewals
+        } 
+      },
     };
   } catch (error) {
+    console.error('Error in getServerSideProps:', error);
     return { notFound: true };
   }
 };
 
+
 const PermisViewPage: React.FC<Props> = ({ permis }) => {
+  console.log('Component props:', { permis });
   const router = useRouter();
   const [notif, setNotif] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [notificationQueue, setNotificationQueue] = useState<Array<{message: string;type: 'error' | 'success' | 'info';}>>([]);
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [pendingPermisId, setPendingPermisId] = useState<number | null>(null);
+  const [showMaxRenewalModal, setShowMaxRenewalModal] = useState(false);
 const searchParams = useSearchParams();
 const idPermis = searchParams!.get('id');
   const formatDate = (date: Date | null) => {
@@ -100,6 +159,19 @@ const idPermis = searchParams!.get('id');
 
    const [selectedProcedures, setSelectedProcedures] = useState<Procedure[]>([]);
 
+   const calculateValidityStatus = (expiryDate: Date | null) => {
+  if (!expiryDate) return 'Inconnu';
+  
+  const today = new Date();
+  const expiry = new Date(expiryDate);
+  const diffTime = expiry.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return 'Expiré';
+  if (diffDays < 30) return 'Expire bientôt';
+  return 'Valide';
+};
+
 const handleProcedureTypeClick = (type: string) => {
   const matchingProcedures = permis.procedures.filter(p => p.typeProcedure.libelle === type);
   if (matchingProcedures.length > 0) {
@@ -108,6 +180,8 @@ const handleProcedureTypeClick = (type: string) => {
     setIsModalOpen(true);
   }
 };
+
+
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -196,20 +270,42 @@ const handleProcedureTypeClick = (type: string) => {
 
 
  const handleRenewalClick = async (permisId: number) => {
+  // First check if max renewals reached (just in case)
+  if ((permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) {
+    setShowMaxRenewalModal(true);
+    return;
+  }
+
   try {
-    // First: Only check payments
-    await axios.post('http://localhost:3001/api/procedures/renouvellement/check-payments', {
+    const response = await axios.post('http://localhost:3001/api/procedures/renouvellement/check-payments', {
       permisId,
     });
 
-    // If OK, show date selection modal
     setPendingPermisId(permisId);
     setShowDateModal(true);
+
   } catch (error: any) {
-    const message = error.response?.data?.message || 'Paiement incomplet';
-    setNotif({ message: `⛔ ${message}`, type: 'error' });
+    let errorMessage = "Erreur inconnue";
+    
+    if (error.response) {
+      errorMessage = error.response.data.message || error.response.statusText;
+    } else if (error.request) {
+      errorMessage = "Pas de réponse du serveur";
+    } else {
+      errorMessage = error.message;
+    }
+    
+    setNotif({ 
+      message: `⛔ ${errorMessage}`,
+      type: 'error' 
+    });
   }
 };
+
+const handleNotificationClose = () => {
+  setNotif(null);
+};
+
 
 const handleSubmitDate = async () => {
   if (!selectedDate || !pendingPermisId) return;
@@ -243,7 +339,7 @@ const handleSubmitDate = async () => {
   <NotificationBanner
     message={notif.message}
     type={notif.type}
-    onClose={() => setNotif(null)}
+    onClose={handleNotificationClose}
   />
 )}
 
@@ -343,6 +439,108 @@ const handleSubmitDate = async () => {
           </div>
         </div>
 
+        <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
+  <div className={styles.cardHeader}>
+    <div className={styles.cardHeaderIcon}>
+      <RefreshCw size={20} />
+    </div>
+    <h2 className={styles.cardTitle}>Historique des Renouvellements</h2>
+  </div>
+  <div className={styles.cardContent}>
+    {/* Debug log moved outside JSX */}
+    {(() => {
+      console.log('Current renewals data:', permis.renewals);
+      return null;
+    })()}
+    
+    {permis.renewals && permis.renewals.some(r => r.num_decision && r.num_decision !== 'N/A') ? (
+      <div className={styles.renewalTimeline}>
+        {permis.renewals
+          .filter(r => r.num_decision && r.num_decision !== 'N/A')
+          .map((renewal, index) => (
+            <div key={renewal.id} className={styles.renewalItem}>
+            <div className={styles.renewalMarker}>
+              <div className={styles.renewalNumber}>{index + 1}</div>
+              <div className={styles.renewalConnector}></div>
+            </div>
+            <div className={styles.renewalDetails}>
+              <div className={styles.renewalHeader}>
+                <span className={styles.renewalDecision}>Décision: {renewal.num_decision}</span>
+                <span className={styles.renewalDate}>
+                  {formatDate(renewal.date_decision)}
+                </span>
+              </div>
+              <div className={styles.renewalPeriod}>
+                <span>Période: {formatDate(renewal.date_debut_validite)} - {formatDate(renewal.date_fin_validite)}</span>
+                <span className={styles.renewalDuration}>
+                  ({permis.typePermis.duree_renouv} {permis.typePermis.duree_renouv > 1 ? 'ans' : 'an'})
+                </span>
+              </div>
+              {renewal.commentaire && (
+                <div className={styles.renewalComment}>
+                  <strong>Commentaire:</strong> {renewal.commentaire}
+                </div>
+              )}
+              <div 
+  className={styles.renewalLimitWarning}
+  onClick={() => {
+    if (permis.nombre_renouvellements! >= permis.typePermis.nbr_renouv_max) {
+      setShowMaxRenewalModal(true);
+    }
+  }}
+  style={{
+    cursor: permis.nombre_renouvellements! >= permis.typePermis.nbr_renouv_max ? 'pointer' : 'default'
+  }}
+>
+  {permis.nombre_renouvellements && permis.typePermis.nbr_renouv_max && (
+    <>
+      <div className={styles.renewalProgress}>
+        <div 
+          className={styles.renewalProgressBar}
+          style={{
+            width: `${Math.min(100, (permis.nombre_renouvellements / permis.typePermis.nbr_renouv_max) * 100)}%`
+          }}
+        ></div>
+      </div>
+      <div className={styles.renewalLimitText}>
+        {permis.nombre_renouvellements} / {permis.typePermis.nbr_renouv_max} renouvellements utilisés
+      </div>
+      {permis.nombre_renouvellements >= permis.typePermis.nbr_renouv_max && (
+        <div className={styles.renewalMaxReached}>
+          <XCircle size={16} />
+          <span>Maximum de renouvellements atteint</span>
+        </div>
+      )}
+    </>
+  )}
+</div>
+            </div>
+          </div>
+          ))
+        }
+        <div className={styles.currentStatus}>
+          <div className={styles.statusLabel}>Statut actuel:</div>
+          <div className={`${styles.statusValue} ${
+            calculateValidityStatus(permis.date_expiration) === 'Valide' ? styles.statusValid :
+            calculateValidityStatus(permis.date_expiration) === 'Expire bientôt' ? styles.statusWarning :
+            styles.statusExpired
+          }`}>
+            {calculateValidityStatus(permis.date_expiration)}
+            {permis.date_expiration && (
+              <span className={styles.statusDate}>
+                (jusqu'au {formatDate(permis.date_expiration)})
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className={styles.noRenewals}>
+        Ce permis n'a pas encore été renouvelé.
+      </div>
+    )}
+  </div>
+</div>
         {/* Procedures Card */}
         <div className={`${styles.card} ${styles.animateIn} ${styles.delay2}`}>
           <div className={styles.cardHeader}>
@@ -382,18 +580,31 @@ const handleSubmitDate = async () => {
       <h2 className={styles.cardTitle}>Actions rapides</h2>
     </div>
     <div className={styles.cardContent}>
-      <button 
+<button 
   className={`${styles.actionButton} ${styles.actionButtonPrimary}`}
   disabled={permis.typePermis.code_type === 'PEM'}
-  style={{
-    opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
-    cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+  onClick={() => {
+    if ((permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) {
+      setShowMaxRenewalModal(true);
+    } else {
+      handleRenewalClick(permis.id);
+    }
   }}
-  onClick={() => handleRenewalClick(permis.id)}
-
+  style={{
+    position: 'relative',
+    opacity: (permis.typePermis.code_type === 'PEM' || 
+             (permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) ? 0.7 : 1,
+    cursor: (permis.typePermis.code_type === 'PEM' || 
+             (permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) ? 'not-allowed' : 'pointer'
+  }}
 >
   <RefreshCw size={18} />
   Demander un renouvellement
+  {(permis.nombre_renouvellements || 0) >= permis.typePermis.nbr_renouv_max && (
+    <span className={styles.tooltip}>
+      Maximum de {permis.typePermis.nbr_renouv_max} renouvellements atteint
+    </span>
+  )}
 </button>
       <button 
         className={`${styles.actionButton} ${styles.actionButtonSuccess}`}
@@ -531,7 +742,14 @@ const handleSubmitDate = async () => {
 {showDateModal && (
   <div className={styles.modalOverlay}>
     <div className={styles.modalContent}>
-      <h2 className={styles.modalTitle}>Choisir une date de demande</h2>
+      <h2 className={styles.modalTitle}>Demande de renouvellement</h2>
+      
+      <div className={styles.modalInfoText}>
+        <p>Renouvellements restants: {permis.typePermis.nbr_renouv_max - (permis.nombre_renouvellements || 0)}/{permis.typePermis.nbr_renouv_max}</p>
+        <p>Vous pouvez effectuer {permis.typePermis.nbr_renouv_max - (permis.nombre_renouvellements || 0)} renouvellement(s) supplémentaire(s)</p>
+      </div>
+
+      <h3 className={styles.modalSubtitle}>Choisir une date de demande</h3>
 
       <input
         type="date"
@@ -556,6 +774,47 @@ const handleSubmitDate = async () => {
           className={styles.modalPrimaryButton}
         >
           Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showMaxRenewalModal && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <button 
+        onClick={() => setShowMaxRenewalModal(false)} 
+        className={styles.modalCloseButton}
+      >
+        <XCircle size={20} />
+      </button>
+      
+      <div className={styles.modalIconWarning}>
+        <XCircle size={48} className={styles.warningIcon} />
+      </div>
+      
+      <h2 className={styles.modalTitle}>Limite de renouvellements atteinte</h2>
+      
+      <div className={styles.modalBody}>
+        <p>
+          <strong>Type de permis:</strong> {permis.typePermis.lib_type} ({permis.typePermis.code_type})
+        </p>
+        <p>
+          <strong>Renouvellements effectués:</strong> {permis.nombre_renouvellements || 0} / {permis.typePermis.nbr_renouv_max}
+        </p>
+        <div className={styles.modalWarningText}>
+          Ce permis a atteint le nombre maximum de renouvellements autorisés.
+          Vous ne pouvez pas effectuer de nouveaux renouvellements pour ce permis.
+        </div>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button
+          onClick={() => setShowMaxRenewalModal(false)}
+          className={styles.modalPrimaryButton}
+        >
+          Compris
         </button>
       </div>
     </div>

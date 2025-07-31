@@ -25,7 +25,7 @@ async function bootstrap() {
       'Origin',
       'Cache-Control',
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH','HEAD'],
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
@@ -35,7 +35,6 @@ async function bootstrap() {
   if (!fs.existsSync(publicPath)) {
     console.warn('⚠️ Warning: public folder not found at:', publicPath);
   }
-  console.log('🧩 Serving static files from:', publicPath);
   app.useStaticAssets(publicPath);
 
   await app.listen(process.env.PORT ?? 3001);

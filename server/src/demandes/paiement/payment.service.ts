@@ -304,7 +304,6 @@ private async updateObligationStatus(obligationId: number) {
 
 async generatePaymentReceipt(paymentId: number) {
   try {
-    console.log(`▶️ Starting receipt generation for payment ID: ${paymentId}`);
 
     const payment = await this.prisma.paiement.findUnique({
       where: { id: paymentId },
@@ -342,11 +341,27 @@ async generatePaymentReceipt(paymentId: number) {
       payments: obligation?.paiements || [] // ✅ all related payments
     });
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    await page.pdf({ path: outputPath, format: 'A4', printBackground: true });
-    await browser.close();
+    
+try {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox'],
+  });
+
+  const page = await browser.newPage();
+  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+  await page.pdf({
+    path: outputPath,
+    format: 'A4',
+    printBackground: true,
+  });
+
+  await browser.close();
+} catch (error) {
+  console.error('🛑 Puppeteer PDF generation failed:', error);
+  throw error; // Optional: re-throw to let NestJS return 500
+}
 
     return {
       pdfUrl: `http://localhost:3001/receipts/${paymentId}.pdf`,

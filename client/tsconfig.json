@@ -14,7 +14,7 @@
     "types": ["node"],
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": "./src", // ✅ Add this line
+    "baseUrl": ".", // ✅ Add this line
     "paths": {
       "@/*": ["*"] // ✅ No need for ./src/* if baseUrl is already src
     },

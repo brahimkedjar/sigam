@@ -10,7 +10,7 @@ interface UseActivateEtapeOptions {
 
 export const useActivateEtape = ({ idProc, etapeNum, statutProc }: UseActivateEtapeOptions) => {
   useEffect(() => {
-    if (!idProc) return;
+    if (!idProc || !statutProc) return;
     if (statutProc === 'TERMINEE') return;
 
     const activate = async () => {

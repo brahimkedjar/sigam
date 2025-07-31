@@ -13,6 +13,7 @@
   position: relative;
 }
 
+
 .headerTitle {
   font-size: 2.5rem;
   font-weight: 700;
@@ -389,6 +390,26 @@
   transform: translateY(0);
 }
 
+.modalInfoText {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border-radius: 0.375rem;
+  border-left: 4px solid #6366f1;
+}
+
+.modalInfoText p {
+  margin: 0.25rem 0;
+}
+
+.modalSubtitle {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #334155;
+}
+
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -563,3 +584,163 @@
   }
 }
 
+/* Renewal Timeline Styles */
+.renewalTimeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.renewalItem {
+  position: relative;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.renewalMarker {
+  position: absolute;
+  left: -40px;
+  top: 0;
+}
+
+.renewalNumber {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #6366f1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.renewalConnector {
+  position: absolute;
+  left: 15px;
+  top: 30px;
+  bottom: 0;
+  width: 2px;
+  background-color: #e2e8f0;
+}
+
+.renewalDetails {
+  margin-left: 10px;
+}
+
+.renewalHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.renewalDecision {
+  font-weight: 600;
+}
+
+.renewalDate {
+  color: #64748b;
+}
+
+.renewalPeriod {
+  color: #475569;
+  margin-bottom: 5px;
+}
+
+.renewalDuration {
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.renewalComment {
+  color: #64748b;
+  font-style: italic;
+  margin-top: 5px;
+}
+
+.currentStatus {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: #f8fafc;
+}
+
+.statusLabel {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.statusValue {
+  font-weight: 500;
+}
+
+.statusValid {
+  color: #10b981;
+}
+
+.statusWarning {
+  color: #f59e0b;
+}
+
+.statusExpired {
+  color: #ef4444;
+}
+
+.statusDate {
+  color: #64748b;
+  margin-left: 5px;
+}
+
+.noRenewals {
+  color: #64748b;
+  text-align: center;
+  padding: 20px;
+}
+
+.modalIconWarning {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.warningIcon {
+  color: #ef4444;
+}
+
+.renewalLimitWarning {
+  transition: all 0.2s ease;
+}
+
+.renewalLimitWarning:hover {
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 100;
+}
+
+.actionButton:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.modalWarningText {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #fef2f2;
+  border-radius: 0.375rem;
+  border-left: 4px solid #ef4444;
+  color: #b91c1c;
+}

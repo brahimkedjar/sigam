@@ -65,20 +65,39 @@ async getProceduresEnCours() {
     },
   });
 
-  console.log('>>> Procedures fetched from DB:', data.map(d => ({
-    id: d.id_demande,
-    etapes: d.procedure?.ProcedureEtape.map(p => ({
-      statut: p.statut,
-      lib_etape: p.etape?.lib_etape
-    }))
-  })));
-
   return data;
 }
 
 
 async deleteProcedureAndRelatedData(procedureId: number) { 
   return this.prisma.$transaction(async (prisma) => {
+    // First check if this is a renewal procedure
+    const procedure = await prisma.procedure.findUnique({
+      where: { id_proc: procedureId },
+      include: {
+        typeProcedure: true,
+        permis: {
+          select: {
+            id: true,
+            nombre_renouvellements: true
+          }
+        }
+      }
+    });
+
+    // If this is a renewal procedure, decrement the count
+    if (procedure?.typeProcedure.libelle!.toLowerCase() === 'renouvellement' && 
+        procedure.permis.length > 0) {
+      const permisId = procedure.permis[0].id;
+      const currentCount = procedure.permis[0].nombre_renouvellements || 0;
+      
+      await prisma.permis.update({
+        where: { id: permisId },
+        data: {
+          nombre_renouvellements: Math.max(0, currentCount - 1)
+        }
+      });
+    }
     // First get all related demandes for this procedure
     const demandes = await prisma.demande.findMany({
       where: { id_proc: procedureId },
