@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 const procedures = [
   { id: 1, nom: "Permis de prospection - Mines", code: "PPM" },
