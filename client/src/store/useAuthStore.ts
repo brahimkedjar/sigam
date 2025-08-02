@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
+
 interface AuthData {
   token: string | null; // Allow null for token
   id: number | null;
@@ -22,6 +24,7 @@ interface AuthStore {
 }
 
 export const useAuthStore = create<AuthStore>()(
+  
    persist(
     (set, get) => ({
       auth: {

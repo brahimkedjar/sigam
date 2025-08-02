@@ -9,16 +9,18 @@ const protectedRoutes = [
   '/DEA',
   '/gestion-permis',
   '/controle-minier',
-  '/instruction-cadastrale'
+  '/instruction-cadastrale',
+  '/permis_dashboard'
 ];
 
 const routePermissionMap: Record<string, string> = {
-  '/dashboard': 'view_dashboard',
+  '/dashboard': 'dashboard',
   '/admin_panel': 'Admin-Panel',
   '/DEA': 'Payments',
   '/gestion-permis': 'manage_permits',
   '/controle-minier': 'controle_minier',
   '/instruction-cadastrale': 'view_cadastre',
+  '/permis_dashboard': 'dashboard'
 };
 
 export async function middleware(req: NextRequest) {
@@ -105,6 +107,7 @@ export const config = {
     '/DEA/:path*',
     '/gestion-permis/:path*',
     '/controle-minier/:path*',
-    '/instruction-cadastrale/:path*'
+    '/instruction-cadastrale/:path*',
+    '/permis_dashboard/:path*',
   ],
 };
