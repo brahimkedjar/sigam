@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import Modal from 'react-modal';
 import { ToastContainer } from 'react-toastify';
@@ -24,6 +24,7 @@ import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import { STEP_LABELS } from '@/src/constants/steps';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 if (typeof window !== 'undefined') {
   Modal.setAppElement('#__next');
@@ -59,7 +60,7 @@ const PermitRenewalPage = () => {
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const originalId = originalIdStr ? parseInt(originalIdStr, 10) : undefined;
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [permitDetails, setPermitDetails] = useState<PermitDetails | null>(null);
   const [permitTypeDetails, setPermitTypeDetails] = useState<PermitTypeDetails | null>(null);
   const [renewalData, setRenewalData] = useState<RenewalData>({

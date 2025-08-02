@@ -63,8 +63,10 @@ export default function Navbar() {
               <span className={styles['avatar-initials']}>{getInitials(auth.role!)}</span>
             </div>
             <div className={styles['user-info']}>
-              <span className={styles['user-name']}>{auth.role}</span>
-              <span className={styles['user-email']}>{auth.role?.toLowerCase().replace(' ', '_')}@sigam.com</span>
+              <div className={styles['user-info']}>
+    <span className={styles['user-name']}>{auth.username}</span>
+    <span className={styles['user-email']}>{auth.email}</span>
+  </div>
             </div>
             <FiChevronDown className={`${styles['dropdown-arrow']} ${isDropdownOpen ? styles['open'] : ''}`} />
           </button>
@@ -76,8 +78,12 @@ export default function Navbar() {
                   <span className={styles['avatar-initials']}>{getInitials(auth.role!)}</span>
                 </div>
                 <div>
-                  <p className={styles['dropdown-name']}>{auth.role}</p>
-                  <p className={styles['dropdown-email']}>{auth.role?.toLowerCase().replace(' ', '_')}@sigam.com</p>
+                  <div>
+                                  <p className={styles['dropdown-name']}>Role : {auth.role}</p>
+
+    <p className={styles['dropdown-name']}>{auth.username}</p>
+    <p className={styles['dropdown-email']}>{auth.email}</p>
+  </div>
                 </div>
               </div>
               

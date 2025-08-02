@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   FiUpload,
   FiCheck,
@@ -22,6 +22,7 @@ import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 import { useActivateEtape } from "@/src/hooks/useActivateEtape";
+import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
 
 type Document = {
   id_doc: number;
@@ -45,7 +46,7 @@ type DocumentWithStatus = Document & { statut: DocStatus };
 
 export default function Step5_Documents() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const originalId  = searchParams?.get("originalDemandeId");
   const originalprocid  = searchParams?.get("original_proc_id");
   const idProcStr = searchParams?.get('id');

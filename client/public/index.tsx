@@ -19,7 +19,7 @@ export default function DemandeStart() {
   const [idTypeProc, setIdTypeProc] = useState<number | null>(null);
   const [objet, setObjet] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const router = useRouterWithLoading();
 
   const handleSubmit = async () => {
     if (!idTypeProc || !objet) {

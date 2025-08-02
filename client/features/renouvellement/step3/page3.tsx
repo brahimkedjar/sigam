@@ -8,7 +8,7 @@ import Actionnaires from './Actionnaires';
 import  DetailsRC from './DetailsRC';
 import axios from 'axios';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 import { FiCheck, FiX, FiFileText, FiChevronRight, FiChevronLeft, FiEdit, FiLoader } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '../../../src/store/useAuthStore';
@@ -113,7 +113,7 @@ const initialData: SocieteData = {
 export default function Step2() {
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
   const [idDemande, setIdDemande] = useState<string | null>(null);
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [detenteurId, setDetenteurId] = useState<number | null>(null);
   const searchParams = useSearchParams();
   const [showTauxModal, setShowTauxModal] = useState(false);

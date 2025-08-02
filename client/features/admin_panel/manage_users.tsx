@@ -8,6 +8,7 @@ import router from 'next/router';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { ViewType } from '../../src/types/viewtype';
 import { useViewNavigator } from '../../src/hooks/useViewNavigator';
+import { logAuditAction } from '../../src/utils/auditLogger';
 
 type Role = {
   id: number;
@@ -62,6 +63,7 @@ export default function AdminPanel() {
   const [editingGroups, setEditingGroups] = useState<{ [id: number]: boolean }>({});
   const [selectedGroupsForUser, setSelectedGroupsForUser] = useState<number[]>([]);
   const [groupInputs, setGroupInputs] = useState<{ [id: number]: { name: string, description: string } }>({});
+  const auth = useAuthStore.getState().auth;
   const toggleAllPermissions = () => {
   if (selectedPermissions.length === permissions.length) {
     // Deselect all
@@ -71,6 +73,7 @@ export default function AdminPanel() {
     setSelectedPermissions(permissions.map(p => p.id));
   }
 };
+
 
 const isAllSelected = selectedPermissions.length === permissions.length && permissions.length > 0;
 const isSomeSelected = selectedPermissions.length > 0 && !isAllSelected;
@@ -165,99 +168,269 @@ const createGroup = async () => {
 
 const assignGroupsToUser = async () => {
   if (!selectedUser || selectedGroupsForUser.length === 0) return;
+  
   try {
+    const user = users.find(u => u.id === selectedUser);
+    const selectedGroups = groups.filter(g => selectedGroupsForUser.includes(g.id));
+    
     await axios.post(`${API_URL}/admin/user/assign-groups`, {
       userId: selectedUser,
       groupIds: selectedGroupsForUser,
     });
+    
+    await logAuditAction({
+      action: 'ASSIGN',
+      entityType: 'User',
+      entityId: selectedUser,
+      changes: {
+        groups: {
+          old: user?.groups?.map(g => g.name) || [],
+          new: selectedGroups.map(g => g.name)
+        }
+      },
+      status: 'SUCCESS',
+      additionalData: {
+        groupIds: selectedGroupsForUser,
+        operation: 'group_assignment'
+      }
+    });
+    
     setSelectedUser(null);
     setSelectedGroupsForUser([]);
     showNotification('Groups assigned to user successfully', 'success');
     fetchAll();
-  } catch (error) {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'ASSIGN',
+      entityType: 'User',
+      entityId: selectedUser,
+      status: 'FAILURE',
+      errorMessage: error.message,
+      additionalData: {
+        errorDetails: error.response?.data || null
+      }
+    });
     showNotification('Failed to assign groups to user', 'error');
   }
 };
 
+
 const deleteGroup = async (id: number) => {
   try {
+    const groupToDelete = groups.find(g => g.id === id);
     await axios.delete(`${API_URL}/admin/group/${id}`);
+    
+    await logAuditAction({
+      action: 'DELETE',
+      entityType: 'Group',
+      entityId: id,
+      changes: {
+        group: {
+          new :groupToDelete
+      }
+    }   ,   status: 'SUCCESS'
+  });
+    
     showNotification('Group deleted successfully', 'success');
     fetchAll();
-  } catch {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'DELETE',
+      entityType: 'Group',
+      entityId: id,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
     showNotification('Failed to delete group', 'error');
   }
 };
 
 const updateGroup = async (id: number, name: string, description?: string) => {
   try {
+    const oldGroup = groups.find(g => g.id === id);
     await axios.put(`${API_URL}/admin/group/${id}`, { name, description });
+    
+    await logAuditAction({
+      action: 'UPDATE',
+      entityType: 'Group',
+      entityId: id,
+      changes: {
+        name: { old: oldGroup?.name, new: name },
+        description: { old: oldGroup?.description, new: description }
+      },
+      status: 'SUCCESS'
+    });
+    
     showNotification('Group updated successfully', 'success');
     fetchAll();
-  } catch {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'UPDATE',
+      entityType: 'Group',
+      entityId: id,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
     showNotification('Failed to update group', 'error');
   }
 };
+
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
 
-  const createRole = async () => {
-    if (!newRole.trim()) return;
-    try {
-      await axios.post(`${API_URL}/admin/role`, { name: newRole });
-      setNewRole('');
-      showNotification('Role created successfully', 'success');
-      fetchAll();
-    } catch (error) {
-      showNotification('Failed to create role', 'error');
-    }
-  };
+const createRole = async () => {
+  if (!newRole.trim()) return;
+  try {
+    await axios.post(`${API_URL}/admin/role`, { name: newRole });
+    
+     await logAuditAction({
+      action: 'CREATE',
+      entityType: 'Role',
+      changes: {
+        name: { new: newRole }
+      },
+      additionalData: {
+        username: auth.username // Include username
+      },
+      status: 'SUCCESS'
+    });
+    
+    setNewRole('');
+    showNotification('Role created successfully', 'success');
+    fetchAll();
+  }catch (error: any) {
+    console.error('Role creation failed:', error);
+    
+    await logAuditAction({
+      action: 'CREATE',
+      entityType: 'Role',
+      status: 'FAILURE',
+      errorMessage: error.message,
+      
+    });
+    
+    showNotification('Failed to create role', 'error');
+  }
+};
+
+
 
   const createPermission = async () => {
-    if (!newPermission.trim()) return;
-    try {
-      await axios.post(`${API_URL}/admin/permission`, { name: newPermission });
-      setNewPermission('');
-      showNotification('Permission created successfully', 'success');
-      fetchAll();
-    } catch (error) {
-      showNotification('Failed to create permission', 'error');
-    }
-  };
+  if (!newPermission.trim()) return;
+  
+  try {
+    await axios.post(`${API_URL}/admin/permission`, { name: newPermission });
+    
+    await logAuditAction({
+      action: 'CREATE',
+      entityType: 'Permission',
+      changes: {
+        name: {new : newPermission
+      },
+    },      status: 'SUCCESS'
+  });
+    
+    setNewPermission('');
+    showNotification('Permission created successfully', 'success');
+    fetchAll();
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'CREATE',
+      entityType: 'Permission',
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
+    showNotification('Failed to create permission', 'error');
+  }
+};
 
-  const assignPermissions = async () => {
-    if (!selectedRole || selectedPermissions.length === 0) return;
-    try {
-      await axios.post(`${API_URL}/admin/role/assign-permissions`, {
-        roleId: selectedRole,
-        permissionIds: selectedPermissions,
-      });
-      setSelectedRole(null);
-      setSelectedPermissions([]);
-      showNotification('Permissions assigned successfully', 'success');
-      fetchAll();
-    } catch (error) {
-      showNotification('Failed to assign permissions', 'error');
-    }
-  };
+const assignPermissions = async () => {
+  if (!selectedRole || selectedPermissions.length === 0) return;
+  
+  try {
+    const role = roles.find(r => r.id === selectedRole);
+    const selectedPerms = permissions.filter(p => selectedPermissions.includes(p.id));
+    
+    await axios.post(`${API_URL}/admin/role/assign-permissions`, {
+      roleId: selectedRole,
+      permissionIds: selectedPermissions,
+    });
+    
+    await logAuditAction({
+      action: 'ASSIGN',
+      entityType: 'Role',
+      entityId: selectedRole,
+      changes: {
+        permissions: {
+          old: role?.permissions?.map(p => p.name) || [],
+          new: selectedPerms.map(p => p.name)
+        }
+      },
+      status: 'SUCCESS',
+      additionalData: {
+        permissionIds: selectedPermissions
+      }
+    });
+    
+    setSelectedRole(null);
+    setSelectedPermissions([]);
+    showNotification('Permissions assigned successfully', 'success');
+    fetchAll();
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'ASSIGN',
+      entityType: 'Role',
+      entityId: selectedRole,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
+    showNotification('Failed to assign permissions', 'error');
+  }
+};
+
 
   const assignRoleToUser = async () => {
-    if (!selectedUser || !selectedRoleForUser) return;
-    try {
-      await axios.post(`${API_URL}/admin/user/assign-role`, {
-        userId: selectedUser,
-        roleId: selectedRoleForUser,
-      });
-      setSelectedUser(null);
-      setSelectedRoleForUser(null);
-      showNotification('Role assigned to user successfully', 'success');
-      fetchAll();
-    } catch (error) {
-      showNotification('Failed to assign role to user', 'error');
-    }
-  };
+  if (!selectedUser || !selectedRoleForUser) return;
+  
+  try {
+    const user = users.find(u => u.id === selectedUser);
+    const role = roles.find(r => r.id === selectedRoleForUser);
+    
+    await axios.post(`${API_URL}/admin/user/assign-role`, {
+      userId: selectedUser,
+      roleId: selectedRoleForUser,
+    });
+    
+    await logAuditAction({
+      action: 'ASSIGN',
+      entityType: 'User',
+      entityId: selectedUser,
+      changes: {
+        role: {
+          old: user?.role?.name || null,
+          new: role?.name
+        }
+      },
+      status: 'SUCCESS'
+    });
+    
+    setSelectedUser(null);
+    setSelectedRoleForUser(null);
+    showNotification('Role assigned to user successfully', 'success');
+    fetchAll();
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'ASSIGN',
+      entityType: 'User',
+      entityId: selectedUser,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
+    showNotification('Failed to assign role to user', 'error');
+  }
+};
 
   const handlePermissionToggle = (permissionId: number) => {
   setSelectedPermissions(prev =>
@@ -269,45 +442,120 @@ const updateGroup = async (id: number, name: string, description?: string) => {
    
 const deleteRole = async (id: number) => {
   try {
+    const roleToDelete = roles.find(r => r.id === id);
     await axios.delete(`${API_URL}/admin/role/${id}`);
+    
+    await logAuditAction({
+      action: 'DELETE',
+      entityType: 'Role',
+      entityId: id,
+      changes: {
+        role: {new :roleToDelete
+      },
+    },      status: 'SUCCESS'
+  });
+    
     showNotification('Role deleted successfully', 'success');
     fetchAll();
-  } catch {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'DELETE',
+      entityType: 'Role',
+      entityId: id,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
     showNotification('Failed to delete role', 'error');
   }
 };
 
+
 const updateRole = async (id: number, name: string) => {
   try {
+    const oldRole = roles.find(r => r.id === id);
     await axios.put(`${API_URL}/admin/role/${id}`, { name });
+    
+    await logAuditAction({
+      action: 'UPDATE',
+      entityType: 'Role',
+      entityId: id,
+      changes: {
+        name: {  
+          old: oldRole?.name,
+          new: name
+        }
+      },
+      status: 'SUCCESS'
+    });
+    
     showNotification('Role updated successfully', 'success');
     fetchAll();
-  } catch {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'UPDATE',
+      entityType: 'Role',
+      entityId: id,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
     showNotification('Failed to update role', 'error');
   }
 };
 
 const deletePermission = async (id: number) => {
   try {
+    const permissionToDelete = permissions.find(p => p.id === id);
     await axios.delete(`${API_URL}/admin/permission/${id}`);
+    await logAuditAction({
+      action: 'DELETE',
+      entityType: 'Permission',
+      entityId: id,
+      changes: { permission: {new:
+        permissionToDelete },
+    },      status: 'SUCCESS'
+  });
     showNotification('Permission deleted successfully', 'success');
     fetchAll();
-  } catch {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'DELETE',
+      entityType: 'Permission',
+      entityId: id,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
     showNotification('Failed to delete permission', 'error');
   }
 };
 
 const updatePermission = async (id: number, name: string) => {
   try {
+    const oldPermission = permissions.find(p => p.id === id);
     await axios.put(`${API_URL}/admin/permission/${id}`, { name });
+    
+    await logAuditAction({
+      action: 'UPDATE',
+      entityType: 'Permission',
+      entityId: id,
+      changes: {
+        name: { old: oldPermission?.name, new: name }
+      },
+      status: 'SUCCESS'
+    });
+    
     showNotification('Permission updated successfully', 'success');
     fetchAll();
-  } catch {
+  } catch (error: any) {
+    await logAuditAction({
+      action: 'UPDATE',
+      entityType: 'Permission',
+      entityId: id,
+      status: 'FAILURE',
+      errorMessage: error.message
+    });
     showNotification('Failed to update permission', 'error');
   }
 };
-
-
 return (
   <div className={styles['app-container']}>
     <Navbar />

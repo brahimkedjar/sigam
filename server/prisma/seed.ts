@@ -171,6 +171,9 @@ async function main9() {
       email: 'admin@sigam.dz',
       password: hashed,
       roleId: adminRole.id,
+      nom: 'Admin',
+      Prenom: 'Super',
+      username: 'admin'
     },
   });
 
@@ -181,6 +184,9 @@ async function main9() {
       email: 'user@sigam.dz',
       password: hashed,
       roleId: userRole.id,
+      nom: 'User',
+      Prenom: 'Normal',
+      username: 'user'
     },
   });
 

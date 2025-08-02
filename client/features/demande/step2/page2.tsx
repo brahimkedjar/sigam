@@ -21,6 +21,7 @@ import { useAuthStore } from "../../../src/store/useAuthStore";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
+import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
 
 type Document = {
   id_doc: number;
@@ -44,7 +45,7 @@ type DocumentWithStatus = Document & { statut: DocStatus };
 
 export default function Step5_Documents() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const idProc = searchParams?.get("id");
   const [idDemande, setIdDemande] = useState<string | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);

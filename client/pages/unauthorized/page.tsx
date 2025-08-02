@@ -3,12 +3,12 @@
 import styles from './unauthorized.module.css';
 import { useSearchParams } from 'next/navigation';
 import { FiHome, FiAlertTriangle } from 'react-icons/fi';
-import { useRouter } from 'next/navigation';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 export default function Unauthorized() {
   const searchParams = useSearchParams();
   const reason = searchParams?.get('reason');
-  const router = useRouter();
+  const router = useRouterWithLoading();
 
   const getMessage = () => {
     switch (reason) {

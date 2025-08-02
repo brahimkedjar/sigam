@@ -92,7 +92,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const res = await fetch(`http://localhost:3001/Permisdashboard/${id}`);
     if (!res.ok) throw new Error('Failed to fetch permit');
     const permis = await res.json();
-     // Ensure typePermis includes all required fields
     if (!permis.typePermis.nbr_renouv_max) {
       const typeRes = await fetch(`http://localhost:3001/api/typepermis/${permis.id_typePermis}`);
       const typeData = await typeRes.json();
@@ -103,9 +102,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
     const renewalsRes = await fetch(`http://localhost:3001/api/procedures/${id}/renewals`);
     const renewalsData = renewalsRes.ok ? await renewalsRes.json() : [];
-    
-    console.log('Raw renewals data:', renewalsData); // Debug
-
     // Transform the data to match RenewalInfo
     const formattedRenewals = renewalsData.map((proc: any) => {
   // Ensure we have a valid renewal object
@@ -137,8 +133,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 
 const PermisViewPage: React.FC<Props> = ({ permis }) => {
-  console.log('Component props:', { permis });
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [notif, setNotif] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [notificationQueue, setNotificationQueue] = useState<Array<{message: string;type: 'error' | 'success' | 'info';}>>([]);
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);

@@ -1,20 +1,20 @@
 'use client';
 import { useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
 import Image from 'next/image';
 import styles from './login.module.css';
 import Link from 'next/link';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const setAuth = useAuthStore((s) => s.login);
-  const router = useRouter();
+  const login = useAuthStore((s) => s.login); 
+  const router = useRouterWithLoading();
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
@@ -22,49 +22,35 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      const debug = await axios.get(
-        'http://localhost:3001/auth/debug-headers',
-        { withCredentials: true }
-      );
-
-      document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-
-      const loginResponse = await axios.post(
-        'http://localhost:3001/auth/login',
+      const response = await axios.post(
+        'http://localhost:3001/auth/login', 
         { email, password },
         { 
           withCredentials: true,
-          headers: { 'Content-Type': 'application/json' }
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
       );
 
-      if (loginResponse.status !== 201) {
-        throw new Error('Login failed');
-      }
-
-      const cookieTest = await axios.get(
-        'http://localhost:3001/auth/debug-cookies',
-        { withCredentials: true }
-      );
-
-      const meResponse = await axios.get('http://localhost:3001/auth/me', {
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
-
-      setAuth({
-        token: null,
-        role: meResponse.data.user.role,
-        permissions: meResponse.data.user.permissions,
-      });
-
-      window.location.href = '/permis_dashboard/PermisDashboard';
+      useAuthStore.getState().login(response.data);
+      router.push('/permis_dashboard/PermisDashboard');
       
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('Login error:', err);
       setError('Email ou mot de passe invalide');
+      
+      try {
+        await axios.post('http://localhost:3001/audit-logs/log', {
+          action: 'LOGIN',
+          entityType: 'User',
+          status: 'FAILURE',
+          errorMessage: 'Invalid credentials',
+          additionalData: { email }
+        });
+      } catch (auditError) {
+        console.error('Failed to log failed login attempt:', auditError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +64,21 @@ export default function LoginPage() {
 
   return (
     <div className={styles.loginContainer}>
+      {/* Full-page loading overlay */}
+      {isLoading && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.quantumSpinner}>
+            <div className={styles.quantumDot}></div>
+            <div className={styles.quantumDot}></div>
+            <div className={styles.quantumDot}></div>
+            <div className={styles.quantumDot}></div>
+          </div>
+          <div className={styles.loadingText}>Authentification en cours...</div>
+        </div>
+      )}
+
       {/* Left side - Branding/Illustration */}
-      <div className={styles.brandSection}>
+      <div className={`${styles.brandSection} ${isLoading ? styles.blurred : ''}`}>
         <div className={styles.brandLogo}>
           <Image 
             src="/logo-white.png" 
@@ -103,7 +102,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login Form */}
-      <div className={styles.loginFormSection}>
+      <div className={`${styles.loginFormSection} ${isLoading ? styles.blurred : ''}`}>
         <div className={styles.loginFormContainer}>
           <div className={styles.loginHeader}>
             <h2 className={styles.loginTitle}>Connexion</h2>
@@ -170,17 +169,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className={styles.submitButton}
           >
-            {isLoading ? (
-              <span>
-                <svg className={styles.spinner} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="20" height="20">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Connexion en cours...
-              </span>
-            ) : (
-              'Se connecter'
-            )}
+            Se connecter
           </button>
 
           <div className={styles.loginFooter}>
@@ -190,9 +179,9 @@ export default function LoginPage() {
                Sign Up
               </Link>
             </p>
-             <a href="/admin_panel/page" className={styles.footerLink}>
-               Admin Page
-              </a>
+            <a href="/admin_panel/page" className={styles.footerLink}>
+              Admin Page
+            </a>
           </div>
         </div>
       </div>

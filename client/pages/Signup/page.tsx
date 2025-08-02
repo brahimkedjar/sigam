@@ -5,7 +5,15 @@ import axios from 'axios';
 import styles from './register.module.css';
 
 export default function Register() {
-  const [form, setForm] = useState({ email: '', password: '', role: '' });
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    role: '',
+    nom: '',
+    Prenom: '',
+    username: '',
+  });
+
   const [message, setMessage] = useState('');
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
 
@@ -43,6 +51,39 @@ export default function Register() {
         {message && <p className={styles.message}>{message}</p>}
 
         <div className={styles.formGroup}>
+          <label htmlFor="nom">Nom</label>
+          <input
+            type="text"
+            id="nom"
+            required
+            value={form.nom}
+            onChange={(e) => setForm({ ...form, nom: e.target.value })}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="Prenom">Prénom</label>
+          <input
+            type="text"
+            id="Prenom"
+            required
+            value={form.Prenom}
+            onChange={(e) => setForm({ ...form, Prenom: e.target.value })}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="username">Nom d'utilisateur</label>
+          <input
+            type="text"
+            id="username"
+            required
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
           <label htmlFor="email">Email</label>
           <input
             type="email"
@@ -70,7 +111,7 @@ export default function Register() {
             id="role"
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
-           >
+          >
             {roles.map((role) => (
               <option key={role.id} value={role.name}>
                 {role.name.charAt(0).toUpperCase() + role.name.slice(1)}

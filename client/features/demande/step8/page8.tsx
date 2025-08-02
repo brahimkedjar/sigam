@@ -2,7 +2,8 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
+
 import axios, { isAxiosError } from "axios";
 import { 
   FiChevronLeft, 
@@ -169,7 +170,7 @@ const SeanceList = ({ seances, selectedSeance, onSelect }: {
 };
 
 export default function ComiteDirectionPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const searchParams = useSearchParams();
   const originalIdStr = searchParams?.get("originalDemandeId");
   const originalProcIdStr = searchParams?.get("original_proc_id");

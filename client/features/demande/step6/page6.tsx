@@ -28,6 +28,7 @@ import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 //import ArcGISMap from '@/components/map/DynamicArcGISMap'; // cleaner with `@` alias
 
 export default function CadastrePage() {
@@ -49,7 +50,7 @@ export default function CadastrePage() {
   };
 
   // State for points and polygon
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [idDemande, setIdDemande] = useState<number | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [superficie, setSuperficie] = useState(0);

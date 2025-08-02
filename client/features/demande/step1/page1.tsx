@@ -2,7 +2,6 @@
 
 import styles from './demande.module.css';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { cleanLocalStorageForNewDemande } from '../../../utils/cleanLocalStorage';
 import Navbar from '../../../features/navbar/Navbar';
@@ -13,6 +12,7 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 type TypePermis = {
   id: number;
@@ -32,7 +32,7 @@ export default function DemandeStart() {
   const [codeDemande, setCodeDemande] = useState('');
   const [heureDemarrage, setHeureDemarrage] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const { currentView, navigateTo } = useViewNavigator('nouvelle-demande');
   const currentStep = 0;
   const [dateSoumission, setDateSoumission] = useState<Date | null>(new Date());

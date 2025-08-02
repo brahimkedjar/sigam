@@ -8,14 +8,59 @@ datasource db {
 }
 
 // === 1. Prisma Schema (schema.prisma) ===
+// schema.prisma
+model Session {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.VarChar(64)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id               Int       @id @default(autoincrement())
+  action           String
+  entityType       String
+  entityId         Int?
+  userId           Int?
+  user             User?     @relation(fields: [userId], references: [id])
+  timestamp        DateTime  @default(now())
+  changes          Json?
+  ipAddress        String?
+  userAgent        String?
+  status           String?   @default("SUCCESS")
+  errorMessage     String?
+  additionalData   Json?
+  previousState    Json?     // Stores the complete previous state for undo
+  contextId        String?   // For grouping related actions
+  sessionId        String?   // For tracking user sessions
+  
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([contextId])
+  @@index([sessionId])
+}
+
 model User {
   id        Int      @id @default(autoincrement())
+  nom       String
+  Prenom    String
+  username  String   @unique
   email     String   @unique
   password  String
   roleId    Int?
   role      Role?    @relation(fields: [roleId], references: [id])
   userGroups UserGroup[]
+  sessions  Session[]  
   createdAt DateTime @default(now())
+  AuditLog AuditLog[]
 }
 
 model Role {

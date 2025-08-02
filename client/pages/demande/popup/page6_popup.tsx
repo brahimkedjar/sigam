@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useRouter } from "next/router";
+import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
+
 import { 
   FiX, 
   FiCheck, 
@@ -104,7 +105,7 @@ interface SummaryModalProps {
 }
 
 export default function SummaryModal({ data, onClose }: SummaryModalProps) {
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [isLoading, setIsLoading] = useState(false);
   
   if (!data) return null;

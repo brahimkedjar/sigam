@@ -15,8 +15,8 @@ import {
   FiUpload
 } from 'react-icons/fi';
 import * as turf from '@turf/turf';
-import { useRouter } from 'next/router';
 import axios from 'axios';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 //import ArcGISMap from '@/components/map/DynamicArcGISMap'; // cleaner with `@` alias
 
 export default function CadastrePage() {
@@ -39,7 +39,7 @@ type PermitData = {
 };
 
   // State for points and polygon
-  const router = useRouter();
+  const router = useRouterWithLoading();
 const [idDemande, setIdDemande] = useState<number | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [superficie, setSuperficie] = useState(0);

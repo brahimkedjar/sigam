@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {
   FiSearch, FiChevronRight, FiClock,
@@ -14,6 +13,8 @@ import dynamic from 'next/dynamic';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useViewNavigator } from '../../src/hooks/useViewNavigator';
 import { STEP_LABELS } from '../../src/constants/steps';
+import { logAuditAction } from '../../src/utils/auditLogger';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 interface Demande {
   id_demande: number;
@@ -67,7 +68,7 @@ export default function SuiviDemandes() {
   const [isLoading, setIsLoading] = useState(true);
   const { currentView, navigateTo } = useViewNavigator('procedures');
   const [searchTerm, setSearchTerm] = useState('');
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const { auth, isLoaded } = useAuthStore();
   const [procedureToDelete, setProcedureToDelete] = useState<number | null>(null);
   const Sidebar = dynamic(() => import('../sidebar/Sidebar'), { ssr: false });

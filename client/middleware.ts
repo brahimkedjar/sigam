@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const apiURL = process.env.NEXT_PUBLIC_API_URL; // Always server-side in middleware
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
 const protectedRoutes = [
   '/dashboard',
@@ -23,29 +23,50 @@ const routePermissionMap: Record<string, string> = {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-const token = req.cookies.get('token')?.value;
+  
+  // Get token from cookies
+  const sessionToken = req.cookies.get('auth_token')?.value;
+  console.log('Middleware token check:', { 
+    path: pathname, 
+    tokenExists: !!sessionToken,
+    allCookies: req.cookies.getAll() 
+  });
 
-  // Redirect authenticated users away from login page
-  if (pathname === '/' && token) {
-    return NextResponse.redirect(new URL('/permis_dashboard/PermisDashboard', req.url));
+  // Handle root path redirection
+  if (pathname === '/') {
+    if (sessionToken) {
+      try {
+        const verifyResponse = await fetch(`${apiURL}/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: sessionToken }),
+        });
+        
+        if (verifyResponse.ok) {
+          return NextResponse.redirect(new URL('/permis_dashboard/PermisDashboard', req.url));
+        }
+      } catch (err) {
+        console.error('Session verification failed:', err);
+      }
+    }
+    return NextResponse.next();
   }
-
-  // Check for protected route
+  // Check for protected routes
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    if (!token) {
+    if (!sessionToken) {
       return NextResponse.redirect(new URL('/unauthorized/page?reason=not_authenticated', req.url));
     }
 
     try {
-      const res = await fetch(`${apiURL}/auth/me`, {
-  method: 'GET',
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-  cache: 'no-store',
-});
-
-
+      // Verify session with the backend
+      const res = await fetch(`${apiURL}/auth/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: sessionToken }),
+        cache: 'no-store',
+      });
 
       if (!res.ok) throw new Error('Unauthorized');
 
@@ -65,7 +86,10 @@ const token = req.cookies.get('token')?.value;
 
     } catch (err) {
       console.error('❌ Middleware auth error:', err);
-      return NextResponse.redirect(new URL('/unauthorized/page?reason=auth_error', req.url));
+      // Clear invalid session
+      const response = NextResponse.redirect(new URL('/unauthorized/page?reason=auth_error', req.url));
+      response.cookies.delete('auth_token');
+      return response;
     }
   }
 

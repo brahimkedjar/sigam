@@ -50,7 +50,6 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
     { id: 'instruction-cadastrale', icon: <FiMap />, label: 'Instruction cadastrale', permission: 'view_cadastre' },
     { id: 'generateur-permis', icon: <FiBriefcase />, label: 'Générateur permis', permission: 'generate_permits' },
     { id: 'parametres', icon: <FiSettings />, label: 'Paramètres', permission: 'manage_settings' },
-    { id: 'gestion-utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', permission: 'manage_users' },
     { 
       id: 'Admin-Panel', 
       icon: <FiLock />, 
@@ -58,7 +57,10 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
       permission: 'Admin-Panel',
       subItems: [
         { id: 'manage_users', icon: <FiUsers />, label: 'Manage Users', permission: 'manage_users' },
-        { id: 'manage_documents', icon: <FiFile />, label: 'Manage Documents', permission: 'manage_documents' }
+        { id: 'manage_documents', icon: <FiFile />, label: 'Manage Documents', permission: 'manage_documents' },
+        { id: 'Audit_Logs', icon: <FiFile />, label: 'Audit Logs', permission: 'Audit_Logs' },
+        { id: 'gestion-utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', permission: 'manage_users' },
+ 
       ]
     },
     { id: 'Payments', icon: <FiDollarSign />, label: 'Paiements', permission: 'Payments' },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import {
   FiChevronLeft, FiChevronRight, FiMapPin, FiFileText, FiX,
@@ -20,6 +20,7 @@ import { STEP_LABELS } from '../../../src/constants/steps';
 import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import { toast } from 'react-toastify';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 type Substance = {
   id_sub: number;
@@ -58,7 +59,7 @@ type Commune = {
 
 export default function Step4_Substances() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const originalId  = searchParams?.get("originalDemandeId");
   const originalprocid  = searchParams?.get("original_proc_id");
   const idProcStr = searchParams?.get('id');

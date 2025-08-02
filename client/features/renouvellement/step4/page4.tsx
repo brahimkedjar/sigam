@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 import { useDemandeInfo } from '../../../utils/useDemandeInfo';
 import { FiChevronLeft, FiChevronRight, FiUser, FiDollarSign, FiTool, FiFileText, FiCalendar } from 'react-icons/fi';
 import styles from '@/features/demande/step4/capacites.module.css';
@@ -33,7 +33,7 @@ export default function Capacites() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { isReady } = useDemandeInfo();
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const searchParams = useSearchParams();
   const [idDemande, setIdDemande] = useState<string | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);

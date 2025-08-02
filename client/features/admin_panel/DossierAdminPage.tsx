@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/router';
 import { FiEdit, FiTrash2, FiPlus, FiX, FiFileText, FiFolder, FiCheck, FiSearch, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,6 +7,7 @@ import styles from './DossierManager.module.css'
 import Navbar from '../../features/navbar/Navbar';
 import Sidebar from '../../features/sidebar/Sidebar';
 import { useViewNavigator } from '../../src/hooks/useViewNavigator';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 // Types
 interface TypePermis {
@@ -89,7 +89,7 @@ export default function DossierManager() {
     remarques: ''
   });
 
-  const router = useRouter();
+  const router = useRouterWithLoading();
 
   // Fetch all data
   useEffect(() => {

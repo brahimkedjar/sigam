@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import Modal from 'react-modal';
 import { FiChevronLeft, FiChevronRight, FiDownload, FiFileText, FiSave } from 'react-icons/fi';
@@ -14,6 +14,7 @@ import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 if (typeof window !== 'undefined') {
   Modal.setAppElement('#__next');
 }
@@ -22,7 +23,7 @@ const Step10GeneratePermis = () => {
   const searchParams = useSearchParams();
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [data, setData] = useState<any>(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [idDemande, setIdDemande] = useState<string | null>(null);

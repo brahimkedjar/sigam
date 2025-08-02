@@ -8,7 +8,6 @@ import Actionnaires from './Actionnaires';
 import  DetailsRC from './DetailsRC';
 import axios from 'axios';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { FiX, FiFileText, FiChevronRight, FiChevronLeft, FiEdit, FiLoader } from 'react-icons/fi';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../../features/navbar/Navbar';
@@ -19,6 +18,7 @@ import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 type AccordionItem = {
   id: string;
@@ -111,7 +111,7 @@ const initialData: SocieteData = {
 export default function Step2() {
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
   const [idDemande, setIdDemande] = useState<string | null>(null);
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const [detenteurId, setDetenteurId] = useState<number | null>(null);
   const searchParams = useSearchParams();
   const [showTauxModal, setShowTauxModal] = useState(false);

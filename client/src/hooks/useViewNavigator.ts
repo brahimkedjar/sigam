@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuthStore } from '../store/useAuthStore';
 import type { ViewType } from '../types/viewtype';
+import { useRouterWithLoading } from './useRouterWithLoading';
 
 const permissionMap: Record<ViewType, string> = {
   'dashboard': 'view_dashboard',
@@ -17,7 +18,8 @@ const permissionMap: Record<ViewType, string> = {
   'Payments': 'Payments',
   'controle_minier': 'controle_minier',
   'manage_users': 'manage_users',
-  'manage_documents': 'manage_documents'
+  'manage_documents': 'manage_documents',
+  'Audit_Logs': 'Audit_Logs'
 };
 
 const routeMap: Record<ViewType, string> = {
@@ -33,13 +35,14 @@ const routeMap: Record<ViewType, string> = {
   'Payments': '/DEA/DEA_dashboard',
   'controle_minier': '/controle-minier',
   'manage_users': '/admin_panel/manage_users',
-  'manage_documents': '/admin_panel/DossierAdminPage'
+  'manage_documents': '/admin_panel/DossierAdminPage',
+  'Audit_Logs': '/audit-logs/page'
 
 };
 
 export const useViewNavigator = (initialView: ViewType = 'dashboard') => {
   const [currentView, setCurrentView] = useState<ViewType>(initialView);
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const { hasPermission } = useAuthStore();
 
   const navigateTo = (view: ViewType) => {
@@ -54,3 +57,5 @@ export const useViewNavigator = (initialView: ViewType = 'dashboard') => {
     navigateTo
   };
 };
+
+

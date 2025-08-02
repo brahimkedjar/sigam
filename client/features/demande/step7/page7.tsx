@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+
 import axios from "axios";
 import { FiSend, FiClock, FiCheck, FiX, FiChevronLeft, FiChevronRight, FiDownload, FiFileText } from "react-icons/fi";
 import { jsPDF } from "jspdf";
@@ -13,6 +13,7 @@ import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
 import { useActivateEtape } from "@/src/hooks/useActivateEtape";
+import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
 
 type InteractionWali = {
   id_interaction: number;
@@ -25,7 +26,7 @@ type InteractionWali = {
 };
 
 export default function AvisWaliStep() {
-  const router = useRouter();
+  const router = useRouterWithLoading();
   const searchParams = useSearchParams();
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;

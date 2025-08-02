@@ -264,3 +264,100 @@
   color: #2563eb;
   text-decoration: underline;
 }
+
+/* Full-page Loading Overlay */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+/* Quantum Spinner Animation */
+.quantumSpinner {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.quantumDot {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  animation: quantum-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.quantumDot:nth-child(1) {
+  animation-delay: -0.24s;
+  top: 8px;
+  left: 8px;
+  background: #3b82f6; /* blue-500 */
+}
+
+.quantumDot:nth-child(2) {
+  animation-delay: -0.12s;
+  top: 8px;
+  right: 8px;
+  background: #ef4444; /* red-500 */
+}
+
+.quantumDot:nth-child(3) {
+  animation-delay: 0;
+  bottom: 8px;
+  right: 8px;
+  background: #10b981; /* emerald-500 */
+}
+
+.quantumDot:nth-child(4) {
+  bottom: 8px;
+  left: 8px;
+  background: #f59e0b; /* amber-500 */
+}
+
+@keyframes quantum-spin {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.5) rotate(180deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.loadingText {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  text-align: center;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+/* Blur effect for background when loading */
+.blurred {
+  filter: blur(2px);
+  opacity: 0.7;
+  pointer-events: none;
+}

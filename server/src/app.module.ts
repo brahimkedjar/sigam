@@ -29,12 +29,14 @@ import { PaymentModule } from './demandes/paiement/payement.module';
 import { ProcedureRenouvellementModule } from './renouvellement/procedure_renouvellement.module';
 import { ConfigModule } from '@nestjs/config';
 import { TimelineModule } from './demandes/timeline of procedure/timeline.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { SessionModule } from './session/session.module';
 
 
 @Module({
   imports: [DemandesModule,PaymentModule,ConfigModule.forRoot({
       isGlobal: true,
-    }),ProcedureRenouvellementModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
+    }),ProcedureRenouvellementModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
   controllers: [DemandesController],
   providers: [DemandeService],
 
