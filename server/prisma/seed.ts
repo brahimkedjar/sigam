@@ -162,33 +162,7 @@ async function main9() {
     });
   }
 
-  const hashed = await bcrypt.hash('password123', 10);
-
-  await prisma.user.upsert({
-    where: { email: 'admin@sigam.dz' },
-    update: {},
-    create: {
-      email: 'admin@sigam.dz',
-      password: hashed,
-      roleId: adminRole.id,
-      nom: 'Admin',
-      Prenom: 'Super',
-      username: 'admin'
-    },
-  });
-
-  await prisma.user.upsert({
-    where: { email: 'user@sigam.dz' },
-    update: {},
-    create: {
-      email: 'user@sigam.dz',
-      password: hashed,
-      roleId: userRole.id,
-      nom: 'User',
-      Prenom: 'Normal',
-      username: 'user'
-    },
-  });
+  
 
   console.log('✅ Seed complete');
 }
