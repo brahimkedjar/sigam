@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AuditLogCreatedEvent } from './events/audit-log-created.event';
@@ -49,11 +49,16 @@ export class AuditLogService {
 
   async log(data: AuditLogData): Promise<{ id: number }> {
     try {
+      // Ensure proper number conversion for entityId
+      const entityId = data.entityId !== undefined && data.entityId !== null ? 
+        Number(data.entityId) : 
+        null;
+
       const logInput: Prisma.AuditLogCreateInput = {
         action: data.action,
         entityType: data.entityType,
-        entityId: data.entityId ?? undefined,
-        user: data.userId ? { connect: { id: data.userId } } : undefined,
+        entityId,
+        user: data.userId ? { connect: { id: Number(data.userId) } } : undefined,
         changes: data.changes ?? undefined,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
@@ -67,29 +72,35 @@ export class AuditLogService {
 
       const createdLog = await this.prisma.auditLog.create({
         data: logInput,
-        include: { user: true }
+        include: { 
+          user: { 
+            select: { 
+              id: true,
+              username: true,
+              email: true,
+              role: true
+            } 
+          } 
+        }
       });
 
+      // Emit event
       this.eventEmitter.emit(
         'audit-log.created',
         new AuditLogCreatedEvent({
           id: createdLog.id,
           action: createdLog.action,
           entityType: createdLog.entityType,
-          entityId: createdLog.entityId ?? undefined,
-          userId: createdLog.userId ?? undefined,
-          user: createdLog.user ? {
-            id: createdLog.user.id,
-            username: createdLog.user.username,
-            email: createdLog.user.email
-          } : undefined,
+          entityId: createdLog.entityId,
+          userId: createdLog.userId,
+          user: createdLog.user,
           timestamp: createdLog.timestamp,
         })
       );
 
       return { id: createdLog.id };
     } catch (error) {
-      console.error('Audit log creation failed:', error);
+      console.log('Audit log creation failed:', error);
       throw error;
     }
   }
@@ -138,41 +149,127 @@ export class AuditLogService {
     return log;
   }
 
-  async revertLog(revertDto: RevertAuditLogDto) {
-  const log = await this.getLogById(revertDto.logId);
-
-  if (!log.previousState) {
-    throw new Error('Cannot revert - previous state not available');
-  }
-
-  const model = this.prisma[log.entityType.toLowerCase()];
-  if (!model) {
-    throw new Error(`Entity type ${log.entityType} not supported for revert`);
-  }
-
-  await model.update({
-    where: { id: log.entityId ?? undefined },
-    data: log.previousState as Prisma.InputJsonValue,
+ async revertLog(revertDto: RevertAuditLogDto) {
+  // 1. Get the audit log being reverted
+  const logToRevert = await this.prisma.auditLog.findUnique({
+    where: { id: revertDto.logId },
+    include: { user: true }
   });
 
-  return this.log({
-    action: 'REVERT',
-    entityType: log.entityType,
-    entityId: log.entityId ?? undefined,
-    userId: revertDto.userId,
-    changes: {
-      revertedFrom: log.changes as Prisma.JsonValue,
-      revertedTo: log.previousState as Prisma.JsonValue,
+  if (!logToRevert) throw new NotFoundException('Audit log not found');
+  if (!logToRevert.previousState) {
+    throw new BadRequestException('Cannot revert - previous state not available');
+  }
+
+  // 2. Get the Prisma model for the entity type
+  const model = this.prisma[logToRevert.entityType.toLowerCase()];
+  if (!model) {
+    throw new BadRequestException(`Entity type ${logToRevert.entityType} not supported`);
+  }
+
+  // 3. Handle different action types
+  if (logToRevert.action === 'DELETE') {
+    // For DELETE actions, we need to recreate the entity
+    return this.revertDeleteAction(model, logToRevert, revertDto);
+  } else {
+    // For other actions (UPDATE, CREATE), use standard revert logic
+    return this.revertStandardAction(model, logToRevert, revertDto);
+  }
+}
+
+private async revertDeleteAction(model: any, logToRevert: any, revertDto: RevertAuditLogDto) {
+  // 1. Parse the previous state
+  const previousState = logToRevert.previousState as Record<string, any>;
+  
+  // 2. Create the entity (don't include relationships in initial create)
+  const { rolePermissions, ...entityData } = previousState;
+  const recreatedEntity = await model.create({
+    data: entityData
+  });
+
+  // 3. Restore relationships if they exist
+  if (rolePermissions && Array.isArray(rolePermissions)) {
+    await this.prisma.rolePermission.createMany({
+      data: rolePermissions.map((rp: any) => ({
+        roleId: recreatedEntity.id,
+        permissionId: rp.permissionId,
+        // include other rolePermission fields as needed
+      })),
+      skipDuplicates: true
+    });
+  }
+
+  // 4. Create the audit log for the revert
+  return this.prisma.auditLog.create({
+    data: {
+      action: 'REVERT',
+      entityType: logToRevert.entityType,
+      entityId: recreatedEntity.id,
+      userId: revertDto.userId,
+      changes: {
+        action: 'RECREATED',
+        originalLogId: logToRevert.id,
+        originalAction: logToRevert.action
+      },
+      previousState: undefined, // No previous state since we're recreating
+      ipAddress: revertDto.ipAddress,
+      userAgent: revertDto.userAgent,
+      additionalData: {
+        reason: revertDto.reason,
+        originalUser: logToRevert.user 
+          ? { id: logToRevert.user.id, username: logToRevert.user.username }
+          : null,
+        originalTimestamp: logToRevert.timestamp,
+        recreatedData: entityData
+      },
+      contextId: logToRevert.contextId,
+      sessionId: revertDto.sessionId
     },
-    contextId: log.contextId ?? undefined,
-    additionalData: {
-      originalLogId: log.id,
-      revertedBy: revertDto.userId,
-      reason: revertDto.reason,
-    },
+    include: { user: true }
   });
 }
 
+private async revertStandardAction(model: any, logToRevert: any, revertDto: RevertAuditLogDto) {
+  // 1. Get current entity state
+  const currentEntity = await model.findUnique({
+    where: { id: logToRevert.entityId ?? undefined },
+  });
+
+  // 2. Perform the revert
+  await model.update({
+    where: { id: logToRevert.entityId ?? undefined },
+    data: logToRevert.previousState as Prisma.InputJsonValue,
+  });
+
+  // 3. Create the audit log
+  return this.prisma.auditLog.create({
+    data: {
+      action: 'REVERT',
+      entityType: logToRevert.entityType,
+      entityId: logToRevert.entityId,
+      userId: revertDto.userId,
+      changes: {
+        revertedFrom: currentEntity,
+        revertedTo: logToRevert.previousState,
+        originalLogId: logToRevert.id,
+        originalAction: logToRevert.action
+      },
+      previousState: currentEntity,
+      ipAddress: revertDto.ipAddress,
+      userAgent: revertDto.userAgent,
+      additionalData: {
+        reason: revertDto.reason,
+        originalUser: logToRevert.user 
+          ? { id: logToRevert.user.id, username: logToRevert.user.username }
+          : null,
+        originalTimestamp: logToRevert.timestamp
+      },
+      contextId: logToRevert.contextId,
+      sessionId: revertDto.sessionId
+    },
+    include: { user: true }
+  });
+}
  async getVisualizationData(dto: AuditLogVisualizationDto) {
   // Convert entityId to number if it exists
   const entityId = dto.entityId ? Number(dto.entityId) : undefined;

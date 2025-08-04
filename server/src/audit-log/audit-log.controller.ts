@@ -1,24 +1,15 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  Req,
-  Param,
-} from '@nestjs/common';
-import { AuditLogData, AuditLogService } from './audit-log.service';
+import { Controller, Get, Post, Body, Query, Param, UseInterceptors, Req, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Request as ExpressRequest } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './user-role.enum';
 import { AuditLogInputDto } from './dto/audit-log-input.dto';
 import { RevertAuditLogDto } from './dto/revert-audit-log.dto';
 import { AuditLogVisualizationDto } from './dto/audit-log-visualization.dto';
 import { AuditLogStatsDto } from './dto/audit-log-stats.dto';
+import { AuditLogData, AuditLogService } from './audit-log.service';
 import { SessionService } from 'src/session/session.service';
-import { Request } from 'express';// auth.controller.ts
-
+import { Request } from 'express';
+import { AuditLogInterceptor } from './audit-log.interceptor';
 @ApiTags('Audit Logs')
 @Controller('audit-logs')
 export class AuditLogController {
@@ -82,7 +73,6 @@ export class AuditLogController {
     });
   }
 
-
   @Get('recent')
   @ApiOperation({ summary: 'Get recent activity' })
   @ApiResponse({ status: 200, description: 'Returns recent logs' })
@@ -106,13 +96,29 @@ export class AuditLogController {
     );
   }
 
-  @Post('revert')
-  @ApiOperation({ summary: 'Revert an audit log action' })
-  @ApiResponse({ status: 200, description: 'Action reverted successfully' })
-  @Roles(UserRole.ADMIN)
-  async revertAction(@Body() revertDto: RevertAuditLogDto) {
-    return this.auditLogService.revertLog(revertDto);
+@Post('revert')
+@ApiOperation({ summary: 'Revert an audit log action' })
+@ApiResponse({ status: 200, description: 'Action reverted successfully' })
+@ApiResponse({ status: 400, description: 'Invalid revert request' })
+@Roles(UserRole.ADMIN)
+async revertAction(@Body() revertDto: RevertAuditLogDto) {
+  try {
+    // Validate the request
+    if (!revertDto.logId || !revertDto.userId) {
+      throw new HttpException(
+        'Missing required fields: logId and userId',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return await this.auditLogService.revertLog(revertDto);
+  } catch (error) {
+    throw new HttpException(
+      error.message,
+      HttpStatus.BAD_REQUEST
+    );
   }
+}
 
   @Get('visualize')
   @ApiOperation({ summary: 'Get visualization data for audit logs' })

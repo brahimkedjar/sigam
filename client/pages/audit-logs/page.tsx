@@ -58,6 +58,7 @@ import Navbar from '@/features/navbar/Navbar';
 import Sidebar from '@/features/sidebar/Sidebar';
 import { useViewNavigator } from '@/src/hooks/useViewNavigator';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
+import { useAuthStore } from '@/src/store/useAuthStore';
 interface ActionChipProps {
   action: string;
 }
@@ -160,21 +161,38 @@ const AuditLogsPage: React.FC = () => {
     setPage(0);
   };
 
-  const handleRevert = async (logId: number, reason: string) => {
-    try {
-      await axios.post(`${apiURL}/audit-logs/revert`, {
-        logId,
-        userId: 1, // Replace with actual user ID from auth
-        reason,
-      });
-      enqueueSnackbar('Action reverted successfully', { variant: 'success' });
-      fetchLogs();
-      setRevertDialogOpen(false);
-    } catch (err) {
-      enqueueSnackbar('Failed to revert action', { variant: 'error' });
-      console.error(err);
+const handleRevert = async (logId: number, reason: string) => {
+  try {
+    const auth = useAuthStore.getState().auth;
+    await axios.post(`${apiURL}/audit-logs/revert`, {
+      logId,
+      userId: auth?.id,
+      reason,
+      ipAddress: '::1', // Or get real IP if available
+      userAgent: navigator.userAgent,
+      sessionId: document.cookie?.match(/auth_token=([^;]+)/)?.[1]
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    enqueueSnackbar('Action reverted successfully', { variant: 'success' });
+    fetchLogs();
+    setRevertDialogOpen(false);
+  
+  } catch (error) {
+    let errorMessage = 'Failed to revert action';
+    
+    if (axios.isAxiosError(error)) {
+      errorMessage = error.response?.data?.message || error.message;
+      console.error('Revert error:', error.response?.data);
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
     }
-  };
+    
+    enqueueSnackbar(errorMessage, { variant: 'error' });
+  }
+};
 
   const toggleRowExpand = (logId: number) => {
     setExpandedRows(prev => ({
@@ -219,7 +237,7 @@ const AuditLogsPage: React.FC = () => {
       
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Grid container spacing={2}>
+          <Grid container spacing={4}>
             <Grid item xs={12} sm={6} md={3}>
               <TextField
                 fullWidth
@@ -265,22 +283,7 @@ const AuditLogsPage: React.FC = () => {
                 ))}
               </Select>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                fullWidth
-                label="Search"
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+            
             <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <Button
                 variant="outlined"

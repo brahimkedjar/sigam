@@ -24,6 +24,8 @@ async function bootstrap() {
       'Accept',
       'Origin',
       'Cache-Control',
+      'x-user-id',
+      'x-user-name'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH','HEAD'],
     preflightContinue: false,

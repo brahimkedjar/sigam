@@ -13,7 +13,7 @@ interface AuditTimelineProps {
 interface TimelineItemData {
   id: number;
   date: Date;
-  action: string;
+  action: string | null;
   user: string;
   changes?: any;
 }

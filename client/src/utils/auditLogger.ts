@@ -6,7 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface AuditLogPayload {
   action: string;
-  entityType: string;
+  entityType?: string;
   entityId?: number;
   changes?: Record<string, { old?: any; new?: any }>;
   status?: 'SUCCESS' | 'FAILURE';
@@ -18,6 +18,7 @@ export const logAuditAction = async (payload: Omit<AuditLogPayload, 'userId'>) =
   const auth = useAuthStore.getState().auth;
   
   try {
+    // Validate payload before sending
     await axios.post(`${API_URL}/audit-logs/log`, {
       ...payload,
       userId: auth?.id ?? null,

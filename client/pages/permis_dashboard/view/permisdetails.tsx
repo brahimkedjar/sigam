@@ -83,7 +83,6 @@ interface Procedure {
 interface Props {
   permis: PermisDetails;
 }
-console.log('--- PAGE LOADING ---');
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 

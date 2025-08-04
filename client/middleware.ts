@@ -28,11 +28,7 @@ export async function middleware(req: NextRequest) {
   
   // Get token from cookies
   const sessionToken = req.cookies.get('auth_token')?.value;
-  console.log('Middleware token check:', { 
-    path: pathname, 
-    tokenExists: !!sessionToken,
-    allCookies: req.cookies.getAll() 
-  });
+
 
   // Handle root path redirection
   if (pathname === '/') {

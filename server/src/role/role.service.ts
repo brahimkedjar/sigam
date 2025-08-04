@@ -1,61 +1,119 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoleService {
   constructor(private prisma: PrismaService) {}
 
-  createRole(name: string) {
-    return this.prisma.role.create({ data: { name } });
+   async createRole(name: string) {
+    return this.prisma.role.create({ 
+      data: { name },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true
+          }
+        }
+      }
+    });
   }
 
   async assignPermissionsToRole(roleId: number, permissionIds: number[]) {
-  // Optional: Clear existing permissions first
-  await this.prisma.rolePermission.deleteMany({
-    where: { roleId: Number(roleId) },
-  });
+    await this.prisma.rolePermission.deleteMany({
+      where: { roleId: Number(roleId) },
+    });
 
-  // Insert new permissions
-  const data = permissionIds.map((permissionId) => ({
-    roleId: Number(roleId),
-    permissionId: Number(permissionId),
-  }));
+    const data = permissionIds.map((permissionId) => ({
+      roleId: Number(roleId),
+      permissionId: Number(permissionId),
+    }));
 
-  return this.prisma.rolePermission.createMany({ data });
-}
+    await this.prisma.rolePermission.createMany({ data });
+    
+    return this.prisma.role.findUnique({
+      where: { id: roleId },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true
+          }
+        }
+      }
+    });
+  }
 
-async deleteRole(id: number) {
-  // Step 1: Remove permissions linked to this role
-  await this.prisma.rolePermission.deleteMany({
-    where: { roleId: id },
-  });
+  async deleteRole(id: number) {
+    const roleToDelete = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true
+          }
+        }
+      }
+    });
 
-  // Step 2: Nullify role from users
-  await this.prisma.user.updateMany({
-    where: { roleId: id },
-    data: { roleId: null },
-  });
+    if (!roleToDelete) {
+      throw new NotFoundException('Role not found');
+    }
 
-  // Step 3: Delete the role
-  return this.prisma.role.delete({
-    where: { id },
-  });
-}
+    await this.prisma.rolePermission.deleteMany({
+      where: { roleId: id },
+    });
 
+    await this.prisma.user.updateMany({
+      where: { roleId: id },
+      data: { roleId: null },
+    });
 
+    await this.prisma.role.delete({
+      where: { id },
+    });
 
-updateRole(id: number, name: string) {
-  return this.prisma.role.update({ where: { id }, data: { name } });
-}
+    return roleToDelete;
+  }
 
+  async updateRole(id: number, name: string) {
+    const currentRole = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true
+          }
+        }
+      }
+    });
+
+    const updatedRole = await this.prisma.role.update({
+      where: { id },
+      data: { name },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true
+          }
+        }
+      }
+    });
+
+    return {
+      ...updatedRole,
+      _old: currentRole,
+    };
+  }
 
   getAllRoles() {
-  return this.prisma.role.findMany({
-    select: {
-      id: true,
-      name: true,
-    },
-  });
-}
+    return this.prisma.role.findMany({
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true
+          }
+        }
+      }
+    });
+  }
 
 }

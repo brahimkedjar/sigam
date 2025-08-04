@@ -19,6 +19,7 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
+import { useAuthStore } from '@/src/store/useAuthStore';
 
 type AccordionItem = {
   id: string;
@@ -343,12 +344,13 @@ const handleActionnairesChange = (data: SocieteData['actionnaires']) => {
   if (!formData.repLegal.nin) throw new Error("NIN du représentant légal est requis");
 
   try {
+    
     // 🟡 Tenter de mettre à jour (cas où la personne existe)
     response = await axios.put(
       `${apiURL}/api/representant-legal/${formData.repLegal.nin}`,
       {
         ...formData.repLegal,
-        id_detenteur: detenteurId
+        id_detenteur: detenteurId,
       }
     );
   } catch (err: any) {

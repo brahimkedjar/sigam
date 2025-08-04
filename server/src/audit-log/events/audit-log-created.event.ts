@@ -8,10 +8,10 @@ export class AuditLogCreatedEvent {
   constructor(
     public readonly auditLog: {
       id: number;
-      action: string;
-      entityType: string;
-      entityId?: number;
-      userId?: number;
+      action: string | null;
+      entityType?: string;
+      entityId?: number | null;
+      userId?: number | null;
       user?: AuditLogUser | null; // Allow null here
       timestamp: Date;
     }
