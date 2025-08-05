@@ -13,7 +13,7 @@ interface DEAChartProps {
 
 const DEAChart: React.FC<DEAChartProps> = ({ obligations, onExport }) => {
   const prepareChartData = (obligations: any[]) => {
-    const categories = ['Produit Attribution', 'Droit Établissement', 'Taxe Superficiaire', 'Amendes'];
+    const categories = ['Produit Attribution', 'Droit Établissement', 'Taxe Superficiaire', 'Redevance'];
     const dueData = [0, 0, 0, 0];
     const paidData = [0, 0, 0, 0];
     

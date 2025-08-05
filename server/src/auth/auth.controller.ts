@@ -12,7 +12,7 @@ export class AuthController {
 
 @Post('login')
 async login(
-  @Body() body: { email: string; password: string },
+  @Body() body: { email: string; password: string },@Req() request: Request,
   @Res({ passthrough: true }) res: Response
 ) {
   const user = await this.authService.validateUser(body.email, body.password);
@@ -36,7 +36,7 @@ async login(
 
 @Post('logout')
 async logout(
-  @Req() req: Request,
+  @Req() req: Request,@Req() request: Request,
   @Res({ passthrough: true }) res: Response
 ) {
   const token = req.cookies?.auth_token;

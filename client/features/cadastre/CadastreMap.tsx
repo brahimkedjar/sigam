@@ -17,6 +17,7 @@ import {
 import * as turf from '@turf/turf';
 import axios from 'axios';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
+import ArcGISMap from '@/components/map/ArcGISMap';
 //import ArcGISMap from '@/components/map/DynamicArcGISMap'; // cleaner with `@` alias
 
 export default function CadastrePage() {
@@ -266,7 +267,7 @@ const saveCoordinatesToBackend = async () => {
               </button>
             </div>
           </div>
-          {/*
+          
           <ArcGISMap 
             ref={mapRef}
             points={points} 
@@ -284,7 +285,7 @@ const saveCoordinatesToBackend = async () => {
                 })));
               }
             }}
-          />*/}
+          />
 
           <div className="map-footer">
             <div className="area-display">

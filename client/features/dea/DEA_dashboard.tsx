@@ -147,36 +147,47 @@ const DEADashboard: React.FC = () => {
   };
 
   const handleExport = async () => {
-    try {
-      const XLSX = await import('xlsx');
-      const { saveAs } = await import('file-saver');
-      
-      const worksheetData = filteredObligations.map((ob) => ({
-        Référence: ob.permis?.code_permis || '',
-        Détenteur: ob.permis?.detenteur?.nom_sociétéFR || '',
-        'Type de droit': ob.typePaiement?.libelle || '',
-        Montant: ob.amount || 0,
-        Échéance: ob.dueDate ? new Date(ob.dueDate).toLocaleDateString() : '',
-        Statut: ob.status || ''
-      }));
+  try {
+    // Dynamically import the required libraries
+    const XLSX = await import('xlsx');
+    const FileSaver = await import('file-saver');
+    
+    const worksheetData = filteredObligations.map((ob) => ({
+      Référence: ob.permis?.code_permis || '',
+      Détenteur: ob.permis?.detenteur?.nom_sociétéFR || '',
+      'Type de droit': ob.typePaiement?.libelle || '',
+      Montant: ob.amount || 0,
+      Échéance: ob.dueDate ? new Date(ob.dueDate).toLocaleDateString() : '',
+      Statut: ob.status || ''
+    }));
 
-      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Obligations');
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Obligations');
 
-      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    const excelBuffer = XLSX.write(workbook, { 
+      bookType: 'xlsx', 
+      type: 'array' 
+    });
+    
+    const blob = new Blob([excelBuffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
 
-      saveAs(blob, `obligations_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      showMessage('success', 'Export successful!');
-    } catch (err) {
-      console.error('Export error:', err);
-      showMessage('error', 'Export failed');
-    }
-  };
+    FileSaver.default.saveAs(
+      blob, 
+      `obligations_export_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+    
+    showMessage('success', 'Export successful!');
+  } catch (err) {
+    console.error('Export error:', err);
+    showMessage('error', 'Export failed');
+  }
+};
 
   const prepareChartData = (obligations: Obligation[]) => {
-    const categories = ['Produit Attribution', 'Droit Établissement', 'Taxe Superficiaire', 'Amendes'];
+    const categories = ['Produit Attribution', 'Droit Établissement', 'Taxe Superficiaire', 'Redevance'];
     const dueData = [0, 0, 0, 0];
     const paidData = [0, 0, 0, 0];
     
@@ -444,7 +455,7 @@ const DEADashboard: React.FC = () => {
           <div className="dea-dashboard">
             <div className="dashboard-header">
               <Title level={2} style={{ marginBottom: 0 }}>
-                Détail des Droits, Échéances et Amendes
+                Détail des Droits, Échéances et Redevance
               </Title>
               <div className="header-actions">
                 <RangePicker

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
 export default function LoginPage() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,13 +17,21 @@ export default function LoginPage() {
   const login = useAuthStore((s) => s.login); 
   const router = useRouterWithLoading();
   const [error, setError] = useState<string | null>(null);
-
+  const auth = useAuthStore.getState().auth;
+  const apiClient = axios.create({
+    baseURL: API_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': auth?.id, 
+      'X-User-Name': auth?.username || auth?.email 
+    }
+  });
   const handleLogin = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await axios.post(
+      const response = await apiClient.post(
         'http://localhost:3001/auth/login', 
         { email, password },
         { 
@@ -39,18 +48,6 @@ export default function LoginPage() {
     } catch (err) {
       console.error('Login error:', err);
       setError('Email ou mot de passe invalide');
-      
-      try {
-        await axios.post('http://localhost:3001/audit-logs/log', {
-          action: 'LOGIN',
-          entityType: 'User',
-          status: 'FAILURE',
-          errorMessage: 'Invalid credentials',
-          additionalData: { email }
-        });
-      } catch (auditError) {
-        console.error('Failed to log failed login attempt:', auditError);
-      }
     } finally {
       setIsLoading(false);
     }

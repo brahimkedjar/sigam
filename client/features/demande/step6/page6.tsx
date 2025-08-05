@@ -29,7 +29,7 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
-//import ArcGISMap from '@/components/map/DynamicArcGISMap'; // cleaner with `@` alias
+import ArcGISMap from '@/components/map/ArcGISMap'; // cleaner with `@` alias
 
 export default function CadastrePage() {
 
@@ -576,7 +576,7 @@ function isPointOnSegment(seg: {p1: number[], p2: number[]}, point: number[]) {
                       </button>
                     </div>
                   </div>
-{/*
+
                   <ArcGISMap
                     ref={mapRef}
                     points={points}
@@ -600,7 +600,7 @@ function isPointOnSegment(seg: {p1: number[], p2: number[]}, point: number[]) {
 )}
 
 
-                  />*/}
+                  />
 
                   <div className={styles['map-footer']}>
                     <div className={styles['area-display']}>

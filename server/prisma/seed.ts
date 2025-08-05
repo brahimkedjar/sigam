@@ -104,7 +104,8 @@ async function main9() {
       { name: 'controle_minier'},
       { name: 'dashboard'},
       { name: 'Payments'},
-      { name: 'manage_documents'}
+      { name: 'manage_documents'},
+      { name: 'Audit_Logs'}
 
     ],
     skipDuplicates: true,
