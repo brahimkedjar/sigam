@@ -33,17 +33,18 @@ import { AuditLogModule } from './audit-log/audit-log.module';
 import { SessionModule } from './session/session.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditLogInterceptor } from './audit-log/audit-log.interceptor';
+import { ExpertMinierModule } from './demandes/expert_minier/expert-minier.module';
 
 
 @Module({
   imports: [DemandesModule,PaymentModule,ConfigModule.forRoot({
       isGlobal: true,
-    }),ProcedureRenouvellementModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
+    }),ProcedureRenouvellementModule,ExpertMinierModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
   controllers: [DemandesController],
-  providers: [DemandeService,{
+  providers: [DemandeService,/*{
       provide: APP_INTERCEPTOR,
       useClass: AuditLogInterceptor,
-    },],
+    }*/],
 
 })
 export class AppModule {}

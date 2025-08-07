@@ -14,9 +14,18 @@ import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import ExpertDropdown from '@/components/ExpertDropdown';
 
+type ExpertMinier = {
+  id_expert: number;
+  nom_expert: string;
+  fonction: string;
+  num_registre: string | null;
+  organisme: string;
+};
 export default function Capacites() {
   const [form, setForm] = useState({
+    id_expert: 0,
     duree_travaux: '',
     capital_social: '',
     budget: '',
@@ -45,6 +54,20 @@ export default function Capacites() {
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const currentStep = 3;    
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  const [selectedExpert, setSelectedExpert] = useState<ExpertMinier | null>(null);
+
+  useEffect(() => {
+  if (selectedExpert) {
+    setForm(prev => ({
+      ...prev,
+      nom_expert: selectedExpert.nom_expert,
+      fonction: selectedExpert.fonction,
+      num_registre: selectedExpert.num_registre || '',
+      organisme: selectedExpert.organisme,
+      id_expert: selectedExpert.id_expert
+    }));
+  }
+}, [selectedExpert]);
 
   /*useEffect(() => {
     if (!idProc || from === 'suivi') return;
@@ -73,6 +96,7 @@ export default function Capacites() {
         setCodeDemande(demande.code_demande);
         setStatutProc(res.data.procedure.statut_proc);
         setForm({
+          id_expert: demande.expertMinier?.id_expert || 0,
   duree_travaux: demande.duree_travaux_estimee || '',
   capital_social: demande.capital_social_disponible || '',
   budget: demande.budget_prevu || '',
@@ -324,64 +348,73 @@ const handleSaveEtape = async () => {
 
               {/* Expert Minier Section */}
               <section className={styles.formSection}>
-                <div className={styles.sectionHeader}>
-                  <FiUser className={styles.sectionIcon} />
-                  <h3 className={styles.sectionTitle}>Expert minier</h3>
-                </div>
-                <div className={styles.formGrid}>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Nom complet*</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="nom_expert"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.nom_expert}
-                      placeholder="Nom et prénom de l'expert"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Fonction*</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="fonction"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.fonction}
-                      placeholder="Ex: Géologue senior"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Numéro de registre</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="num_registre"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.num_registre}
-                      placeholder="Numéro d'enregistrement"
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Organisme*</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="organisme"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.organisme}
-                      placeholder="Organisme d'affiliation"
-                      required
-                    />
-                  </div>
-                </div>
-              </section>
+  <div className={styles.sectionHeader}>
+    <FiUser className={styles.sectionIcon} />
+    <h3 className={styles.sectionTitle}>Expert minier</h3>
+  </div>
+  
+  <div className={styles.expertSelector}>
+    <ExpertDropdown 
+      onSelect={setSelectedExpert}
+      disabled={statutProc === 'TERMINEE'}
+      initialExpert={form.id_expert ? selectedExpert : null}
+    />
+  </div>
+
+  <div className={styles.formGrid}>
+    <div className={styles.formGroup}>
+      <label className={styles.formLabel}>Nom complet*</label>
+      <input
+        disabled={statutProc === 'TERMINEE'}
+        type="text"
+        name="nom_expert"
+        className={styles.formInput}
+        onChange={handleChange}
+        value={form.nom_expert}
+        placeholder="Nom et prénom de l'expert"
+        required
+      />
+    </div>
+    <div className={styles.formGroup}>
+      <label className={styles.formLabel}>Fonction*</label>
+      <input
+        disabled={statutProc === 'TERMINEE'}
+        type="text"
+        name="fonction"
+        className={styles.formInput}
+        onChange={handleChange}
+        value={form.fonction}
+        placeholder="Ex: Géologue senior"
+        required
+      />
+    </div>
+    <div className={styles.formGroup}>
+      <label className={styles.formLabel}>Numéro de registre</label>
+      <input
+        disabled={statutProc === 'TERMINEE'}
+        type="text"
+        name="num_registre"
+        className={styles.formInput}
+        onChange={handleChange}
+        value={form.num_registre}
+        placeholder="Numéro d'enregistrement"
+      />
+    </div>
+    <div className={styles.formGroup}>
+      <label className={styles.formLabel}>Organisme*</label>
+      <input
+        disabled={statutProc === 'TERMINEE'}
+        type="text"
+        name="organisme"
+        className={styles.formInput}
+        onChange={handleChange}
+        value={form.organisme}
+        placeholder="Organisme d'affiliation"
+        required
+      />
+    </div>
+  </div>
+</section>
             </div>
 
             <div className={styles.actionButtons}>

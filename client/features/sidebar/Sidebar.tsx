@@ -59,7 +59,7 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
         { id: 'manage_users', icon: <FiUsers />, label: 'Manage Users', permission: 'manage_users' },
         { id: 'manage_documents', icon: <FiFile />, label: 'Manage Documents', permission: 'manage_documents' },
         { id: 'Audit_Logs', icon: <FiFile />, label: 'Audit Logs', permission: 'Audit_Logs' },
-        { id: 'gestion-utilisateurs', icon: <FiUsers />, label: 'Utilisateurs', permission: 'manage_users' },
+        { id: 'gestion_experts', icon: <FiUsers />, label: 'gestion experts', permission: 'manage_documents' },
  
       ]
     },

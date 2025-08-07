@@ -29,14 +29,14 @@ async updateDetenteur(
   @Body() data: any
 ) {
   // Validate required fields
-  if (!data.nom_fr || !data.nom_ar || !data.statut_id) {
+  if (!data.nom_fr || !data.nom_ar || !parseInt(data.statut_id, 10)) {
     throw new HttpException('Nom FR, Nom AR et Statut sont obligatoires', HttpStatus.BAD_REQUEST);
   }
 
   return this.societeService.updateDetenteur(id, {
     nom_fr: data.nom_fr,
     nom_ar: data.nom_ar,
-    statut_id: data.statut_id,
+    statut_id: parseInt(data.statut_id, 10),
     tel: data.tel || '',
     email: data.email || '',
     fax: data.fax || '',

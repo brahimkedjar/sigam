@@ -19,7 +19,8 @@ const permissionMap: Record<ViewType, string> = {
   'controle_minier': 'controle_minier',
   'manage_users': 'manage_users',
   'manage_documents': 'manage_documents',
-  'Audit_Logs': 'Audit_Logs'
+  'Audit_Logs': 'Audit_Logs',
+  'gestion_experts': 'manage_documents'
 };
 
 const routeMap: Record<ViewType, string> = {
@@ -36,7 +37,8 @@ const routeMap: Record<ViewType, string> = {
   'controle_minier': '/controle-minier',
   'manage_users': '/admin_panel/manage_users',
   'manage_documents': '/admin_panel/DossierAdminPage',
-  'Audit_Logs': '/audit-logs/page'
+  'Audit_Logs': '/audit-logs/page',
+  'gestion_experts': '/gestion_experts/page'
 
 };
 

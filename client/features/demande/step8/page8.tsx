@@ -269,11 +269,11 @@ useEffect(() => {
     // Try to fetch comités if they exist
     try {
       const comitesRes = await axios.get(`${apiURL}/cd/comites/procedure/${idProc}`);
-const transformedData = comitesRes.data.map((comite: { decisionCDs: any; }) => ({
+const transformedData = comitesRes.data.map((comite: { decisionCDs: any }) => ({
   ...comite,
-  decisions: comite.decisionCDs // Map decisionCDs to decisions
+  decisions: comite.decisionCDs
 }));
-      setComites(transformedData);
+setComites(transformedData);
       if (comitesRes.data?.length > 0) {
         setSelectedComite(comitesRes.data[0].id_comite);
       }
@@ -344,28 +344,34 @@ const handleSaveComite = async () => {
   try {
     setIsSubmitting(true);
     
+    let response;
     if (selectedComite) {
-      // Update existing comite - using PUT with full comité ID
-      await axios.put(`${apiURL}/cd/comites/${selectedComite}`, {
+      response = await axios.put(`${apiURL}/cd/comites/${selectedComite}`, {
         ...comiteForm,
         id_seance: selectedSeance,
         id_procedure: idProc
       });
-      toast.success("Comité mis à jour avec succès");
     } else {
-      // Create new comite - using POST to /cd/comites
-      await axios.post(`${apiURL}/cd/comites`, {
+      response = await axios.post(`${apiURL}/cd/comites`, {
         ...comiteForm,
         id_seance: selectedSeance,
         id_procedure: idProc
       });
-      toast.success("Comité créé avec succès");
     }
 
-    // Refresh comites list using the procedure endpoint
+    // Refresh comites list
     const comitesRes = await axios.get(`${apiURL}/cd/comites/procedure/${idProc}`);
-    setComites(comitesRes.data);
+    
+    // Transform the data properly
+    const transformedData = comitesRes.data.map((comite: any) => ({
+      ...comite,
+      decisions: comite.decisionCDs || [] // Ensure decisions array exists
+    }));
+    
+    setComites(transformedData);
+    setSelectedComite(response.data.id_comite); // Select the newly created/updated comité
     setMode('view');
+    toast.success(selectedComite ? "Comité mis à jour avec succès" : "Comité créé avec succès");
   } catch (err) {
     console.error("Error saving comite:", err);
     toast.error("Erreur lors de l'enregistrement du comité");

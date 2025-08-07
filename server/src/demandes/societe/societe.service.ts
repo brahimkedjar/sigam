@@ -340,7 +340,7 @@ async updateDetenteur(id: number, data: any): Promise<DetenteurMorale> {
     data: {
       nom_sociétéFR: data.nom_fr,
       nom_sociétéAR: data.nom_ar,
-      id_statutJuridique: data.statut_id,
+      id_statutJuridique: parseInt(data.statut_id, 10),
       telephone: data.tel,
       email: data.email,
       fax: data.fax,

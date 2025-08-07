@@ -15,4 +15,5 @@ export type ViewType =
   | 'manage_documents'  
   | 'Payments'
   | 'controle_minier'
-  | 'Audit_Logs';
+  | 'Audit_Logs'
+  | 'gestion_experts';

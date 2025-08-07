@@ -200,7 +200,7 @@ export default function Step2() {
           infos: {
             nom_fr: demande.detenteur.nom_sociétéFR,
             nom_ar: demande.detenteur.nom_sociétéAR,
-            statut_id: demande.detenteur.id_statutJuridique || '', // Changed from statutJuridique?.id_statutJuridique to id_statutJuridique
+            statut_id: demande.detenteur.id_statutJuridique || 0, // Changed from statutJuridique?.id_statutJuridique to id_statutJuridique
             tel: demande.detenteur.telephone,
             email: demande.detenteur.email,
             fax: demande.detenteur.fax,
