@@ -92,7 +92,8 @@ type Demande = {
 };
 
 export default function PermisDashboard() {
-  // Dashboard data states
+ const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
     actifs: 0,

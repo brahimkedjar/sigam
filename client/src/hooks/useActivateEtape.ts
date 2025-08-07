@@ -9,6 +9,8 @@ interface UseActivateEtapeOptions {
 }
 
 export const useActivateEtape = ({ idProc, etapeNum, statutProc }: UseActivateEtapeOptions) => {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (!idProc || !statutProc) return;
     if (statutProc === 'TERMINEE') return;

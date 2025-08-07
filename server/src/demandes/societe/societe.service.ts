@@ -12,7 +12,7 @@ export class SocieteService {
     });
   }
 
-  async getStatutJuridiqueById(id: string) {
+  async getStatutJuridiqueById(id: number) {
     return this.prisma.statutJuridique.findUnique({
       where: { id_statutJuridique: id }
     });

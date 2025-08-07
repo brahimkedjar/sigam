@@ -40,6 +40,7 @@ interface ProcedureEtape {
     ordre_etape:number;
   };
 }
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
 const LIB_PHASES = STEP_LABELS ;
 

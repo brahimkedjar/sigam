@@ -18,6 +18,8 @@ export default function LoginPage() {
   const router = useRouterWithLoading();
   const [error, setError] = useState<string | null>(null);
   const auth = useAuthStore.getState().auth;
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
   const apiClient = axios.create({
     baseURL: API_URL,
     headers: {

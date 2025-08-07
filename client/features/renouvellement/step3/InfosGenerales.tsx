@@ -2,7 +2,7 @@ import styles from './formcomponent.module.css';
 
 // Define types for better type safety
 type StatutJuridique = {
-  id_statutJuridique: string;
+  id_statutJuridique: number;
   code_statut: string;
   statut_fr: string;
   statut_ar: string;

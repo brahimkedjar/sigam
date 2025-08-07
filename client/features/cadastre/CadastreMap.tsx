@@ -49,6 +49,7 @@ const [idDemande, setIdDemande] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [overlapDetected, setOverlapDetected] = useState(false);
   const [overlapPermit, setOverlapPermit] = useState('');
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const [permitData, setPermitData] = useState<PermitData>({
     code: 'PXM-2025-014',
     type: 'Exploration de mines (PEM)',

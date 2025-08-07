@@ -85,6 +85,7 @@ interface Props {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   const id = context.query.id;
 
@@ -265,6 +266,8 @@ const handleProcedureTypeClick = (type: string) => {
 
 
  const handleRenewalClick = async (permisId: number) => {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
   // First check if max renewals reached (just in case)
   if ((permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) {
     setShowMaxRenewalModal(true);
@@ -303,6 +306,8 @@ const handleNotificationClose = () => {
 
 
 const handleSubmitDate = async () => {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
   if (!selectedDate || !pendingPermisId) return;
 
   try {

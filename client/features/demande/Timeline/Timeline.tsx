@@ -49,6 +49,7 @@ const Timeline1 = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchTimeline = async () => {

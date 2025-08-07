@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/useAuthStore';
 export function useSessionLoader() {
   const initialize = useAuthStore((s) => s.initialize);
   const setLoaded = () => useAuthStore.setState({ isLoaded: true });
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const load = async () => {

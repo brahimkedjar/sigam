@@ -22,6 +22,7 @@ interface AuthStore {
   initialize: () => Promise<void>;
   hasPermission: (perm: string) => boolean;
 }
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
 export const useAuthStore = create<AuthStore>()(
   

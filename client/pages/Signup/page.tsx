@@ -16,6 +16,7 @@ export default function Register() {
 
   const [message, setMessage] = useState('');
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchRoles = async () => {

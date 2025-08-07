@@ -53,6 +53,7 @@ type Obligation = ObligationDto;
 type Payment = PaymentDto;
 
 const DEADashboard: React.FC = () => {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const [loading, setLoading] = useState(true);
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [filteredObligations, setFilteredObligations] = useState<Obligation[]>([]);
