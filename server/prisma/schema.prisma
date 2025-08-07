@@ -412,7 +412,7 @@ model ExpertMinier {
 
 
 model StatutJuridique {
-  id_statutJuridique String    @id @default(uuid())
+  id_statutJuridique Int    @id @unique
   code_statut        String    @unique
   statut_fr          String
   statut_ar          String
@@ -423,7 +423,7 @@ model StatutJuridique {
 
 model DetenteurMorale {
   id_detenteur       Int                @id @default(autoincrement())
-  id_statutJuridique String
+  id_statutJuridique Int
   statutJuridique    StatutJuridique    @relation(fields: [id_statutJuridique], references: [id_statutJuridique])
   nom_sociétéFR      String
   nom_sociétéAR      String
