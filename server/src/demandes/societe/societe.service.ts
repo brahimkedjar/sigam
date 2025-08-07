@@ -21,7 +21,7 @@ export class SocieteService {
   async createDetenteur(data: any) {
     // First validate the statut exists
     const statutExists = await this.prisma.statutJuridique.findUnique({
-      where: { id_statutJuridique: data.statut_id }
+      where: { id_statutJuridique: parseInt(data.statut_id, 10) }
     });
     
     if (!statutExists) {
@@ -32,7 +32,7 @@ export class SocieteService {
       where: {
         nom_sociétéFR: data.nom_fr,
         nom_sociétéAR: data.nom_ar,
-        id_statutJuridique: data.statut_id,
+        id_statutJuridique: parseInt(data.statut_id, 10),
       }
     });
 
@@ -44,7 +44,7 @@ export class SocieteService {
       data: {
         nom_sociétéFR: data.nom_fr,
         nom_sociétéAR: data.nom_ar,
-        id_statutJuridique: data.statut_id,
+        id_statutJuridique: parseInt(data.statut_id, 10),
         telephone: data.tel,
         email: data.email,
         fax: data.fax,

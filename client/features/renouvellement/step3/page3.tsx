@@ -43,7 +43,7 @@ type SocieteData = {
   infos: {
     nom_fr: string;
     nom_ar: string;
-    statut_id: string;
+    statut_id: number;
     tel: string;
     email: string;
     fax: string;
@@ -79,7 +79,7 @@ const initialData: SocieteData = {
   infos: {
     nom_fr: '',
     nom_ar: '',
-    statut_id: '',
+    statut_id: 0,
     tel: '',
     email: '',
     fax: '',

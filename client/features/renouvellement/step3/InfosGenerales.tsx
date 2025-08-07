@@ -11,7 +11,7 @@ type StatutJuridique = {
 type InfosGeneralesData = {
   nom_fr: string;
   nom_ar: string;
-  statut_id: string;
+  statut_id: number;
   tel: string;
   email: string;
   fax: string;
