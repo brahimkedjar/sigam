@@ -80,7 +80,7 @@ useEffect(() => {
 
   const fetchDemande = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/procedures/${id_proc}/demande`);
+      const res = await axios.get(`${apiURL}/api/procedures/${id_proc}/demande`);
       setIdDemande(res.data.id_demande);
     } catch (error) {
       console.error('❌ Failed to fetch demande:', error);
@@ -110,7 +110,7 @@ const saveCoordinatesToBackend = async () => {
 
 
     try {
-      const response = await fetch('http://localhost:3001/coordinates', {
+      const response = await fetch(`${apiURL}/coordinates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

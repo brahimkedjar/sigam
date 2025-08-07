@@ -20,7 +20,7 @@ export default function Register() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/admin/roles');
+        const response = await axios.get(`${apiURL}/admin/roles`);
         const fetchedRoles = response.data;
         setRoles(fetchedRoles);
         if (fetchedRoles.length > 0) {
@@ -36,7 +36,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3001/auth/register', form);
+      await axios.post(`${apiURL}/auth/register`, form);
       setMessage('✅ Inscription réussie !');
     } catch {
       setMessage('❌ Échec de l\'inscription.');

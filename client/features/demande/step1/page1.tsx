@@ -70,7 +70,7 @@ export default function DemandeStart() {
       cleanLocalStorageForNewDemande();
 
       const res = await axios.post(
-        'http://localhost:3001/demandes/generate-code',
+        `${apiURL}/demandes/generate-code`,
         { id_typepermis: selectedPermis.id },
         { withCredentials: true }
       );

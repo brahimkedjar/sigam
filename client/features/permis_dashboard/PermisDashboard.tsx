@@ -162,7 +162,7 @@ export default function PermisDashboard() {
 
    /*const fetchExpiringSoonPermis = async () => {
   try {
-    const response = await axios.get('http://localhost:3001/Permisdashboard/expiring-soon');
+    const response = await axios.get(`${apiURL}/Permisdashboard/expiring-soon`);
     setExpiringSoonPermis(response.data);
   } catch (err) {
     console.error('Failed to fetch expiring soon permis:', err);
@@ -177,7 +177,7 @@ router.push(`/permis_dashboard/view/permisdetails?id=${permisId}`);
 const handleDeletePermis = async (permisId: number) => {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce permis?')) {
     try {
-      await axios.delete(`http://localhost:3001/Permisdashboard/${permisId}`);
+      await axios.delete(`${apiURL}/Permisdashboard/${permisId}`);
       setPermisList(permisList.filter(p => p.id !== permisId));
       alert('Permis supprimé avec succès');
     } catch (error) {
@@ -190,7 +190,7 @@ const handleDeletePermis = async (permisId: number) => {
   const fetchPermisList = async (page: number = 1) => {
   setIsLoadingPermis(true);
   try {
-    const response = await axios.get(`http://localhost:3001/Permisdashboard`, {
+    const response = await axios.get(`${apiURL}/Permisdashboard`, {
       params: {
         page: Number(page),
         limit: Number(permisPerPage)
@@ -266,9 +266,9 @@ const handleDeletePermis = async (permisId: number) => {
       setError(null);
       
       const [statsResponse, evolutionResponse, typesResponse] = await Promise.all([
-        axios.get('http://localhost:3001/api/dashboard/stats'),
-        axios.get('http://localhost:3001/api/dashboard/evolution'),
-        axios.get('http://localhost:3001/api/dashboard/types')
+        axios.get(`${apiURL}/api/dashboard/stats`),
+        axios.get(`${apiURL}/api/dashboard/evolution`),
+        axios.get(`${apiURL}/api/dashboard/types`)
       ]);
 
       setStats(statsResponse.data);
@@ -292,19 +292,19 @@ const handleDeletePermis = async (permisId: number) => {
       
       switch (type) {
         case 'total':
-          endpoint = 'http://localhost:3001/Permisdashboard';
+          endpoint = `${apiURL}/Permisdashboard`;
           title = 'Tous les permis';
           break;
         case 'actifs':
-          endpoint = 'http://localhost:3001/Permisdashboard/actifs';
+          endpoint = `${apiURL}/Permisdashboard/actifs`;
           title = 'Permis actifs';
           break;
         case 'enCours':
-          endpoint = 'http://localhost:3001/Demandesdashboard/en-cours';
+          endpoint = `${apiURL}/Demandesdashboard/en-cours`;
           title = 'Demandes en cours';
           break;
         case 'expires':
-          endpoint = 'http://localhost:3001/Permisdashboard/expires';
+          endpoint = `${apiURL}/Permisdashboard/expires`;
           title = 'Permis expirés';
           break;
       }

@@ -79,7 +79,7 @@ export default function SuiviDemandes() {
 
   const fetchDemandes = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/procedures', {
+      const res = await axios.get(`${apiURL}/api/procedures`, {
         signal: controller.signal
       });
       if (isMounted) setDemandes(res.data);
@@ -121,7 +121,7 @@ export default function SuiviDemandes() {
  const goToEtape = async (idProc: number) => {
   try {
     setIsLoading(true);
-    const res = await axios.get(`http://localhost:3001/api/procedure-etape/current/${idProc}`);
+    const res = await axios.get(`${apiURL}/api/procedure-etape/current/${idProc}`);
     const etape = res.data;
     if (etape?.link) {
       router.push(`${etape.link}`);
@@ -202,13 +202,13 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
       );
 
       try {
-        const response = await fetch(`http://localhost:3001/api/procedures/${procedureId}`, {
+        const response = await fetch(`${apiURL}/api/procedures/${procedureId}`, {
           method: 'DELETE',
         });
 
         if (!response.ok) {
           // If the deletion fails, we might want to re-fetch the data
-          const res = await axios.get('http://localhost:3001/api/procedures/en-cours');
+          const res = await axios.get(`${apiURL}/api/procedures/en-cours`);
           setDemandes(res.data);
           throw new Error("Échec de la suppression");
         }

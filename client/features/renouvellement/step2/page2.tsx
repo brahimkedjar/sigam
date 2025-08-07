@@ -95,7 +95,7 @@ useEffect(() => {
   const activateStep = async () => {
     if (!idProc) return;
     try {
-      await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/2`);
+      await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/2`);
     } catch (err) {
       console.error("Échec de l'activation de l'étape");
     }
@@ -157,7 +157,7 @@ useEffect(() => {
   useEffect(() => {
     if (!idProc) return;
 
-    axios.get(`http://localhost:3001/api/procedures/${idProc}/demande`)
+    axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
       .then(res => {
         setIdDemande(res.data.id_demande.toString());
         setCodeDemande(res.data.code_demande);
@@ -177,7 +177,7 @@ useEffect(() => {
   const fetchDocuments = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3001/api/procedure/${idDemande}/documents`);
+      const res = await axios.get(`${apiURL}/api/procedure/${idDemande}/documents`);
 
       setDocuments(res.data.documents);
 
@@ -222,7 +222,7 @@ useEffect(() => {
 
     try {
       await axios.post(
-        `http://localhost:3001/api/demande/${idDemande}/dossier-fournis`,
+        `${apiURL}/api/demande/${idDemande}/dossier-fournis`,
         payload
       );
 
@@ -241,7 +241,7 @@ useEffect(() => {
   const approveDemande = async () => {
     try {
       await axios.put(
-        `http://localhost:3001/api/demande/${idDemande}/status`,
+        `${apiURL}/api/demande/${idDemande}/status`,
         { statut_demande: 'ACCEPTEE' }
       );
       setSuccess("Demande approuvée avec succès");
@@ -259,7 +259,7 @@ useEffect(() => {
 
     try {
       await axios.put(
-        `http://localhost:3001/api/demande/${idDemande}/status`,
+        `${apiURL}/api/demande/${idDemande}/status`,
         {
           statut_demande: 'REJETEE',
           motif_rejet: rejectionReason
@@ -278,7 +278,7 @@ useEffect(() => {
 
     try {
       const res = await axios.post(
-        `http://localhost:3001/api/demande/${idDemande}/document/${id}/upload`,
+        `${apiURL}/api/demande/${idDemande}/document/${id}/upload`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );

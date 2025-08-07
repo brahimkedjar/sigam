@@ -76,8 +76,8 @@ const DEADashboard: React.FC = () => {
       try {
         setLoading(true);
         const [obligationsResponse, statsResponse] = await Promise.all([
-          axios.get('http://localhost:3001/payments/obligations'),
-          axios.get('http://localhost:3001/payments/stats')
+          axios.get(`${apiURL}/payments/obligations`),
+          axios.get(`${apiURL}/payments/stats`)
         ]);
         
         const obligations = obligationsResponse.data.map((ob: any) => ({
@@ -131,7 +131,7 @@ const DEADashboard: React.FC = () => {
   const handleGenerateReceipt = async (paymentId: number) => {
     try {
       setLoading(true);
-      const response = await axios.post(`http://localhost:3001/payments/generate-receipt/${paymentId}`);
+      const response = await axios.post(`${apiURL}/payments/generate-receipt/${paymentId}`);
 
       if (response.data.pdfUrl) {
         window.open(response.data.pdfUrl, '_blank');

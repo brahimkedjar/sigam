@@ -58,7 +58,7 @@ const defaultForm: CahierDesCharges = {
   dateExercice: '',
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function CahierChargesDashboard() {
   const { control, handleSubmit, reset, setValue, watch, formState: { isDirty } } = useForm<CahierDesCharges>({

@@ -16,7 +16,7 @@ export const useActivateEtape = ({ idProc, etapeNum, statutProc }: UseActivateEt
     const activate = async () => {
       try {
         const currentUrl = window.location.pathname + window.location.search;
-        await axios.post(`http://localhost:3001/api/procedure-etape/start/${idProc}/${etapeNum}`, {
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/${etapeNum}`, {
            link: currentUrl
         });
       } catch (err) {

@@ -32,7 +32,7 @@ export default function LoginPage() {
     
     try {
       const response = await apiClient.post(
-        'http://localhost:3001/auth/login', 
+        `${apiURL}/auth/login`, 
         { email, password },
         { 
           withCredentials: true,
