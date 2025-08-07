@@ -411,9 +411,20 @@ model ExpertMinier {
 
 
 
+model StatutJuridique {
+  id_statutJuridique String    @id @default(uuid())
+  code_statut        String    @unique
+  statut_fr          String
+  statut_ar          String
+  detenteurs         DetenteurMorale[]
+
+  @@map("statutjuridique")
+}
+
 model DetenteurMorale {
   id_detenteur       Int                @id @default(autoincrement())
   id_statutJuridique String
+  statutJuridique    StatutJuridique    @relation(fields: [id_statutJuridique], references: [id_statutJuridique])
   nom_sociétéFR      String
   nom_sociétéAR      String
   nationalité        String
@@ -425,11 +436,10 @@ model DetenteurMorale {
 
   fonctions          FonctionPersonneMoral[]
   demande            Demande[]
-
-  registreCommerce   RegistreCommerce?  // Relation without attributes here
+  registreCommerce   RegistreCommerce?
+  Permis             Permis[]
 
   @@map("detenteurmorale")
-  Permis Permis[]
 }
 
 model RegistreCommerce {

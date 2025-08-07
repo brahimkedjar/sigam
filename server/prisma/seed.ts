@@ -351,3 +351,24 @@ main11()
     await prisma.$disconnect();
   });
 
+  async function main12() {
+  const statutsJuridiques = [
+    { code_statut: 'SARL', statut_fr: 'Société à responsabilité limitée', statut_ar: 'شركة ذات مسؤولية محدودة' },
+    { code_statut: 'SPA', statut_fr: 'Société par actions', statut_ar: 'شركة مساهمة' },
+    { code_statut: 'EURL', statut_fr: 'Entreprise unipersonnelle à responsabilité limitée', statut_ar: 'مؤسسة فردية ذات مسؤولية محدودة' },
+    { code_statut: 'SNC', statut_fr: 'Société en nom collectif', statut_ar: 'شركة التضامن' },
+    // Add more as needed
+  ];
+  
+  await prisma.statutJuridique.createMany({ data: statutsJuridiques });
+  }
+  
+main12()
+.catch(e => {
+  console.error(e);
+  process.exit(1);
+})
+.finally(async () => {
+  await prisma.$disconnect();
+});
+

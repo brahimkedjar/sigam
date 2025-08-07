@@ -26,43 +26,43 @@ async getAllProcedures() {
   async deleteProcedure(@Param('id') id: string) {
     return this.procedureService.deleteProcedureAndRelatedData(parseInt(id));
   }
- @Get(':id_proc/demande')
-async getDemandeByProcedure(@Param('id_proc', ParseIntPipe) id_proc: number) {
-  return this.prisma.demande.findFirst({
-    where: { id_proc },
-    include: {
-      detenteur: {
-        include: {
-          registreCommerce: true,
-          fonctions: {
-            where: {
-              type_fonction: { in: ['Représentant légal', 'Actionnaire'] },
-            },
-            include: {
-              personne: true
+  @Get(':id_proc/demande')
+  async getDemandeByProcedure(@Param('id_proc', ParseIntPipe) id_proc: number) {
+    return this.prisma.demande.findFirst({
+      where: { id_proc },
+      include: {
+        detenteur: {
+          include: {
+            statutJuridique: true, // Add this line to include the legal status
+            registreCommerce: true,
+            fonctions: {
+              where: {
+                type_fonction: { in: ['Représentant légal', 'Actionnaire'] },
+              },
+              include: {
+                personne: true
+              }
             }
           }
-        }
-      },
-      expertMinier: true,
-      procedure: {
-        include: {
-          typeProcedure: true,
-          ProcedureEtape: {
-            include: {
-              etape: true
-            },
-            orderBy: {
-              etape: {
-                ordre_etape: 'asc'
+        },
+        expertMinier: true,
+        procedure: {
+          include: {
+            typeProcedure: true,
+            ProcedureEtape: {
+              include: {
+                etape: true
+              },
+              orderBy: {
+                etape: {
+                  ordre_etape: 'asc'
+                }
               }
             }
           }
         }
       }
-    }
-  });
-}
-
+    });
+  }
 
 }

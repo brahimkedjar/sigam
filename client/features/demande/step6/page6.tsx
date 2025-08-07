@@ -29,8 +29,11 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
-import ArcGISMap from '@/components/map/ArcGISMap'; // cleaner with `@` alias
-
+import dynamic from 'next/dynamic';
+//import ArcGISMap from '@/components/map/ArcGISMap'; // cleaner with `@` alias
+const ArcGISMap =dynamic(( )=> import('@/components/map/ArcGISMap'),{
+  ssr : false
+})
 export default function CadastrePage() {
 
   type Point = {

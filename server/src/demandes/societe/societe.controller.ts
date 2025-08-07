@@ -10,6 +10,13 @@ export class SocieteController {
     private readonly prisma: PrismaService
   ) {}
 
+  @Get('statuts-juridiques')
+async getAllStatutsJuridiques() {
+  return this.prisma.statutJuridique.findMany({
+    orderBy: { code_statut: 'asc' }
+  });
+}
+
   // Detenteur Morale Endpoints
   @Post('detenteur-morale')
   createDetenteur(@Body() data) {

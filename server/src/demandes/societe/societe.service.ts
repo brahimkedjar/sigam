@@ -5,32 +5,55 @@ import { PersonnePhysique, FonctionPersonneMoral, RegistreCommerce, DetenteurMor
 
 @Injectable()
 export class SocieteService {
-  async createDetenteur(data: any) {
-    const existing = await this.prisma.detenteurMorale.findFirst({
-  where: {
-    nom_sociétéFR: data.nom_fr,
-    nom_sociétéAR: data.nom_ar,
-    id_statutJuridique: data.statut_id,
-  }
-});
 
-if (existing) {
-    throw new HttpException('Le Detenteur Morale existe déjà.', HttpStatus.CONFLICT); // <-- send proper error
+  async getAllStatutsJuridiques() {
+    return this.prisma.statutJuridique.findMany({
+      orderBy: { code_statut: 'asc' }
+    });
   }
-  return this.prisma.detenteurMorale.create({
-    data: {
-      nom_sociétéFR: data.nom_fr,
-      nom_sociétéAR: data.nom_ar,
-      id_statutJuridique: data.statut_id,
-      telephone: data.tel,
-      email: data.email,
-      fax: data.fax,
-      adresse_siège: data.adresse,
-      nationalité: data.nationalite ?? '',
-      pay: data.pay ?? '', 
-    },
-  });
-}
+
+  async getStatutJuridiqueById(id: string) {
+    return this.prisma.statutJuridique.findUnique({
+      where: { id_statutJuridique: id }
+    });
+  }
+
+  async createDetenteur(data: any) {
+    // First validate the statut exists
+    const statutExists = await this.prisma.statutJuridique.findUnique({
+      where: { id_statutJuridique: data.statut_id }
+    });
+    
+    if (!statutExists) {
+      throw new HttpException('Statut juridique invalide', HttpStatus.BAD_REQUEST);
+    }
+
+    const existing = await this.prisma.detenteurMorale.findFirst({
+      where: {
+        nom_sociétéFR: data.nom_fr,
+        nom_sociétéAR: data.nom_ar,
+        id_statutJuridique: data.statut_id,
+      }
+    });
+
+    if (existing) {
+      throw new HttpException('Le Detenteur Morale existe déjà.', HttpStatus.CONFLICT);
+    }
+
+    return this.prisma.detenteurMorale.create({
+      data: {
+        nom_sociétéFR: data.nom_fr,
+        nom_sociétéAR: data.nom_ar,
+        id_statutJuridique: data.statut_id,
+        telephone: data.tel,
+        email: data.email,
+        fax: data.fax,
+        adresse_siège: data.adresse,
+        nationalité: data.nationalite ?? '',
+        pay: data.pay ?? '', 
+      },
+    });
+  }
 
 async updateRepresentant(nin: string, data: any) {
     // Find person by NIN

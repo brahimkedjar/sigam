@@ -1,42 +1,169 @@
-import styles from './formcomponent.module.css'
-// InfosGenerales.tsx
-type InfosGeneralesProps = {
-  data: {
-    nom_fr: string;
-    nom_ar: string;
-    statut_id: string;
-    tel: string;
-    email: string;
-    fax: string;
-    adresse: string;
-    nationalite: string;
-  };
-  onChange: (data: InfosGeneralesProps['data']) => void;
-  disabled?: boolean;
+import styles from './formcomponent.module.css';
+
+// Define types for better type safety
+type StatutJuridique = {
+  id_statutJuridique: string;
+  code_statut: string;
+  statut_fr: string;
+  statut_ar: string;
 };
 
-export default function InfosGenerales({ data, onChange, disabled = false }: InfosGeneralesProps) {
-  if (!data) return <p>Aucune donnée fournie.</p>; // or return null / fallback UI
+type InfosGeneralesData = {
+  nom_fr: string;
+  nom_ar: string;
+  statut_id: string;
+  tel: string;
+  email: string;
+  fax: string;
+  adresse: string;
+  nationalite: string;
+};
 
+type InfosGeneralesProps = {
+  data: InfosGeneralesData;
+  onChange: (data: InfosGeneralesData) => void;
+  disabled?: boolean;
+  statutsJuridiques?: StatutJuridique[];
+  loading?: boolean; // Added loading state
+};
+
+export default function InfosGenerales({ 
+  data, 
+  onChange, 
+  disabled = false,
+  statutsJuridiques = [],
+  loading = false 
+}: InfosGeneralesProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    onChange({ ...data, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    onChange({ ...data, [name]: value });
   };
+
+  // Show skeleton loading if data is loading
+  if (loading) {
+    return (
+      <div className={styles.formGrid}>
+        {[...Array(8)].map((_, index) => (
+          <div key={index} className={styles.inputSkeleton}></div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.formGrid}>
-  <input name="nom_fr" className={styles.inputField} value={data.nom_fr} onChange={handleChange} placeholder="Nom société (FR)" required disabled={disabled}/>
-  <input name="nom_ar" className={`${styles.inputField} ${styles.arabicInput}`} value={data.nom_ar} onChange={handleChange} placeholder="اسم الشركة (AR)" required disabled={disabled}/>
-  <select name="statut_id" className={`${styles.inputField} ${styles.selectField}`} value={data.statut_id} onChange={handleChange} required disabled={disabled}>
-    <option value="">Statut juridique</option>
-    <option value="1">SPA</option>
-    <option value="2">SARL</option>
-    <option value="3">EURL</option>
-  </select>
-  <input name="tel" className={styles.inputField} value={data.tel} onChange={handleChange} placeholder="Téléphone" required disabled={disabled}/>
-  <input type="email" name="email" className={styles.inputField} value={data.email} onChange={handleChange} placeholder="Email" required disabled={disabled}/>
-  <input name="fax" className={styles.inputField} value={data.fax} onChange={handleChange} placeholder="Fax"disabled={disabled} />
-  <input name="adresse" className={styles.inputField} value={data.adresse} onChange={handleChange} placeholder="Adresse complète" required disabled={disabled}/>
-  <input name="nationalite" className={styles.inputField} value={data.nationalite} onChange={handleChange} placeholder="Nationalité" required disabled={disabled}/>
-</div>
+      {/* Company Name (French) */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Nom société (FR)</label>
+        <input
+          name="nom_fr"
+          className={styles.inputField}
+          value={data.nom_fr}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Company Name (Arabic) */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>اسم الشركة (AR)</label>
+        <input
+          name="nom_ar"
+          className={`${styles.inputField} ${styles.arabicInput}`}
+          value={data.nom_ar}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+          dir="rtl"
+        />
+      </div>
+
+      {/* Legal Status */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Statut juridique</label>
+        <select
+          name="statut_id"
+          className={`${styles.inputField} ${styles.selectField}`}
+          value={data.statut_id}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        >
+          <option value="">Sélectionnez un statut</option>
+          {statutsJuridiques.map(statut => (
+            <option key={statut.id_statutJuridique} value={statut.id_statutJuridique}>
+              {statut.code_statut} - {statut.statut_fr}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Phone */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Téléphone</label>
+        <input
+          name="tel"
+          type="tel"
+          className={styles.inputField}
+          value={data.tel}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Email */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Email</label>
+        <input
+          name="email"
+          type="email"
+          className={styles.inputField}
+          value={data.email}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Fax */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Fax</label>
+        <input
+          name="fax"
+          className={styles.inputField}
+          value={data.fax}
+          onChange={handleChange}
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Address */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Adresse complète</label>
+        <input
+          name="adresse"
+          className={styles.inputField}
+          value={data.adresse}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Nationality */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Nationalité</label>
+        <input
+          name="nationalite"
+          className={styles.inputField}
+          value={data.nationalite}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        />
+      </div>
+    </div>
   );
 }
