@@ -54,7 +54,7 @@ const Timeline1 = () => {
     const fetchTimeline = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:3001/timeline/${procedureId}`);
+        const response = await axios.get(`${apiURL}/timeline/${procedureId}`);
         setTimeline(response.data);
       } catch (err) {
         setError('Failed to load timeline data');

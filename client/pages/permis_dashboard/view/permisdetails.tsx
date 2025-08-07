@@ -89,18 +89,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.query.id;
 
   try {
-    const res = await fetch(`http://localhost:3001/Permisdashboard/${id}`);
+    const res = await fetch(`${apiURL}/Permisdashboard/${id}`);
     if (!res.ok) throw new Error('Failed to fetch permit');
     const permis = await res.json();
     if (!permis.typePermis.nbr_renouv_max) {
-      const typeRes = await fetch(`http://localhost:3001/api/typepermis/${permis.id_typePermis}`);
+      const typeRes = await fetch(`${apiURL}/api/typepermis/${permis.id_typePermis}`);
       const typeData = await typeRes.json();
       permis.typePermis = {
         ...permis.typePermis,
         ...typeData
       };
     }
-    const renewalsRes = await fetch(`http://localhost:3001/api/procedures/${id}/renewals`);
+    const renewalsRes = await fetch(`${apiURL}/api/procedures/${id}/renewals`);
     const renewalsData = renewalsRes.ok ? await renewalsRes.json() : [];
     // Transform the data to match RenewalInfo
     const formattedRenewals = renewalsData.map((proc: any) => {
@@ -272,7 +272,7 @@ const handleProcedureTypeClick = (type: string) => {
   }
 
   try {
-    const response = await axios.post('http://localhost:3001/api/procedures/renouvellement/check-payments', {
+    const response = await axios.post(`${apiURL}/api/procedures/renouvellement/check-payments`, {
       permisId,
     });
 
@@ -306,7 +306,7 @@ const handleSubmitDate = async () => {
   if (!selectedDate || !pendingPermisId) return;
 
   try {
-    const res = await axios.post('http://localhost:3001/api/procedures/renouvellement/start', {
+    const res = await axios.post(`${apiURL}/api/procedures/renouvellement/start`, {
       permisId: pendingPermisId,
       date_demande: selectedDate.toISOString().split('T')[0], 
     });

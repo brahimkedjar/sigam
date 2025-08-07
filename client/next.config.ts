@@ -2,6 +2,7 @@
 const withTM = require('next-transpile-modules')([
   '@ant-design/icons-svg'
 ]);
+const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = withTM({
@@ -13,7 +14,7 @@ const nextConfig = withTM({
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/:path*',
+        destination: `${apiURL}/:path*`,
       },
     ];
   },

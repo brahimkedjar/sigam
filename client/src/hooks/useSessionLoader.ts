@@ -15,7 +15,7 @@ export function useSessionLoader() {
         const token = useAuthStore.getState().auth.token;
         
         if (token) {
-          const res = await axios.post('http://localhost:3001/auth/verify', 
+          const res = await axios.post(`${apiURL}/auth/verify`, 
             { token },
             { withCredentials: true }
           );

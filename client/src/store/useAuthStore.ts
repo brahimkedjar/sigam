@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthStore>()(
   
   try {
     // Clear server session
-    await axios.post('http://localhost:3001/auth/logout', {}, {
+    await axios.post(`${apiURL}/auth/logout`, {}, {
       withCredentials: true // Important for cookies
     });
   } catch (error) {
@@ -84,7 +84,7 @@ export const useAuthStore = create<AuthStore>()(
 initialize: async () => {
   try {
     const token = useAuthStore.getState().auth.token;
-          const response = await axios.post('http://localhost:3001/auth/verify', 
+          const response = await axios.post(`${apiURL}/auth/verify`, 
             { token },
             { withCredentials: true }
           );

@@ -316,7 +316,7 @@ async generatePaymentReceipt(paymentId: number) {
                 detenteur: true,
               },
             },
-            paiements: true, // ✅ fetch all payments under this obligation
+            paiements: true, 
           },
         },
       },
@@ -338,7 +338,7 @@ async generatePaymentReceipt(paymentId: number) {
     const htmlContent = this.buildReceiptHtml({
       obligation,
       payment, // current payment
-      payments: obligation?.paiements || [] // ✅ all related payments
+      payments: obligation?.paiements || [] 
     });
 
     
