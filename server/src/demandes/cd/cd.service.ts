@@ -1,119 +1,58 @@
-// cd.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSeanceDto, UpdateSeanceDto } from '../dto/cd.dto';
-import { CreateComiteDto, UpdateComiteDto } from '../dto/cd.dto';
-import { CreateDecisionDto } from '../dto/cd.dto';
-import { PDFDocument } from 'pdf-lib';
+import { 
+  CreateSeanceDto, 
+  UpdateSeanceDto,
+  CreateComiteDto,
+  UpdateComiteDto,
+  CreateDecisionDto,
+  CreateMembreDto,
+  UpdateMembreDto
+} from '../dto/cd.dto';
 
 @Injectable()
 export class CdService {
   constructor(private prisma: PrismaService) {}
 
-    async updateSeance(id: number, data: UpdateSeanceDto) {
-    return this.prisma.seanceCDPrevue.update({
-      where: { id_seance: id },
-      data: {
-        exercice: data.exercice,
-        remarques: data.remarques,
-        membres: {
-          set: data.membre_ids?.map(id => ({ id_membre: id }))
-        }
-      },
-      include: {
-        membres: true
-      }
-    });
-  }
-
-
- async getComiteBySeanceAndProcedure(seanceId: number, procedureId: number) {
-  return this.prisma.comiteDirection.findFirst({
-    where: { 
-      id_seance: seanceId,
-      id_procedure: procedureId
-    },
-    include: {
-      seance: {
-        include: {
-          membres: true
-        }
-      },
-      decisionCDs: true,
-      procedure: true
-    }
-  });
-}
-
-async getSeancesWithComite(procedureId: number) {
-  return this.prisma.seanceCDPrevue.findMany({
-    where: {
-      comites: {
-        some: {
-          id_procedure: procedureId
-        }
-      }
-    },
-    include: {
-      membres: true,
-      comites: {
-        include: {
-          decisionCDs: true
-        }
-      }
-    }
-  });
-}
-
-
-  async deleteSeance(id: number) {
-    // First check if the seance has any comités associated
-    const comites = await this.prisma.comiteDirection.findMany({
-      where: { id_seance: id }
-    });
-
-    if (comites.length > 0) {
-      throw new Error('Cannot delete seance with associated comités');
-    }
-
-    return this.prisma.seanceCDPrevue.delete({
-      where: { id_seance: id }
-    });
-  }
-
-  async deleteComite(id: number) {
-    // First delete all decisions associated with this comité
-    await this.prisma.decisionCD.deleteMany({
-      where: { id_comite: id }
-    });
-
-    return this.prisma.comiteDirection.delete({
-      where: { id_comite: id }
-    });
-  }
-
-  // Seance CRUD operations
-  async createSeance(data: CreateSeanceDto) {
+  
+  // Seance Operations
+  async createSeance(createSeanceDto: CreateSeanceDto) {
+    const numSeance = this.generateSeanceNumber(createSeanceDto.exercice);
+    
     return this.prisma.seanceCDPrevue.create({
       data: {
-        num_seance: this.generateSeanceNumber(data.exercice),
-        date_seance: new Date(),
-        exercice: data.exercice,
-        remarques: data.remarques,
-        membres: {
-          connect: data.membre_ids.map(id => ({ id_membre: id }))
-        }
-      },
+  num_seance: numSeance,
+  date_seance: new Date(createSeanceDto.date_seance),
+  exercice: createSeanceDto.exercice,
+  remarques: createSeanceDto.remarques,
+  statut: 'programmee', 
+  membres: {
+    connect: createSeanceDto.membre_ids.map(id => ({ id_membre: id }))
+  }
+},
+
       include: {
-        membres: true
+        membres: true,
+        procedures: true
       }
     });
   }
 
-  async getSeances() {
+  async getSeances(statut?: 'programmee' | 'terminee') {
+    const where = statut ? { statut } : {};
     return this.prisma.seanceCDPrevue.findMany({
+      where,
       include: {
-        membres: true
+        membres: true,
+        procedures: {
+          include: {
+            demandes: {
+              include: {
+                detenteur: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         date_seance: 'desc'
@@ -126,108 +65,84 @@ async getSeancesWithComite(procedureId: number) {
       where: { id_seance: id },
       include: {
         membres: true,
+        procedures: true,
         comites: {
           include: {
-            decisionCDs: true,
-            procedure: {
-              include: {
-                demandes: true
-              }
-            }
+            decisionCDs: true
           }
         }
       }
     });
   }
 
-  // Comite CRUD operations
-  async createComite(data: CreateComiteDto) {
+  async updateSeance(id: number, updateSeanceDto: UpdateSeanceDto) {
+    return this.prisma.seanceCDPrevue.update({
+      where: { id_seance: id },
+      data: {
+        date_seance: updateSeanceDto.date_seance ? new Date(updateSeanceDto.date_seance) : undefined,
+        exercice: updateSeanceDto.exercice,
+        remarques: updateSeanceDto.remarques,
+        membres: updateSeanceDto.membre_ids ? {
+          set: updateSeanceDto.membre_ids.map(id => ({ id_membre: id }))
+        } : undefined
+      },
+      include: {
+        membres: true
+      }
+    });
+  }
+
+  async deleteSeance(id: number) {
+    return this.prisma.seanceCDPrevue.delete({
+      where: { id_seance: id }
+    });
+  }
+
+  // Comite Operations
+  async createComite(createComiteDto: CreateComiteDto) {
+    const numDecision = this.generateDecisionNumber();
+    
     return this.prisma.comiteDirection.create({
       data: {
-        seance: { connect: { id_seance: data.id_seance } },
-        procedure: { connect: { id_proc: data.id_procedure } },
-        date_comite: new Date(data.date_comite),
-        numero_decision: data.numero_decision,
-        objet_deliberation: data.objet_deliberation,
-        resume_reunion: data.resume_reunion,
-        fiche_technique: data.fiche_technique,
-        carte_projettee: data.carte_projettee,
-        rapport_police: data.rapport_police,
-        instructeur: data.instructeur,
-        decisionCDs: {
-          create: data.decisions.map(decision => ({
+        id_seance: createComiteDto.id_seance,
+        date_comite: new Date(createComiteDto.date_comite),
+        numero_decision: numDecision,
+        objet_deliberation: createComiteDto.objet_deliberation,
+        resume_reunion: createComiteDto.resume_reunion,
+        fiche_technique: createComiteDto.fiche_technique,
+        carte_projettee: createComiteDto.carte_projettee,
+        rapport_police: createComiteDto.rapport_police,
+        instructeur: createComiteDto.instructeur,
+        decisionCDs: createComiteDto.decisions ? {
+          create: createComiteDto.decisions.map(decision => ({
             decision_cd: decision.decision_cd,
             duree_decision: decision.duree_decision,
             commentaires: decision.commentaires
           }))
-        }
+        } : undefined
       },
       include: {
+        decisionCDs: true,
         seance: {
           include: {
             membres: true
           }
-        },
-        decisionCDs: true,
-        procedure: true
+        }
       }
     });
   }
 
-  async updateComite(id: number, data: UpdateComiteDto) {
-    // First delete existing decisions
-    await this.prisma.decisionCD.deleteMany({
-      where: { id_comite: id }
-    });
-
-    return this.prisma.comiteDirection.update({
-      where: { id_comite: id },
-      data: {
-        date_comite: new Date(data.date_comite!),
-        numero_decision: data.numero_decision,
-        objet_deliberation: data.objet_deliberation,
-        resume_reunion: data.resume_reunion,
-        fiche_technique: data.fiche_technique,
-        carte_projettee: data.carte_projettee,
-        rapport_police: data.rapport_police,
-        instructeur: data.instructeur,
-        decisionCDs: {
-          create: data.decisions?.map(decision => ({
-            decision_cd: decision.decision_cd,
-            duree_decision: decision.duree_decision,
-            commentaires: decision.commentaires
-          }))
-        }
-      },
+  async getComites() {
+    return this.prisma.comiteDirection.findMany({
       include: {
         seance: true,
-        decisionCDs: true,
-        procedure: true
+        decisionCDs: true
+      },
+      orderBy: {
+        date_comite: 'desc'
       }
     });
   }
-
-async getComitesByProcedure(procedureId: number) {
-  return this.prisma.comiteDirection.findMany({
-    where: { id_procedure: procedureId },
-    include: {
-      seance: {
-        include: {
-          membres: true
-        }
-      },
-      decisionCDs: true,
-      procedure: {
-        include: {
-          demandes: true
-        }
-      }
-    },
-    orderBy: {
-      date_comite: 'desc'
-    }
-  });
-}
 
   async getComiteById(id: number) {
     return this.prisma.comiteDirection.findUnique({
@@ -238,111 +153,152 @@ async getComitesByProcedure(procedureId: number) {
             membres: true
           }
         },
-        decisionCDs: true,
-        procedure: {
-          include: {
-            demandes: true
-          }
-        }
+        decisionCDs: true
       }
     });
   }
 
-  // Members operations
+  async updateComite(id: number, updateComiteDto: UpdateComiteDto) {
+    return this.prisma.$transaction(async (tx) => {
+      // First delete existing decisions if updating
+      if (updateComiteDto.decisions) {
+        await tx.decisionCD.deleteMany({
+          where: { id_comite: id }
+        });
+      }
+
+      return tx.comiteDirection.update({
+        where: { id_comite: id },
+        data: {
+          date_comite: updateComiteDto.date_comite ? new Date(updateComiteDto.date_comite) : undefined,
+          numero_decision: updateComiteDto.numero_decision,
+          objet_deliberation: updateComiteDto.objet_deliberation,
+          resume_reunion: updateComiteDto.resume_reunion,
+          fiche_technique: updateComiteDto.fiche_technique,
+          carte_projettee: updateComiteDto.carte_projettee,
+          rapport_police: updateComiteDto.rapport_police,
+          instructeur: updateComiteDto.instructeur,
+          decisionCDs: updateComiteDto.decisions ? {
+            create: updateComiteDto.decisions.map(decision => ({
+              decision_cd: decision.decision_cd,
+              duree_decision: decision.duree_decision,
+              commentaires: decision.commentaires
+            }))
+          } : undefined
+        },
+        include: {
+          decisionCDs: true
+        }
+      });
+    });
+  }
+
+  async deleteComite(id: number) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.decisionCD.deleteMany({
+        where: { id_comite: id }
+      });
+
+      return tx.comiteDirection.delete({
+        where: { id_comite: id }
+      });
+    });
+  }
+
+  // Decision Operations
+  async createDecision(createDecisionDto: CreateDecisionDto) {
+    return this.prisma.decisionCD.create({
+      data: {
+        id_comite: createDecisionDto.id_comite,
+        decision_cd: createDecisionDto.decision_cd,
+        duree_decision: createDecisionDto.duree_decision,
+        commentaires: createDecisionDto.commentaires
+      }
+    });
+  }
+
+  async getDecisionsByComite(comiteId: number) {
+    return this.prisma.decisionCD.findMany({
+      where: { id_comite: comiteId }
+    });
+  }
+
+  // Member Operations
+  async createMembre(createMembreDto: CreateMembreDto) {
+    return this.prisma.membresComite.create({
+      data: {
+        nom_membre: createMembreDto.nom_membre,
+        prenom_membre: createMembreDto.prenom_membre,
+        fonction_membre: createMembreDto.fonction_membre,
+        email_membre: createMembreDto.email_membre
+      }
+    });
+  }
+
   async getMembres() {
     return this.prisma.membresComite.findMany();
   }
 
-  // Generate PDF report
-  async generateComiteReport(comiteId: number) {
-    const comite = await this.getComiteById(comiteId);
-    if (!comite) {
-      throw new Error('Comité non trouvé');
-    }
-
-    // Create PDF document
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([600, 800]);
-
-    // Add content to PDF
-    const { width, height } = page.getSize();
-    const fontSize = 12;
-    
-    // Add title
-    page.drawText('Rapport du Comité de Direction', {
-      x: 50,
-      y: height - 50,
-      size: 18,
+  async getMembreById(id: number) {
+    return this.prisma.membresComite.findUnique({
+      where: { id_membre: id }
     });
-
-    // Add comite details
-    page.drawText(`Numéro de décision: ${comite.numero_decision}`, {
-      x: 50,
-      y: height - 100,
-      size: fontSize,
-    });
-    
-    page.drawText(`Date: ${comite.date_comite.toLocaleDateString()}`, {
-      x: 50,
-      y: height - 120,
-      size: fontSize,
-    });
-
-    page.drawText(`Objet: ${comite.objet_deliberation}`, {
-      x: 50,
-      y: height - 140,
-      size: fontSize,
-    });
-
-    // Add decisions
-    page.drawText('Décisions:', {
-      x: 50,
-      y: height - 180,
-      size: fontSize,
-    });
-
-    let yPosition = height - 200;
-    comite.decisionCDs.forEach(decision => {
-      page.drawText(
-        `- ${decision.decision_cd === 'favorable' ? 'Favorable' : 'Défavorable'}` +
-        (decision.duree_decision ? ` (${decision.duree_decision} ans)` : ''),
-        { x: 60, y: yPosition, size: fontSize }
-      );
-      
-      if (decision.commentaires) {
-        yPosition -= 20;
-        page.drawText(`  Motif: ${decision.commentaires}`, {
-          x: 70,
-          y: yPosition,
-          size: fontSize - 2,
-        });
-      }
-      
-      yPosition -= 30;
-    });
-
-    // Add members
-    page.drawText('Membres présents:', {
-      x: 50,
-      y: yPosition - 20,
-      size: fontSize,
-    });
-
-    yPosition -= 40;
-    comite.seance.membres.forEach(membre => {
-      page.drawText(
-        `- ${membre.prenom_membre} ${membre.nom_membre} (${membre.fonction_membre})`,
-        { x: 60, y: yPosition, size: fontSize - 2 }
-      );
-      yPosition -= 20;
-    });
-
-    // Serialize PDF
-    const pdfBytes = await pdfDoc.save();
-    return pdfBytes;
   }
 
+  async updateMembre(id: number, updateMembreDto: UpdateMembreDto) {
+    return this.prisma.membresComite.update({
+      where: { id_membre: id },
+      data: {
+        nom_membre: updateMembreDto.nom_membre,
+        prenom_membre: updateMembreDto.prenom_membre,
+        fonction_membre: updateMembreDto.fonction_membre,
+        email_membre: updateMembreDto.email_membre
+      }
+    });
+  }
+
+  async deleteMembre(id: number) {
+    return this.prisma.membresComite.delete({
+      where: { id_membre: id }
+    });
+  }
+
+  // Procedure-Seance Relationship
+  async addProcedureToSeance(seanceId: number, procedureId: number) {
+    return this.prisma.seanceCDPrevue.update({
+      where: { id_seance: seanceId },
+      data: {
+        procedures: {
+          connect: { id_proc: procedureId }
+        }
+      },
+      include: {
+        procedures: true
+      }
+    });
+  }
+
+  async removeProcedureFromSeance(seanceId: number, procedureId: number) {
+    return this.prisma.seanceCDPrevue.update({
+      where: { id_seance: seanceId },
+      data: {
+        procedures: {
+          disconnect: { id_proc: procedureId }
+        }
+      },
+      include: {
+        procedures: true
+      }
+    });
+  }
+
+  // Helper methods for generating unique numbers
   private generateSeanceNumber(exercice: number): string {
-    return `CD-${exercice}-${Math.floor(1000 + Math.random() * 9000)}`;
+    return `CD-${exercice}-${Math.floor(100 + Math.random() * 900)}`;
+  }
+
+  private generateDecisionNumber(): string {
+    const now = new Date();
+    return `DEC-${now.getFullYear()}-${now.getMonth() + 1}-${Math.floor(1000 + Math.random() * 9000)}`;
   }
 }

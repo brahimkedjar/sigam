@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import styles from '@/features/permis_dashboard/PermisDashboard.module.css';
+import styles from './AuditLogs.module.css';
 
 import {
   Box,
@@ -54,8 +54,8 @@ import ChangeRenderer from '../../components/audit/ChangeRenderer';
 import AuditTimeline from '../../components/audit/AuditTimeline';
 import AuditStats from '../../components/audit/AuditStats';
 import { Theme } from '@mui/material/styles';
-import Navbar from '@/features/navbar/Navbar';
-import Sidebar from '@/features/sidebar/Sidebar';
+import Navbar from '@/pages/navbar/Navbar';
+import Sidebar from '@/pages/sidebar/Sidebar';
 import { useViewNavigator } from '@/src/hooks/useViewNavigator';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 import { useAuthStore } from '@/src/store/useAuthStore';

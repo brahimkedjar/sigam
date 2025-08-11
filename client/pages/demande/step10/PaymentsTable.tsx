@@ -17,7 +17,6 @@ interface PaymentsTableProps {
 }
 
 const PaymentsTable = ({ payments = [] }: PaymentsTableProps) => {
-  console.log('📦 [PaymentsTable] received payments:', payments);
 
   if (!payments || payments.length === 0) {
     return (

@@ -300,12 +300,11 @@ model Procedure {
 
   SubstanceAssocieeDemande SubstanceAssocieeDemande[]
   InteractionWali InteractionWali[]
-  id_seance      Int?
-  comites         ComiteDirection[]
   ProcedureEtape ProcedureEtape[]
   renouvellement  ProcedureRenouvellement?
 
-  @@map("procedure")
+  id_seance       Int?
+  seance          SeanceCDPrevue? @relation("SeanceProcedures", fields: [id_seance], references: [id_seance])
 }
 
 
@@ -535,21 +534,26 @@ model RedevanceBareme {
 }
 
 model SeanceCDPrevue {
-  id_seance       Int               @id @default(autoincrement())
-  num_seance      String
-  date_seance     DateTime
-  exercice        Int
-  remarques       String?
-  comites         ComiteDirection[]
-  membres         MembresComite[]   @relation("SeanceMembres")
+  id_seance     Int               @id @default(autoincrement())
+  num_seance    String
+  date_seance   DateTime
+  exercice      Int
+  remarques     String?
+  statut        EnumStatutSeance
+  procedures    Procedure[]       @relation("SeanceProcedures")
+  membres       MembresComite[]   @relation("SeanceMembres")
+  comites       ComiteDirection[] @relation("SeanceComites")
+}
+
+enum EnumStatutSeance {
+  programmee
+  terminee
 }
 
 model ComiteDirection {
-  id_comite          Int             @id @default(autoincrement())
-  id_seance          Int
-  id_procedure       Int
-  seance             SeanceCDPrevue  @relation(fields: [id_seance], references: [id_seance])
-  procedure          Procedure       @relation(fields: [id_procedure], references: [id_proc])
+  id_comite          Int               @id @default(autoincrement())
+  id_seance          Int               // Removed @unique constraint
+  seance             SeanceCDPrevue    @relation(fields: [id_seance], references: [id_seance], name: "SeanceComites")
   date_comite        DateTime
   numero_decision    String
   objet_deliberation String
@@ -558,9 +562,8 @@ model ComiteDirection {
   carte_projettee    String?
   rapport_police     String?
   instructeur        String?
+
   decisionCDs        DecisionCD[]
-  
-  @@unique([id_seance, id_procedure])
 }
 
 model DecisionCD {
@@ -587,7 +590,6 @@ enum EnumDecisionComite {
   favorable
   defavorable
 }
-
 
 
 

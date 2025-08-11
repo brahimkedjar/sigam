@@ -7,8 +7,8 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './experts.module.css';
 import { useViewNavigator } from '@/src/hooks/useViewNavigator';
-import Sidebar from '@/features/sidebar/Sidebar';
-import Navbar from '@/features/navbar/Navbar';
+import Sidebar from '@/pages/sidebar/Sidebar';
+import Navbar from '@/pages/navbar/Navbar';
 
 type ExpertMinier = {
   id_expert: number;

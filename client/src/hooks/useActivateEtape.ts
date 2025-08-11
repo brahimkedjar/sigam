@@ -13,6 +13,7 @@ export const useActivateEtape = ({ idProc, etapeNum, statutProc }: UseActivateEt
 
   useEffect(() => {
     if (!idProc || !statutProc) return;
+    console.log(`Activating step ${etapeNum} for procedure ${idProc} with status ${statutProc}`);
     if (statutProc === 'TERMINEE') return;
 
     const activate = async () => {

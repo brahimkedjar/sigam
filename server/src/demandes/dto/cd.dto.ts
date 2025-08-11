@@ -1,33 +1,27 @@
 export class CreateSeanceDto {
+  date_seance: string;
   exercice: number;
   remarques?: string;
   membre_ids: number[];
 }
 
 export class UpdateSeanceDto {
+  date_seance?: string;
   exercice?: number;
   remarques?: string;
   membre_ids?: number[];
 }
 
-export class CreateDecisionDto {
-  decision_cd: 'favorable' | 'defavorable';
-  duree_decision?: number;
-  commentaires?: string;
-}
-
 export class CreateComiteDto {
   id_seance: number;
-  id_procedure: number;
   date_comite: string;
-  numero_decision: string;
   objet_deliberation: string;
   resume_reunion: string;
   fiche_technique?: string;
   carte_projettee?: string;
   rapport_police?: string;
   instructeur?: string;
-  decisions: CreateDecisionDto[];
+  decisions?: CreateDecisionDto[];
 }
 
 export class UpdateComiteDto {
@@ -40,4 +34,25 @@ export class UpdateComiteDto {
   rapport_police?: string;
   instructeur?: string;
   decisions?: CreateDecisionDto[];
+}
+
+export class CreateDecisionDto {
+  id_comite: number;
+  decision_cd: 'favorable' | 'defavorable';
+  duree_decision?: number;
+  commentaires?: string;
+}
+
+export class CreateMembreDto {
+  nom_membre: string;
+  prenom_membre: string;
+  fonction_membre: string;
+  email_membre: string;
+}
+
+export class UpdateMembreDto {
+  nom_membre?: string;
+  prenom_membre?: string;
+  fonction_membre?: string;
+  email_membre?: string;
 }

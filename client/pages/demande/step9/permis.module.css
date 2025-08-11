@@ -442,3 +442,9 @@
   font-size: 0.875rem;
   color: #2ecc71;
 }
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}

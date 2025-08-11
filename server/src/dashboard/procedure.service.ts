@@ -136,65 +136,51 @@ async deleteProcedureAndRelatedData(procedureId: number) {
       where: { id_procedure: procedureId }
     });
 
-    // Handle Comité de Direction related data
-    // 1. Get all seances related to the procedure
-    const seances = await prisma.seanceCDPrevue.findMany({
-  where: {
-    comites: {
-      some: { 
-        id_procedure: procedureId 
-      }
-    }
-  },
-  select: { 
-    id_seance: true 
-  }
+    // 1. Get the seance ID for the given procedure
+const seances = await prisma.procedure.findUnique({
+  where: { id_proc: procedureId },
+  select: { id_seance: true }
 });
 
-    const seanceIds = seances.map(s => s.id_seance);
+if (seances?.id_seance) {
+  const seanceId = seances.id_seance;
 
-    if (seanceIds.length > 0) {
-      // 2. Get all comites related to these seances AND the procedure's demandes
-      const comites = await prisma.comiteDirection.findMany({
-        where: {
-          id_seance: { in: seanceIds },
-        },
-        select: { id_comite: true }
-      });
+  // 2. Get all comites related to this seance
+  const comites = await prisma.comiteDirection.findMany({
+    where: { id_seance: seanceId },
+    select: { id_comite: true }
+  });
 
-      const comiteIds = comites.map(c => c.id_comite);
+  const comiteIds = comites.map(c => c.id_comite);
 
-      // 3. Delete all decisions of these comites
-      await prisma.decisionCD.deleteMany({
-        where: {
-          id_comite: { in: comiteIds }
-        }
-      });
+  if (comiteIds.length > 0) {
+    // 3. Delete all decisions of these comites
+    await prisma.decisionCD.deleteMany({
+      where: { id_comite: { in: comiteIds } }
+    });
 
-      // 4. Delete all comites related to this procedure's demandes
-      await prisma.comiteDirection.deleteMany({
-        where: {
-          id_seance: { in: seanceIds },
-        }
-      });
+    // 4. Delete all comites for this seance
+    await prisma.comiteDirection.deleteMany({
+      where: { id_seance: seanceId }
+    });
+  }
 
-      // 5. Check if seances are used by other procedures before deleting
-      for (const seanceId of seanceIds) {
+  // 5. Check if any other procedures use this seance before deleting it
   const otherProceduresCount = await prisma.procedure.count({
     where: {
       id_proc: { not: procedureId },
-      id_seance: seanceId // ✅ correct way
+      id_seance: seanceId
     }
   });
 
-        if (otherProceduresCount === 0) {
-          // Only delete seance if no other procedures are using it
-          await prisma.seanceCDPrevue.delete({
-            where: { id_seance: seanceId }
-          });
-        }
-      }
-    }
+  if (otherProceduresCount === 0) {
+    // Only delete if no other procedures are linked
+    await prisma.seanceCDPrevue.delete({
+      where: { id_seance: seanceId }
+    });
+  }
+}
+
 
     // 6. Delete related ProcedureEtape records
     await prisma.procedureEtape.deleteMany({

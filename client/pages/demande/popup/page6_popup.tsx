@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
 
 import { 
   FiX, 
@@ -18,6 +17,7 @@ import {
 } from "react-icons/fi";
 import styles from "./SummaryModal.module.css";
 import { useStepGuard } from "@/src/hooks/StepGuardContext";
+import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
 
 interface Document {
   nom_doc: string;

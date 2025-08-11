@@ -23,7 +23,7 @@ export class ProcedureRenouvellementService {
       procedures: {
         where: {
           typeProcedure: {
-            libelle: { not: 'renouvellement' }
+            libelle: 'demande'
           }
         },
         include: { demandes: true },

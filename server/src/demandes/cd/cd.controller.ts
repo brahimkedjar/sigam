@@ -6,7 +6,7 @@ import {
   Delete, 
   Param, 
   Body, 
-  Res,
+  Query,
   NotFoundException,
   ConflictException
 } from '@nestjs/common';
@@ -16,9 +16,10 @@ import {
   UpdateSeanceDto,
   CreateComiteDto,
   UpdateComiteDto,
-  CreateDecisionDto
+  CreateDecisionDto,
+  CreateMembreDto,
+  UpdateMembreDto
 } from '../dto/cd.dto';
-import { Response } from 'express';
 
 @Controller('cd')
 export class CdController {
@@ -38,8 +39,8 @@ export class CdController {
   }
 
   @Get('seances')
-  async getAllSeances() {
-    return this.cdService.getSeances();
+  async getAllSeances(@Query('statut') statut?: 'programmee' | 'terminee') {
+    return this.cdService.getSeances(statut);
   }
 
   @Get('seances/:id')
@@ -82,12 +83,6 @@ export class CdController {
   @Post('comites')
   async createComite(@Body() createComiteDto: CreateComiteDto) {
     try {
-      // Check if procedure already has a comité
-      const existingComite = await this.cdService.getComitesByProcedure(createComiteDto.id_procedure);
-      if (existingComite.length > 0) {
-        throw new ConflictException('Cette procédure a déjà un comité associé');
-      }
-
       return await this.cdService.createComite(createComiteDto);
     } catch (error) {
       if (error.code === 'P2002') {
@@ -97,7 +92,10 @@ export class CdController {
     }
   }
 
-
+  @Get('comites')
+  async getAllComites() {
+    return this.cdService.getComites();
+  }
 
   @Get('comites/:id')
   async getComiteById(@Param('id') id: string) {
@@ -135,62 +133,68 @@ export class CdController {
     }
   }
 
+  // Decision Endpoints
+  @Post('decisions')
+  async createDecision(@Body() createDecisionDto: CreateDecisionDto) {
+    return this.cdService.createDecision(createDecisionDto);
+  }
+
+  @Get('decisions')
+  async getDecisionsByComite(@Query('comiteId') comiteId: string) {
+    return this.cdService.getDecisionsByComite(parseInt(comiteId));
+  }
+
   // Members Endpoints
+  @Post('membres')
+  async createMembre(@Body() createMembreDto: CreateMembreDto) {
+    return this.cdService.createMembre(createMembreDto);
+  }
+
   @Get('membres')
   async getAllMembres() {
     return this.cdService.getMembres();
   }
 
-  // Report Generation
-  @Get('comites/:id/report')
-  async generateComiteReport(
+  @Get('membres/:id')
+  async getMembreById(@Param('id') id: string) {
+    return this.cdService.getMembreById(parseInt(id));
+  }
+
+  @Put('membres/:id')
+  async updateMembre(
     @Param('id') id: string,
-    @Res() res: Response
+    @Body() updateMembreDto: UpdateMembreDto
   ) {
-    try {
-      const pdfBytes = await this.cdService.generateComiteReport(parseInt(id));
-      
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition', 
-        `attachment; filename=comite-${id}-report.pdf`
-      );
-      
-      return res.send(pdfBytes);
-    } catch (error) {
-      if (error.message === 'Comité non trouvé') {
-        throw new NotFoundException('Comité non trouvé');
-      }
-      throw error;
-    }
+    return this.cdService.updateMembre(parseInt(id), updateMembreDto);
   }
 
-@Get('comites/seance/:seanceId/procedure/:procedureId')
-async getComiteBySeanceAndProcedure(
-  @Param('seanceId') seanceId: string,
-  @Param('procedureId') procedureId: string
-) {
-  const comite = await this.cdService.getComiteBySeanceAndProcedure(
-    parseInt(seanceId),
-    parseInt(procedureId)
-  );
-  if (!comite) {
-    throw new NotFoundException('Comité non trouvé');
+  @Delete('membres/:id')
+  async deleteMembre(@Param('id') id: string) {
+    return this.cdService.deleteMembre(parseInt(id));
   }
-  return comite;
-}
 
-@Get('seances-with-comite/:procedureId')
-async getSeancesWithComite(@Param('procedureId') procedureId: string) {
-  return this.cdService.getSeancesWithComite(parseInt(procedureId));
-}
-
-@Get('comites/procedure/:procedureId')
-async getComitesByProcedure(@Param('procedureId') procedureId: string) {
-  const comites = await this.cdService.getComitesByProcedure(parseInt(procedureId));
-  if (!comites || comites.length === 0) {
-    throw new NotFoundException('No comités found for this procedure');
+  // Procedure-Seance Relationship
+  @Post('seances/:seanceId/procedures/:procedureId')
+  async addProcedureToSeance(
+    @Param('seanceId') seanceId: string,
+    @Param('procedureId') procedureId: string
+  ) {
+    return this.cdService.addProcedureToSeance(
+      parseInt(seanceId),
+      parseInt(procedureId)
+    );
   }
-  return comites;
-}
+
+  @Delete('seances/:seanceId/procedures/:procedureId')
+  async removeProcedureFromSeance(
+    @Param('seanceId') seanceId: string,
+    @Param('procedureId') procedureId: string
+  ) {
+    return this.cdService.removeProcedureFromSeance(
+      parseInt(seanceId),
+      parseInt(procedureId)
+    );
+  }
+
+  
 }
