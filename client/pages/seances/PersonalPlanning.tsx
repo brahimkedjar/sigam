@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import styles from './PersonalPlanning.module.css';
+import Link from 'next/link';
 
 interface Member {
   id_membre: number;
@@ -116,9 +117,20 @@ export default function PersonalPlanning() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div>
+            
           <h1 className={styles.title}>Mon Planning Personnel</h1>
           <p className={styles.subtitle}>Séances de comité programmées</p>
+          <Link href="/seances/Dashboard_seances" className={styles.backButton}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
+               viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Retour au menu
+        </Link>
         </div>
+        
         <button 
           onClick={() => setCalendarView(!calendarView)}
           className={styles.viewToggle}

@@ -52,4 +52,9 @@ async getAllProcedures(
 async getSeancesForMember(@Param('memberId') memberId: string) {
   return this.seanceService.getSeancesForMember(+memberId);
 }
+
+@Get('with-decisions')
+async getSeancesWithDecisions() {
+  return this.seanceService.getSeancesWithDecisions();
+}
 }

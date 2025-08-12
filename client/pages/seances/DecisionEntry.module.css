@@ -1,0 +1,321 @@
+/* styles/DecisionEntry.module.css */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 0.5rem;
+  background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: #718096;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 1rem;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.seanceList {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.seanceCard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.seanceHeader {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.seanceTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 0.5rem;
+}
+
+.seanceDate {
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.seanceStats {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.tableContainer {
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.decisionTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.decisionTable th {
+  background: #f8fafc;
+  color: #4a5568;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.decisionTable td {
+  padding: 1rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.decisionBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pendingBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.primaryButton {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primaryButton:hover {
+  background: #4338ca;
+}
+
+.editButton {
+  background: #e0e7ff;
+  color: #4f46e5;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background: #c7d2fe;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.modalHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid #edf2f7;
+  position: relative;
+}
+
+.modalHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+}
+
+.modalHeader h2 small {
+  display: block;
+  font-size: 0.875rem;
+  color: #4a5568;
+  margin-top: 0.25rem;
+  font-weight: normal;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #718096;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modalForm {
+  padding: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.formGroup select,
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.formGroup select:focus,
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.staticField {
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.secondaryButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  transition: all 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background: #f8fafc;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 1rem;
+}
+
+.loadingSpinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(79, 70, 229, 0.1);
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modalActions {
+    flex-direction: column;
+  }
+  
+  .secondaryButton,
+  .primaryButton {
+    width: 100%;
+  }
+}
