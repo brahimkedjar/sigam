@@ -14,7 +14,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: ['http://localhost:3002'],
     credentials: true,
     exposedHeaders: ['set-cookie', 'authorization'],
     allowedHeaders: [
@@ -39,6 +39,6 @@ async function bootstrap() {
   }
   app.useStaticAssets(publicPath);
 
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3011);
 }
 bootstrap();

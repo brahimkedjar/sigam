@@ -300,6 +300,7 @@ model Procedure {
 
   SubstanceAssocieeDemande SubstanceAssocieeDemande[]
   InteractionWali InteractionWali[]
+  cessions     ProcedureCession[]
   ProcedureEtape ProcedureEtape[]
   renouvellement  ProcedureRenouvellement?
 
@@ -478,6 +479,10 @@ model PersonnePhysique {
   réf_professionnelles     String
 
   fonctions FonctionPersonneMoral[]
+  
+  // Inverse relations
+  anciens_titres   ProcedureCession[] @relation("AncienTitulaire")
+  nouveaux_titres  ProcedureCession[] @relation("NouveauTitulaire")
 
   @@map("personnephysique")
 }
@@ -838,8 +843,41 @@ model SuperficiaireBareme {
   @@map("superficiaire_bareme")
 }
 
+model ProcedureCession {
+  id_cession              Int               @id @default(autoincrement())
+  id_proc            Int
+  id_ancien_cessionaire   Int?               // FK vers PersonnePhysique (ancien)
+  id_nouveau_cessionaire  Int?               // FK vers PersonnePhysique (nouveau)
+  taux_cession            Float
+  motif                   String?            @db.Text
+  nature_cession          NatureCession
+  observation             String?            @db.Text
+  statut                  StatutCession
 
+  // Relations
+  procedure               Procedure          @relation(fields: [id_proc], references: [id_proc])
 
+  ancien_titulaire_physique  PersonnePhysique? @relation("AncienTitulaire", fields: [id_ancien_cessionaire], references: [id_personne])
+  nouveau_titulaire_physique PersonnePhysique? @relation("NouveauTitulaire", fields: [id_nouveau_cessionaire], references: [id_personne])
+
+  @@map("procedure_cession")
+}
+
+// ENUM pour nature_cession
+enum NatureCession {
+  partielle
+  totale
+  majoritaire
+  minoritaire
+}
+
+// ENUM pour statut
+enum StatutCession {
+  en_cours
+  acceptee
+  refusee
+  annulee
+}
 /*
 generator erd {
   provider = "prisma-erd-generator"
