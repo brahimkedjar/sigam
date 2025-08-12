@@ -35,12 +35,15 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditLogInterceptor } from './audit-log/audit-log.interceptor';
 import { ExpertMinierModule } from './demandes/expert_minier/expert-minier.module';
 import { SeanceModule } from './demandes/seances/seance.module';
+import { DecisionModule } from './demandes/decisions/decision.module';
+import { ComitenModule } from './demandes/comites/comite.module';
+import { DecisionTrackingModule } from './demandes/suivi_decisions/decision-tracking.module';
 
 
 @Module({
   imports: [DemandesModule,PaymentModule,ConfigModule.forRoot({
       isGlobal: true,
-    }),ProcedureRenouvellementModule,SeanceModule,ExpertMinierModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
+    }),ProcedureRenouvellementModule,DecisionTrackingModule,ComitenModule,DecisionModule,SeanceModule,ExpertMinierModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
   controllers: [DemandesController],
   providers: [DemandeService,/*{
       provide: APP_INTERCEPTOR,

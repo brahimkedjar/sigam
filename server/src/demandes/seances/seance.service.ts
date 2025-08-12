@@ -220,4 +220,36 @@ async getSeancesForMember(memberId: number) {
   });
 }
 
+async getSeancesWithDecisions() {
+  return this.prisma.seanceCDPrevue.findMany({
+    include: {
+      comites: {
+        include: {
+          decisionCDs: true
+        }
+      },
+      procedures: {
+        include: {
+          typeProcedure: true,
+          demandes: {
+            include: {
+              detenteur: true
+            }
+          }
+        }
+      },
+      membres: {
+        select: {
+          id_membre: true,
+          nom_membre: true,
+          prenom_membre: true
+        }
+      }
+    },
+    orderBy: {
+      date_seance: 'desc'
+    }
+  });
+}
+
 }

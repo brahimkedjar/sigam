@@ -14,6 +14,7 @@ import {
   getNextSeanceNumber 
 } from './seances';
 import styles from './NewSeanceForm.module.css';
+import Link from 'next/link';
 
 interface Member {
   id_membre: number;
@@ -223,7 +224,17 @@ export default function SeanceManager() {
         <div>
           <h1 className={styles.title}>Programmation des Séances de Comité</h1>
           <p className={styles.subtitle}>Créer et gérer les séances du comité de direction</p>
+          <Link href="/seances/Dashboard_seances" className={styles.backButton}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Retour au menu
+          </Link>
         </div>
+        
         <button onClick={openCreateModal} className={styles.primaryButton}>
           <span>+</span> Nouvelle Séance
         </button>
