@@ -12,7 +12,6 @@ CREATE TABLE "CD" (
     "fiche_technique" TEXT,
     "carte_proj" TEXT,
     "rapport_police" TEXT,
-    "instructeur" TEXT,
     "dossier_pret" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "CD_pkey" PRIMARY KEY ("id_comite")

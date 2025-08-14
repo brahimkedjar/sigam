@@ -52,4 +52,23 @@ async getAllProcedures(
 async getSeancesForMember(@Param('memberId') memberId: string) {
   return this.seanceService.getSeancesForMember(+memberId);
 }
+
+@Get('with-decisions')
+async getSeancesWithDecisions() {
+  try {
+    const seances = await this.seanceService.getSeancesWithDecisions();
+    return {
+      success: true,
+      data: seances,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error in getSeancesWithDecisions:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to fetch seances with decisions',
+      timestamp: new Date().toISOString()
+    };
+  }
+}
 }

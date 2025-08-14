@@ -19,7 +19,7 @@ interface RenewalInfo {
   date_fin_validite: Date | null;
   duree_renouvellement: number;
   commentaire: string;
-  nombre_renouvellements?: number; 
+  nombre_renouvellements?: number;
 }
 
 // Then update your PermisDetails interface
@@ -85,7 +85,7 @@ interface Props {
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   const id = context.query.id;
 
@@ -105,25 +105,25 @@ const apiURL = process.env.NEXT_PUBLIC_API_URL;
     const renewalsData = renewalsRes.ok ? await renewalsRes.json() : [];
     // Transform the data to match RenewalInfo
     const formattedRenewals = renewalsData.map((proc: any) => {
-  // Ensure we have a valid renewal object
-  if (!proc.renouvellement) return null;
-  
-  return {
-    id: proc.id_proc,
-    num_decision: proc.renouvellement.num_decision || null,
-    date_decision: proc.renouvellement.date_decision || null,
-    date_debut_validite: proc.renouvellement.date_debut_validite || null,
-    date_fin_validite: proc.renouvellement.date_fin_validite || null,
-    duree_renouvellement: proc.renouvellement.nombre_renouvellements || 0,
-    commentaire: proc.renouvellement.commentaire || '',
-  };
-}).filter(Boolean); // Remove any null entries
+      // Ensure we have a valid renewal object
+      if (!proc.renouvellement) return null;
+
+      return {
+        id: proc.id_proc,
+        num_decision: proc.renouvellement.num_decision || null,
+        date_decision: proc.renouvellement.date_decision || null,
+        date_debut_validite: proc.renouvellement.date_debut_validite || null,
+        date_fin_validite: proc.renouvellement.date_fin_validite || null,
+        duree_renouvellement: proc.renouvellement.nombre_renouvellements || 0,
+        commentaire: proc.renouvellement.commentaire || '',
+      };
+    }).filter(Boolean); // Remove any null entries
     return {
-      props: { 
+      props: {
         permis: {
           ...permis,
           renewals: formattedRenewals
-        } 
+        }
       },
     };
   } catch (error) {
@@ -136,7 +136,7 @@ const apiURL = process.env.NEXT_PUBLIC_API_URL;
 const PermisViewPage: React.FC<Props> = ({ permis }) => {
   const router = useRouterWithLoading();
   const [notif, setNotif] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
-  const [notificationQueue, setNotificationQueue] = useState<Array<{message: string;type: 'error' | 'success' | 'info';}>>([]);
+  const [notificationQueue, setNotificationQueue] = useState<Array<{ message: string; type: 'error' | 'success' | 'info'; }>>([]);
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
@@ -144,8 +144,8 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [pendingPermisId, setPendingPermisId] = useState<number | null>(null);
   const [showMaxRenewalModal, setShowMaxRenewalModal] = useState(false);
-const searchParams = useSearchParams();
-const idPermis = searchParams!.get('id');
+  const searchParams = useSearchParams();
+  const idPermis = searchParams!.get('id');
   const formatDate = (date: Date | null) => {
     return date ? format(new Date(date), 'PPP', { locale: fr }) : 'Non définie';
   };
@@ -154,29 +154,29 @@ const idPermis = searchParams!.get('id');
     new Set(permis.procedures.map(p => p.typeProcedure.libelle))
   );
 
-   const [selectedProcedures, setSelectedProcedures] = useState<Procedure[]>([]);
+  const [selectedProcedures, setSelectedProcedures] = useState<Procedure[]>([]);
 
-   const calculateValidityStatus = (expiryDate: Date | null) => {
-  if (!expiryDate) return 'Inconnu';
-  
-  const today = new Date();
-  const expiry = new Date(expiryDate);
-  const diffTime = expiry.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const calculateValidityStatus = (expiryDate: Date | null) => {
+    if (!expiryDate) return 'Inconnu';
 
-  if (diffDays < 0) return 'Expiré';
-  if (diffDays < 30) return 'Expire bientôt';
-  return 'Valide';
-};
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-const handleProcedureTypeClick = (type: string) => {
-  const matchingProcedures = permis.procedures.filter(p => p.typeProcedure.libelle === type);
-  if (matchingProcedures.length > 0) {
-    setSelectedProcedures(matchingProcedures);
-    setSelectedProcedure(matchingProcedures[0]); // default selection
-    setIsModalOpen(true);
-  }
-};
+    if (diffDays < 0) return 'Expiré';
+    if (diffDays < 30) return 'Expire bientôt';
+    return 'Valide';
+  };
+
+  const handleProcedureTypeClick = (type: string) => {
+    const matchingProcedures = permis.procedures.filter(p => p.typeProcedure.libelle === type);
+    if (matchingProcedures.length > 0) {
+      setSelectedProcedures(matchingProcedures);
+      setSelectedProcedure(matchingProcedures[0]); // default selection
+      setIsModalOpen(true);
+    }
+  };
 
 
 
@@ -226,62 +226,62 @@ const handleProcedureTypeClick = (type: string) => {
     return allSubstances;
   };
 
- const handleViewProcedure = (procedure: Procedure) => {
-  const isRenewal = procedure.typeProcedure.libelle.toLowerCase() === 'renouvellement';
-  const currentStep = procedure.ProcedureEtape.find(step => step.statut === 'EN_COURS');
+  const handleViewProcedure = (procedure: Procedure) => {
+    const isRenewal = procedure.typeProcedure.libelle.toLowerCase() === 'renouvellement';
+    const currentStep = procedure.ProcedureEtape.find(step => step.statut === 'EN_COURS');
 
-  let url: string;
+    let url: string;
 
-  if (isRenewal) {
-    // Find the original procedure (non-renouvellement)
-    const original = permis.procedures.find(p => 
-      p.typeProcedure.libelle.toLowerCase() !== 'renouvellement'
-    );
+    if (isRenewal) {
+      // Find the original procedure (non-renouvellement)
+      const original = permis.procedures.find(p =>
+        p.typeProcedure.libelle.toLowerCase() !== 'renouvellement'
+      );
 
-    const originalDemandeId = original?.ProcedureEtape?.[0]?.id_etape || null;
-    const originalProcId = original?.id_proc || null;
+      const originalDemandeId = original?.ProcedureEtape?.[0]?.id_etape || null;
+      const originalProcId = original?.id_proc || null;
 
-    if (currentStep) {
-      url = `/renouvellement/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
+      if (currentStep) {
+        url = `/renouvellement/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
+      } else {
+        url = `/renouvellement/step2/page2?id=${procedure.id_proc}`;
+      }
+
+      // Add original params if found
+      if (originalDemandeId && originalProcId) {
+        url += `&originalDemandeId=${originalDemandeId}&original_proc_id=${originalProcId}`;
+      }
+
     } else {
-      url = `/renouvellement/step2/page2?id=${procedure.id_proc}`;
+      // Non-renewal
+      if (currentStep) {
+        url = `/demande/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
+      } else {
+        url = `/demande/step2/page2?id=${procedure.id_proc}`;
+      }
     }
 
-    // Add original params if found
-    if (originalDemandeId && originalProcId) {
-      url += `&originalDemandeId=${originalDemandeId}&original_proc_id=${originalProcId}`;
+    window.open(url, '_blank');
+  };
+
+
+
+  const handleRenewalClick = async (permisId: number) => {
+    const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
+    // First check if max renewals reached (just in case)
+    if ((permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) {
+      setShowMaxRenewalModal(true);
+      return;
     }
 
-  } else {
-    // Non-renewal
-    if (currentStep) {
-      url = `/demande/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
-    } else {
-      url = `/demande/step2/page2?id=${procedure.id_proc}`;
-    }
-  }
+    try {
+      const response = await axios.post(`${apiURL}/api/procedures/renouvellement/check-payments`, {
+        permisId,
+      });
 
-  window.open(url, '_blank');
-};
-
-
-
- const handleRenewalClick = async (permisId: number) => {
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
-
-  // First check if max renewals reached (just in case)
-  if ((permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) {
-    setShowMaxRenewalModal(true);
-    return;
-  }
-
-  try {
-    const response = await axios.post(`${apiURL}/api/procedures/renouvellement/check-payments`, {
-      permisId,
-    });
-
-    setPendingPermisId(permisId);
-    setShowDateModal(true);
+      setPendingPermisId(permisId);
+      setShowDateModal(true);
 
   } catch (error: any) {
     let errorMessage = "Erreur inconnue";
@@ -302,35 +302,35 @@ const handleProcedureTypeClick = (type: string) => {
 };
 
 
-const handleNotificationClose = () => {
-  setNotif(null);
-};
+  const handleNotificationClose = () => {
+    setNotif(null);
+  };
 
 
-const handleSubmitDate = async () => {
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  const handleSubmitDate = async () => {
+    const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
-  if (!selectedDate || !pendingPermisId) return;
+    if (!selectedDate || !pendingPermisId) return;
 
-  try {
-    const res = await axios.post(`${apiURL}/api/procedures/renouvellement/start`, {
-      permisId: pendingPermisId,
-      date_demande: selectedDate.toISOString().split('T')[0], 
-    });
+    try {
+      const res = await axios.post(`${apiURL}/api/procedures/renouvellement/start`, {
+        permisId: pendingPermisId,
+        date_demande: selectedDate.toISOString().split('T')[0],
+      });
 
-    const { original_demande_id, original_proc_id, new_proc_id } = res.data;
+      const { original_demande_id, original_proc_id, new_proc_id } = res.data;
 
-    router.push(
-      `/renouvellement/step2/page2?id=${new_proc_id}&originalDemandeId=${original_demande_id}&original_proc_id=${original_proc_id}`
-    );
-  } catch (error: any) {
-    setNotif({ message: 'Erreur lors du renouvellement.', type: 'error' });
-  } finally {
-    setShowDateModal(false);
-    setPendingPermisId(null);
-    setSelectedDate(null);
-  }
-};
+      router.push(
+        `/renouvellement/step2/page2?id=${new_proc_id}&originalDemandeId=${original_demande_id}&original_proc_id=${original_proc_id}`
+      );
+    } catch (error: any) {
+      setNotif({ message: 'Erreur lors du renouvellement.', type: 'error' });
+    } finally {
+      setShowDateModal(false);
+      setPendingPermisId(null);
+      setSelectedDate(null);
+    }
+  };
 
   const substances = getAllSubstances();
 
@@ -392,240 +392,239 @@ const handleSubmitCession = async () => {
 };
 
   return (
-  <div className={styles.container}>
-    {notif && (
-  <NotificationBanner
-    message={notif.message}
-    type={notif.type}
-    onClose={handleNotificationClose}
-  />
-)}
+    <div className={styles.container}>
+      {notif && (
+        <NotificationBanner
+          message={notif.message}
+          type={notif.type}
+          onClose={handleNotificationClose}
+        />
+      )}
 
-    <div className={styles.header}>
-      <h1 className={styles.headerTitle}>Détails du Permis</h1>
-      <p className={styles.headerSubtitle}>
-        Informations complètes sur le permis {permis.code_permis}
-      </p>
-    </div>
+      <div className={styles.header}>
+        <h1 className={styles.headerTitle}>Détails du Permis</h1>
+        <p className={styles.headerSubtitle}>
+          Informations complètes sur le permis {permis.code_permis}
+        </p>
+      </div>
 
-    <div className={styles.gridLayout}>
-      {/* Main Content */}
-      <div className="space-y-6">
-        {/* General Info Card */}
-        <div className={`${styles.card} ${styles.animateIn}`}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardHeaderIcon}>
-              <FileText size={20} />
+      <div className={styles.gridLayout}>
+        {/* Main Content */}
+        <div className="space-y-6">
+          {/* General Info Card */}
+          <div className={`${styles.card} ${styles.animateIn}`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardHeaderIcon}>
+                <FileText size={20} />
+              </div>
+              <h2 className={styles.cardTitle}>Informations générales</h2>
             </div>
-            <h2 className={styles.cardTitle}>Informations générales</h2>
-          </div>
-          <div className={styles.cardContent}>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Code Permis</span>
-                <span className={styles.infoValue}>{permis.code_permis}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Type de Permis</span>
-                <span className={styles.infoValue}>
-                  {permis.typePermis.lib_type} ({permis.typePermis.code_type})
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Statut</span>
-                <span className={`${styles.badge} ${getStatusColor(permis.statut?.lib_statut || '')}`}>
-                  {permis.statut?.lib_statut || 'Inconnu'}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Superficie</span>
-                <span className={styles.infoValue}>
-                  {permis.superficie ? `${permis.superficie} Ha` : 'Non définie'}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Titulaire</span>
-                <span className={styles.infoValue}>
-                  {permis.detenteur?.nom_sociétéFR || 'Non défini'}
-                </span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Substances</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {substances.length > 0 ? (
-                    substances.map((substance) => (
-                      <span key={substance.id_sub} className={`${styles.badge} ${styles.badgePrimary}`}>
-                        {substance.nom_subFR}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500">Non spécifiées</span>
-                  )}
+            <div className={styles.cardContent}>
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Code Permis</span>
+                  <span className={styles.infoValue}>{permis.code_permis}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Type de Permis</span>
+                  <span className={styles.infoValue}>
+                    {permis.typePermis.lib_type} ({permis.typePermis.code_type})
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Statut</span>
+                  <span className={`${styles.badge} ${getStatusColor(permis.statut?.lib_statut || '')}`}>
+                    {permis.statut?.lib_statut || 'Inconnu'}
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Superficie</span>
+                  <span className={styles.infoValue}>
+                    {permis.superficie ? `${permis.superficie} Ha` : 'Non définie'}
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Titulaire</span>
+                  <span className={styles.infoValue}>
+                    {permis.detenteur?.nom_sociétéFR || 'Non défini'}
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Substances</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {substances.length > 0 ? (
+                      substances.map((substance) => (
+                        <span key={substance.id_sub} className={`${styles.badge} ${styles.badgePrimary}`}>
+                          {substance.nom_subFR}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-500">Non spécifiées</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Dates Card */}
-        <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardHeaderIcon}>
-              <Calendar size={20} />
+          {/* Dates Card */}
+          <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardHeaderIcon}>
+                <Calendar size={20} />
+              </div>
+              <h2 className={styles.cardTitle}>Dates importantes</h2>
             </div>
-            <h2 className={styles.cardTitle}>Dates importantes</h2>
-          </div>
-          <div className={styles.cardContent}>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Date d'octroi</span>
-                <span className={styles.infoValue}>{formatDate(permis.date_octroi)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Date d'expiration</span>
-                <span className={styles.infoValue}>{formatDate(permis.date_expiration)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Date d'annulation</span>
-                <span className={styles.infoValue}>{formatDate(permis.date_annulation)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Date de renonciation</span>
-                <span className={styles.infoValue}>{formatDate(permis.date_renonciation)}</span>
+            <div className={styles.cardContent}>
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Date d'octroi</span>
+                  <span className={styles.infoValue}>{formatDate(permis.date_octroi)}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Date d'expiration</span>
+                  <span className={styles.infoValue}>{formatDate(permis.date_expiration)}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Date d'annulation</span>
+                  <span className={styles.infoValue}>{formatDate(permis.date_annulation)}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Date de renonciation</span>
+                  <span className={styles.infoValue}>{formatDate(permis.date_renonciation)}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
-  <div className={styles.cardHeader}>
-    <div className={styles.cardHeaderIcon}>
-      <RefreshCw size={20} />
-    </div>
-    <h2 className={styles.cardTitle}>Historique des Renouvellements</h2>
-  </div>
-  <div className={styles.cardContent}>
-    {/* Debug log moved outside JSX */}
-    {(() => {
-      console.log('Current renewals data:', permis.renewals);
-      return null;
-    })()}
-    
-    {permis.renewals && permis.renewals.some(r => r.num_decision && r.num_decision !== 'N/A') ? (
-      <div className={styles.renewalTimeline}>
-        {permis.renewals
-          .filter(r => r.num_decision && r.num_decision !== 'N/A')
-          .map((renewal, index) => (
-            <div key={renewal.id} className={styles.renewalItem}>
-            <div className={styles.renewalMarker}>
-              <div className={styles.renewalNumber}>{index + 1}</div>
-              <div className={styles.renewalConnector}></div>
+          <div className={`${styles.card} ${styles.animateIn} ${styles.delay1}`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardHeaderIcon}>
+                <RefreshCw size={20} />
+              </div>
+              <h2 className={styles.cardTitle}>Historique des Renouvellements</h2>
             </div>
-            <div className={styles.renewalDetails}>
-              <div className={styles.renewalHeader}>
-                <span className={styles.renewalDecision}>Décision: {renewal.num_decision}</span>
-                <span className={styles.renewalDate}>
-                  {formatDate(renewal.date_decision)}
-                </span>
-              </div>
-              <div className={styles.renewalPeriod}>
-                <span>Période: {formatDate(renewal.date_debut_validite)} - {formatDate(renewal.date_fin_validite)}</span>
-                <span className={styles.renewalDuration}>
-                  ({permis.typePermis.duree_renouv} {permis.typePermis.duree_renouv > 1 ? 'ans' : 'an'})
-                </span>
-              </div>
-              {renewal.commentaire && (
-                <div className={styles.renewalComment}>
-                  <strong>Commentaire:</strong> {renewal.commentaire}
+            <div className={styles.cardContent}>
+              {/* Debug log moved outside JSX */}
+              {(() => {
+                console.log('Current renewals data:', permis.renewals);
+                return null;
+              })()}
+
+              {permis.renewals && permis.renewals.some(r => r.num_decision && r.num_decision !== 'N/A') ? (
+                <div className={styles.renewalTimeline}>
+                  {permis.renewals
+                    .filter(r => r.num_decision && r.num_decision !== 'N/A')
+                    .map((renewal, index) => (
+                      <div key={renewal.id} className={styles.renewalItem}>
+                        <div className={styles.renewalMarker}>
+                          <div className={styles.renewalNumber}>{index + 1}</div>
+                          <div className={styles.renewalConnector}></div>
+                        </div>
+                        <div className={styles.renewalDetails}>
+                          <div className={styles.renewalHeader}>
+                            <span className={styles.renewalDecision}>Décision: {renewal.num_decision}</span>
+                            <span className={styles.renewalDate}>
+                              {formatDate(renewal.date_decision)}
+                            </span>
+                          </div>
+                          <div className={styles.renewalPeriod}>
+                            <span>Période: {formatDate(renewal.date_debut_validite)} - {formatDate(renewal.date_fin_validite)}</span>
+                            <span className={styles.renewalDuration}>
+                              ({permis.typePermis.duree_renouv} {permis.typePermis.duree_renouv > 1 ? 'ans' : 'an'})
+                            </span>
+                          </div>
+                          {renewal.commentaire && (
+                            <div className={styles.renewalComment}>
+                              <strong>Commentaire:</strong> {renewal.commentaire}
+                            </div>
+                          )}
+                          <div
+                            className={styles.renewalLimitWarning}
+                            onClick={() => {
+                              if (permis.nombre_renouvellements! >= permis.typePermis.nbr_renouv_max) {
+                                setShowMaxRenewalModal(true);
+                              }
+                            }}
+                            style={{
+                              cursor: permis.nombre_renouvellements! >= permis.typePermis.nbr_renouv_max ? 'pointer' : 'default'
+                            }}
+                          >
+                            {permis.nombre_renouvellements && permis.typePermis.nbr_renouv_max && (
+                              <>
+                                <div className={styles.renewalProgress}>
+                                  <div
+                                    className={styles.renewalProgressBar}
+                                    style={{
+                                      width: `${Math.min(100, (permis.nombre_renouvellements / permis.typePermis.nbr_renouv_max) * 100)}%`
+                                    }}
+                                  ></div>
+                                </div>
+                                <div className={styles.renewalLimitText}>
+                                  {permis.nombre_renouvellements} / {permis.typePermis.nbr_renouv_max} renouvellements utilisés
+                                </div>
+                                {permis.nombre_renouvellements >= permis.typePermis.nbr_renouv_max && (
+                                  <div className={styles.renewalMaxReached}>
+                                    <XCircle size={16} />
+                                    <span>Maximum de renouvellements atteint</span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  }
+                  <div className={styles.currentStatus}>
+                    <div className={styles.statusLabel}>Statut actuel:</div>
+                    <div className={`${styles.statusValue} ${calculateValidityStatus(permis.date_expiration) === 'Valide' ? styles.statusValid :
+                        calculateValidityStatus(permis.date_expiration) === 'Expire bientôt' ? styles.statusWarning :
+                          styles.statusExpired
+                      }`}>
+                      {calculateValidityStatus(permis.date_expiration)}
+                      {permis.date_expiration && (
+                        <span className={styles.statusDate}>
+                          (jusqu'au {formatDate(permis.date_expiration)})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.noRenewals}>
+                  Ce permis n'a pas encore été renouvelé.
                 </div>
               )}
-              <div 
-  className={styles.renewalLimitWarning}
-  onClick={() => {
-    if (permis.nombre_renouvellements! >= permis.typePermis.nbr_renouv_max) {
-      setShowMaxRenewalModal(true);
-    }
-  }}
-  style={{
-    cursor: permis.nombre_renouvellements! >= permis.typePermis.nbr_renouv_max ? 'pointer' : 'default'
-  }}
->
-  {permis.nombre_renouvellements && permis.typePermis.nbr_renouv_max && (
-    <>
-      <div className={styles.renewalProgress}>
-        <div 
-          className={styles.renewalProgressBar}
-          style={{
-            width: `${Math.min(100, (permis.nombre_renouvellements / permis.typePermis.nbr_renouv_max) * 100)}%`
-          }}
-        ></div>
-      </div>
-      <div className={styles.renewalLimitText}>
-        {permis.nombre_renouvellements} / {permis.typePermis.nbr_renouv_max} renouvellements utilisés
-      </div>
-      {permis.nombre_renouvellements >= permis.typePermis.nbr_renouv_max && (
-        <div className={styles.renewalMaxReached}>
-          <XCircle size={16} />
-          <span>Maximum de renouvellements atteint</span>
-        </div>
-      )}
-    </>
-  )}
-</div>
             </div>
           </div>
-          ))
-        }
-        <div className={styles.currentStatus}>
-          <div className={styles.statusLabel}>Statut actuel:</div>
-          <div className={`${styles.statusValue} ${
-            calculateValidityStatus(permis.date_expiration) === 'Valide' ? styles.statusValid :
-            calculateValidityStatus(permis.date_expiration) === 'Expire bientôt' ? styles.statusWarning :
-            styles.statusExpired
-          }`}>
-            {calculateValidityStatus(permis.date_expiration)}
-            {permis.date_expiration && (
-              <span className={styles.statusDate}>
-                (jusqu'au {formatDate(permis.date_expiration)})
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    ) : (
-      <div className={styles.noRenewals}>
-        Ce permis n'a pas encore été renouvelé.
-      </div>
-    )}
-  </div>
-</div>
-        {/* Procedures Card */}
-        <div className={`${styles.card} ${styles.animateIn} ${styles.delay2}`}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardHeaderIcon}>
-              <Clock size={20} />
+          {/* Procedures Card */}
+          <div className={`${styles.card} ${styles.animateIn} ${styles.delay2}`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardHeaderIcon}>
+                <Clock size={20} />
+              </div>
+              <h2 className={styles.cardTitle}>Procédures associées</h2>
             </div>
-            <h2 className={styles.cardTitle}>Procédures associées</h2>
-          </div>
-          <div className={styles.cardContent}>
-            {/* Procedure Types Section */}
-            <div className={styles.procedureTypes}>
-  <h3 className={styles.procedureTypesTitle}>Types de procédures</h3>
-  <div className={styles.procedureTypesList}>
-    {procedureTypes.map(type => (
-      <button
-        key={type}
-        onClick={() => handleProcedureTypeClick(type)}
-        className={styles.procedureTypeBadge}
-      >
-        {type}
-      </button>
-    ))}
-  </div>
-</div>
+            <div className={styles.cardContent}>
+              {/* Procedure Types Section */}
+              <div className={styles.procedureTypes}>
+                <h3 className={styles.procedureTypesTitle}>Types de procédures</h3>
+                <div className={styles.procedureTypesList}>
+                  {procedureTypes.map(type => (
+                    <button
+                      key={type}
+                      onClick={() => handleProcedureTypeClick(type)}
+                      className={styles.procedureTypeBadge}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Sidebar */}
       <div className="space-y-6">
@@ -763,72 +762,72 @@ const handleSubmitCession = async () => {
 )}
 
 
-        <div className={styles.modalStepsContainer}>
-          {selectedProcedure.ProcedureEtape.map((step) => (
-            <div key={step.id_etape} className={styles.stepItem}>
-              <div 
-                className={styles.stepIndicator} 
-                style={{
-                  backgroundColor: step.statut === 'TERMINEE' ? '#10b981' :
-                                  step.statut === 'EN_ATTENTE' ? '#6366f1' : '#e2e8f0',
-                  color: step.statut === 'EN_ATTENTE' ? '#64748b' : 'white'
-                }}
-              >
-                {step.etape.ordre_etape}
-              </div>
-              <div className={styles.stepContent}>
-                <h4 className={styles.stepTitle}>{step.etape.lib_etape}</h4>
-                <div className={styles.stepDates}>
-                  {formatDate(step.date_debut)} - {formatDate(step.date_fin)}
-                </div>
-                <span className={`${styles.badge} ${getStatusColor(step.statut)}`}>
-                  {step.statut}
-                </span>
+              <div className={styles.modalStepsContainer}>
+                {selectedProcedure.ProcedureEtape.map((step) => (
+                  <div key={step.id_etape} className={styles.stepItem}>
+                    <div
+                      className={styles.stepIndicator}
+                      style={{
+                        backgroundColor: step.statut === 'TERMINEE' ? '#10b981' :
+                          step.statut === 'EN_ATTENTE' ? '#6366f1' : '#e2e8f0',
+                        color: step.statut === 'EN_ATTENTE' ? '#64748b' : 'white'
+                      }}
+                    >
+                      {step.etape.ordre_etape}
+                    </div>
+                    <div className={styles.stepContent}>
+                      <h4 className={styles.stepTitle}>{step.etape.lib_etape}</h4>
+                      <div className={styles.stepDates}>
+                        {formatDate(step.date_debut)} - {formatDate(step.date_fin)}
+                      </div>
+                      <span className={`${styles.badge} ${getStatusColor(step.statut)}`}>
+                        {step.statut}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className={styles.modalSecondaryButton}
+              >
+                Fermer
+              </button>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  handleViewProcedure(selectedProcedure);
+                }}
+                className={styles.modalPrimaryButton}
+              >
+                Voir la procédure
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className={styles.modalFooter}>
-        <button
-          onClick={() => setIsModalOpen(false)}
-          className={styles.modalSecondaryButton}
-        >
-          Fermer
-        </button>
-        <button
-          onClick={() => {
-            setIsModalOpen(false);
-            handleViewProcedure(selectedProcedure);
-          }}
-          className={styles.modalPrimaryButton}
-        >
-          Voir la procédure
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {showDateModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h2 className={styles.modalTitle}>Demande de renouvellement</h2>
 
-{showDateModal && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalContent}>
-      <h2 className={styles.modalTitle}>Demande de renouvellement</h2>
-      
-      <div className={styles.modalInfoText}>
-        <p>Renouvellements restants: {permis.typePermis.nbr_renouv_max - (permis.nombre_renouvellements || 0)}/{permis.typePermis.nbr_renouv_max}</p>
-        <p>Vous pouvez effectuer {permis.typePermis.nbr_renouv_max - (permis.nombre_renouvellements || 0)} renouvellement(s) supplémentaire(s)</p>
-      </div>
+            <div className={styles.modalInfoText}>
+              <p>Renouvellements restants: {permis.typePermis.nbr_renouv_max - (permis.nombre_renouvellements || 0)}/{permis.typePermis.nbr_renouv_max}</p>
+              <p>Vous pouvez effectuer {permis.typePermis.nbr_renouv_max - (permis.nombre_renouvellements || 0)} renouvellement(s) supplémentaire(s)</p>
+            </div>
 
-      <h3 className={styles.modalSubtitle}>Choisir une date de demande</h3>
+            <h3 className={styles.modalSubtitle}>Choisir une date de demande</h3>
 
-      <input
-        type="date"
-        value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
-        onChange={(e) => setSelectedDate(new Date(e.target.value))}
-        className={styles.modalDateInput}
-      />
+            <input
+              type="date"
+              value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+              onChange={(e) => setSelectedDate(new Date(e.target.value))}
+              className={styles.modalDateInput}
+            />
 
       <div className={styles.modalFooter}>
         <button
@@ -888,49 +887,49 @@ const handleSubmitCession = async () => {
   </div>
 )}
 
-{showMaxRenewalModal && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalContent}>
-      <button 
-        onClick={() => setShowMaxRenewalModal(false)} 
-        className={styles.modalCloseButton}
-      >
-        <XCircle size={20} />
-      </button>
-      
-      <div className={styles.modalIconWarning}>
-        <XCircle size={48} className={styles.warningIcon} />
-      </div>
-      
-      <h2 className={styles.modalTitle}>Limite de renouvellements atteinte</h2>
-      
-      <div className={styles.modalBody}>
-        <p>
-          <strong>Type de permis:</strong> {permis.typePermis.lib_type} ({permis.typePermis.code_type})
-        </p>
-        <p>
-          <strong>Renouvellements effectués:</strong> {permis.nombre_renouvellements || 0} / {permis.typePermis.nbr_renouv_max}
-        </p>
-        <div className={styles.modalWarningText}>
-          Ce permis a atteint le nombre maximum de renouvellements autorisés.
-          Vous ne pouvez pas effectuer de nouveaux renouvellements pour ce permis.
+      {showMaxRenewalModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <button
+              onClick={() => setShowMaxRenewalModal(false)}
+              className={styles.modalCloseButton}
+            >
+              <XCircle size={20} />
+            </button>
+
+            <div className={styles.modalIconWarning}>
+              <XCircle size={48} className={styles.warningIcon} />
+            </div>
+
+            <h2 className={styles.modalTitle}>Limite de renouvellements atteinte</h2>
+
+            <div className={styles.modalBody}>
+              <p>
+                <strong>Type de permis:</strong> {permis.typePermis.lib_type} ({permis.typePermis.code_type})
+              </p>
+              <p>
+                <strong>Renouvellements effectués:</strong> {permis.nombre_renouvellements || 0} / {permis.typePermis.nbr_renouv_max}
+              </p>
+              <div className={styles.modalWarningText}>
+                Ce permis a atteint le nombre maximum de renouvellements autorisés.
+                Vous ne pouvez pas effectuer de nouveaux renouvellements pour ce permis.
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setShowMaxRenewalModal(false)}
+                className={styles.modalPrimaryButton}
+              >
+                Compris
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className={styles.modalFooter}>
-        <button
-          onClick={() => setShowMaxRenewalModal(false)}
-          className={styles.modalPrimaryButton}
-        >
-          Compris
-        </button>
-      </div>
     </div>
-  </div>
-)}
-
-  </div>
-);
+  );
 }
 
 export default PermisViewPage;

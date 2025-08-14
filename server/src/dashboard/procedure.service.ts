@@ -12,6 +12,25 @@ export class ProcedureService {
       procedure: {
         include: {
           typeProcedure: true,
+          permis: {
+            include: {
+              detenteur: true,
+              procedures: {
+                where: {
+                  typeProcedure: {
+                    libelle: 'demande'
+                  }
+                },
+                include: {
+                  demandes: {
+                    include: {
+                      detenteur: true
+                    }
+                  }
+                }
+              }
+            }
+          },
           ProcedureEtape: {
             include: {
               etape: true,
@@ -29,6 +48,22 @@ export class ProcedureService {
     orderBy: {
       date_demande: 'desc',
     },
+  });
+}
+
+// In your procedure.service.ts
+async getProcedureById(id: number) {
+  return this.prisma.procedure.findUnique({
+    where: { id_proc: id },
+    include: {
+      typeProcedure: true,
+      demandes: {
+        include: {
+          detenteur: true
+        },
+        take: 1
+      }
+    }
   });
 }
 
@@ -280,8 +315,17 @@ if (seances?.id_seance) {
     }
 
     // 12. Delete ProcedureRenouvellement if exists
-    await prisma.procedureRenouvellement.deleteMany({
-      where: { id_proc: procedureId }
+    const demande = await this.prisma.demande.findFirst({
+      where: { id_proc: procedureId },
+    });
+
+    if (!demande) {
+      throw new NotFoundException('Demande not found for this procedure');
+    }
+
+    // Delete ProcedureRenouvellement records associated with the demande
+    await this.prisma.procedureRenouvellement.deleteMany({
+      where: { id_demande: demande.id_demande },
     });
 
     // 13. Finally, delete the Procedure itself

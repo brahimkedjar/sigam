@@ -66,7 +66,6 @@ export default function Step4_Substances() {
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [idDemande, setIdDemande] = useState<number | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
@@ -85,6 +84,8 @@ export default function Step4_Substances() {
   const [dureeTravaux, setDureeTravaux] = useState('');
   const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   // Substances State
   const [allSubstances, setAllSubstances] = useState<Substance[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);

@@ -112,7 +112,6 @@ export class CdService {
         fiche_technique: createComiteDto.fiche_technique,
         carte_projettee: createComiteDto.carte_projettee,
         rapport_police: createComiteDto.rapport_police,
-        instructeur: createComiteDto.instructeur,
         decisionCDs: createComiteDto.decisions ? {
           create: createComiteDto.decisions.map(decision => ({
             decision_cd: decision.decision_cd,
@@ -177,7 +176,6 @@ export class CdService {
           fiche_technique: updateComiteDto.fiche_technique,
           carte_projettee: updateComiteDto.carte_projettee,
           rapport_police: updateComiteDto.rapport_police,
-          instructeur: updateComiteDto.instructeur,
           decisionCDs: updateComiteDto.decisions ? {
             create: updateComiteDto.decisions.map(decision => ({
               decision_cd: decision.decision_cd,

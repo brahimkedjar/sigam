@@ -333,58 +333,59 @@ const handleSaveEtape = async () => {
                   <h3 className={styles.sectionTitle}>Expert minier</h3>
                 </div>
                 <div className={styles.formGrid}>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Nom complet*</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="nom_expert"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.nom_expert}
-                      placeholder="Nom et prénom de l'expert"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Fonction*</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="fonction"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.fonction}
-                      placeholder="Ex: Géologue senior"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Numéro de registre</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="num_registre"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.num_registre}
-                      placeholder="Numéro d'enregistrement"
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Organisme*</label>
-                    <input
-                    disabled={statutProc === 'TERMINEE'}
-                      type="text"
-                      name="organisme"
-                      className={styles.formInput}
-                      onChange={handleChange}
-                      value={form.organisme}
-                      placeholder="Organisme d'affiliation"
-                      required
-                    />
-                  </div>
-                </div>
+  <div className={styles.formGroup}>
+    <label className={styles.formLabel}>Nom complet*</label>
+    <input
+      type="text"
+      name="nom_expert"
+      className={styles.formInput}
+      onChange={handleChange}
+      value={form.nom_expert}
+      placeholder="Nom et prénom de l'expert"
+      required
+      disabled
+    />
+  </div>
+  <div className={styles.formGroup}>
+    <label className={styles.formLabel}>Fonction*</label>
+    <input
+      type="text"
+      name="fonction"
+      className={styles.formInput}
+      onChange={handleChange}
+      value={form.fonction}
+      placeholder="Ex: Géologue senior"
+      required
+      disabled
+    />
+  </div>
+  <div className={styles.formGroup}>
+    <label className={styles.formLabel}>Numéro de registre</label>
+    <input
+      type="text"
+      name="num_registre"
+      className={styles.formInput}
+      onChange={handleChange}
+      value={form.num_registre}
+      placeholder="Numéro d'enregistrement"
+      disabled
+    />
+  </div>
+  <div className={styles.formGroup}>
+    <label className={styles.formLabel}>Organisme*</label>
+    <input
+      type="text"
+      name="organisme"
+      className={styles.formInput}
+      onChange={handleChange}
+      value={form.organisme}
+      placeholder="Organisme d'affiliation"
+      required
+      disabled
+    />
+  </div>
+</div>
+
               </section>
             </div>
 

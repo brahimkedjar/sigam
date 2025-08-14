@@ -39,7 +39,7 @@ model AuditLog {
   previousState    Json?     // Stores the complete previous state for undo
   contextId        String?   // For grouping related actions
   sessionId        String?   // For tracking user sessions
-
+  
   @@index([entityType])
   @@index([entityId])
   @@index([userId])
@@ -58,7 +58,7 @@ model User {
   roleId    Int?
   role      Role?    @relation(fields: [roleId], references: [id])
   userGroups UserGroup[]
-  sessions  Session[]
+  sessions  Session[]  
   createdAt DateTime @default(now())
   AuditLog AuditLog[]
 }
@@ -140,10 +140,10 @@ model DossierFournis {
   date_depot      DateTime @default(now())
   statut_dossier  String   // e.g., 'complet', 'incomplet', 'en_revision'
   remarques       String?
-
+  
   demande         Demande  @relation(fields: [id_demande], references: [id_demande])
   documents       DossierFournisDocument[]
-
+  
   @@map("dossier_fournis")
 }
 
@@ -187,12 +187,12 @@ model TypePermis {
   code_type         String    @unique // ppm / PEM / PXC ...
   regime            String    // mines / carriere
   duree_initiale    Float       // in years
-  nbr_renouv_max  Int
+  nbr_renouv_max  Int  
   duree_renouv    Float     // max renewal times
   delai_renouv      Int       // days before expiration
   superficie_max    Float?
   permis            Permis[]
-
+  
   @@map("typepermis")
   DossierAdministratif DossierAdministratif[]
   Demande Demande[]
@@ -300,8 +300,8 @@ model Procedure {
 
   SubstanceAssocieeDemande SubstanceAssocieeDemande[]
   InteractionWali InteractionWali[]
-  cessions     ProcedureCession[]
   ProcedureEtape ProcedureEtape[]
+  renouvellement  ProcedureRenouvellement?
 
   id_seance       Int?
   seance          SeanceCDPrevue? @relation("SeanceProcedures", fields: [id_seance], references: [id_seance])
@@ -339,29 +339,30 @@ model Demande {
   id_daira         Int?
   id_commune       Int?
   lieu_dit_ar      String?
-  statut_demande              StatutDemande?
+  statut_demande              StatutDemande? 
   wilaya           Wilaya?    @relation(fields: [id_wilaya], references: [id_wilaya])
   daira            Daira?     @relation(fields: [id_daira], references: [id_daira])
   commune          Commune?   @relation(fields: [id_commune], references: [id_commune])
   procedure       Procedure     @relation(fields: [id_proc], references: [id_proc])
   detenteur       DetenteurMorale? @relation(fields: [id_detenteur], references: [id_detenteur])
   expertMinier ExpertMinier? @relation(fields: [id_expert], references: [id_expert])
-  typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id])
+  typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id]) 
   dossiersFournis DossierFournis[]
-  renouvellement              ProcedureRenouvellement?
+
   @@map("demande")
   CahierCharge CahierCharge[]
 }
 
 model ProcedureRenouvellement {
   id_renouvellement       Int       @id @default(autoincrement())
-  id_demande              Int       @unique
+  id_proc                 Int       @unique
   num_decision            String?
-  date_decision           DateTime? // Optional (set later)
-  date_debut_validite     DateTime? // Set when finalized
-  date_fin_validite       DateTime? // Set when finalized
-  commentaire             String?   // Optional
-  demande                 Demande   @relation(fields: [id_demande], references: [id_demande])
+  date_decision       DateTime? // Optional (set later)
+  date_debut_validite DateTime? // Set when finalized
+  date_fin_validite   DateTime? // Set when finalized
+  commentaire         String?   // Optional
+  procedure               Procedure @relation(fields: [id_proc], references: [id_proc])
+  
 }
 
 
@@ -477,10 +478,6 @@ model PersonnePhysique {
   réf_professionnelles     String
 
   fonctions FonctionPersonneMoral[]
-  
-  // Inverse relations
-  anciens_titres   ProcedureCession[] @relation("AncienTitulaire")
-  nouveaux_titres  ProcedureCession[] @relation("NouveauTitulaire")
 
   @@map("personnephysique")
 }
@@ -564,7 +561,6 @@ model ComiteDirection {
   fiche_technique    String?
   carte_projettee    String?
   rapport_police     String?
-
   decisionCDs        DecisionCD[]
 }
 
@@ -572,7 +568,7 @@ model DecisionCD {
   id_decision     Int              @id @default(autoincrement())
   id_comite       Int
   comite          ComiteDirection  @relation(fields: [id_comite], references: [id_comite])
-
+  
   decision_cd     EnumDecisionComite
   duree_decision  Int?
   commentaires    String?
@@ -840,41 +836,8 @@ model SuperficiaireBareme {
   @@map("superficiaire_bareme")
 }
 
-model ProcedureCession {
-  id_cession              Int               @id @default(autoincrement())
-  id_proc            Int
-  id_ancien_cessionaire   Int?               // FK vers PersonnePhysique (ancien)
-  id_nouveau_cessionaire  Int?               // FK vers PersonnePhysique (nouveau)
-  taux_cession            Float?
-  motif                   String?            @db.Text
-  nature_cession          NatureCession?
-  observation             String?            @db.Text
-  statut                  StatutCession?
 
-  // Relations
-  procedure               Procedure          @relation(fields: [id_proc], references: [id_proc])
 
-  ancien_titulaire_physique  PersonnePhysique? @relation("AncienTitulaire", fields: [id_ancien_cessionaire], references: [id_personne])
-  nouveau_titulaire_physique PersonnePhysique? @relation("NouveauTitulaire", fields: [id_nouveau_cessionaire], references: [id_personne])
-
-  @@map("procedure_cession")
-}
-
-// ENUM pour nature_cession
-enum NatureCession {
-  partielle
-  totale
-  majoritaire
-  minoritaire
-}
-
-// ENUM pour statut
-enum StatutCession {
-  en_cours
-  acceptee
-  refusee
-  annulee
-}
 /*
 generator erd {
   provider = "prisma-erd-generator"

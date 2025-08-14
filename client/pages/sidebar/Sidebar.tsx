@@ -64,7 +64,9 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
       ]
     },
     { id: 'Payments', icon: <FiDollarSign />, label: 'Paiements', permission: 'Payments' },
-    { id: 'controle_minier', icon: <FiShield />, label: 'Contrôle minier', permission: 'controle_minier' }
+    { id: 'controle_minier', icon: <FiShield />, label: 'Contrôle minier', permission: 'controle_minier' },
+    { id: 'Gestion_seances', icon: <FiHome />, label: 'Gestion_seances', permission: 'dashboard' }
+
   ];
 
   const toggleSidebar = () => {
