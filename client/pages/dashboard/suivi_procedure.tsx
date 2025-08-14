@@ -22,6 +22,7 @@ interface Detenteur {
 
 interface Procedure {
   id_proc: number;
+  num_proc:string;
   typeProcedure: {
     nom: string;
     description?: string;
@@ -373,7 +374,7 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
                 <table className={styles['suivi-table']}>
                   <thead>
                     <tr>
-                      <th>CODE DEMANDE</th>
+                      <th>CODE PROCEDURE</th>
                       <th>TITULAIRE</th>
                       <th>TYPE DE PROCÉDURE</th>
                       <th>DATE DEMANDE</th>
@@ -421,7 +422,8 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
 
   return (
     <tr key={d.id_demande}>
-      <td>{d.code_demande}</td>
+      
+      <td>{d.procedure.num_proc}</td>
       <td>{getSocieteName(d)}</td>
       <td>{d.procedure?.typeProcedure?.description || '---'}</td>
       <td>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</td>
