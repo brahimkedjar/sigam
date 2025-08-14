@@ -471,8 +471,6 @@ const saveCoordinatesToBackend = async () => {
     setEtapeMessage(null);
 
     try {
-      const currentUrl = window.location.pathname + window.location.search; 
-
     await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/5`);
       setEtapeMessage("Étape 5 enregistrée avec succès !");
     } catch (err) {

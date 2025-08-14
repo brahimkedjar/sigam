@@ -16,21 +16,35 @@ import { STEP_LABELS } from '../../src/constants/steps';
 import { logAuditAction } from '../../src/utils/auditLogger';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
+interface Detenteur {
+  nom_sociétéFR: string;
+}
+
+interface Procedure {
+  id_proc: number;
+  typeProcedure: {
+    nom: string;
+    description?: string;
+  };
+  statut_proc: string;
+  permis: {
+    detenteur?: Detenteur;
+    procedures: Array<{
+      demandes: Array<{
+        detenteur?: Detenteur;
+      }>;
+    }>;
+  }[];
+  ProcedureEtape: ProcedureEtape[];
+}
+
 interface Demande {
   id_demande: number;
   code_demande: string;
-  date_instruction: string;
-  procedure: {
-    id_proc: number;
-    statut_proc: string;
-    typeProcedure: {
-      nom: string;
-    };
-    ProcedureEtape: ProcedureEtape[];
-  };
-  detenteur?: {
-    nom_sociétéFR?: string;
-  };
+  date_demande: string;
+  date_instruction?: string;
+  detenteur?: Detenteur;
+  procedure: Procedure;
 }
 
 interface ProcedureEtape {
@@ -369,48 +383,68 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDemandes.map((d: any) => {
-
+                    {filteredDemandes.map((d: Demande) => {
   const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
-  console.log("ssssssssss:", d.procedure?.ProcedureEtape);
-                      const phaseConfig = currentPhase
-                        ? STATUS_CONFIG[
-                            currentPhase.etape.lib_etape as keyof typeof STATUS_CONFIG
-                          ]
-                        : STATUS_CONFIG.default;
-                      const statusConfig = getStatusConfig(d.procedure?.statut_proc);
-                      return (
-                        <tr key={d.id_demande}>
-                          <td>{d.code_demande}</td>
-                          <td>{d.detenteur?.nom_sociétéFR || '---'}</td>
-                          <td>{d.procedure?.typeProcedure?.description || '---'}</td>
-                          <td>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</td>
-                          <td>
-                            <div
-                              className={`${styles['status-tag']} ${statusConfig.bg} ${statusConfig.text}`}
-                            >
-                              {statusConfig.icon}
-                              {d.procedure?.statut_proc}
-                            </div>
-                          </td>
-                          <td>
-                            {currentPhase ? (
-                              <div
-                                className={`${styles['status-tag']} ${phaseConfig.bg} ${phaseConfig.text}`}
-                              >
-                                {phaseConfig.icon}
-                                {currentPhase.etape.lib_etape}
-                              </div>
-                            ) : (
-                              <div
-                                className={`${styles['status-tag']} bg-gray-100 text-gray-800`}
-                              >
-                                <FiClock className="text-gray-500" />
-                                Non démarrée
-                              </div>
-                            )}
-                          </td>
-                          <td>
+  const phaseConfig = currentPhase
+    ? STATUS_CONFIG[
+        currentPhase.etape.lib_etape as keyof typeof STATUS_CONFIG
+      ]
+    : STATUS_CONFIG.default;
+  const statusConfig = getStatusConfig(d.procedure?.statut_proc);
+  
+  // Get the company name - tries current demande first, then original demande from permis
+  const getSocieteName = (demande: Demande): string => {
+    // Try current demande first
+    if (demande.detenteur?.nom_sociétéFR) {
+      return demande.detenteur.nom_sociétéFR;
+    }
+    
+    // For procedures linked to permis, get the original demande's detenteur
+    if (demande.procedure.permis.length > 0) {
+      // Get the first permis
+      const permis = demande.procedure.permis[0];
+      
+      // Try the permis's direct detenteur
+      if (permis.detenteur?.nom_sociétéFR) {
+        return permis.detenteur.nom_sociétéFR;
+      }
+      
+      // Try the original demande from the permis's procedures
+      const originalProcedure = permis.procedures[0];
+      if (originalProcedure?.demandes[0]?.detenteur?.nom_sociétéFR) {
+        return originalProcedure.demandes[0].detenteur.nom_sociétéFR;
+      }
+    }
+    
+    return '---';
+  };
+
+  return (
+    <tr key={d.id_demande}>
+      <td>{d.code_demande}</td>
+      <td>{getSocieteName(d)}</td>
+      <td>{d.procedure?.typeProcedure?.description || '---'}</td>
+      <td>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</td>
+      <td>
+        <div className={`${styles['status-tag']} ${statusConfig.bg} ${statusConfig.text}`}>
+          {statusConfig.icon}
+          {d.procedure?.statut_proc}
+        </div>
+      </td>
+      <td>
+        {currentPhase ? (
+          <div className={`${styles['status-tag']} ${phaseConfig.bg} ${phaseConfig.text}`}>
+            {phaseConfig.icon}
+            {currentPhase.etape.lib_etape}
+          </div>
+        ) : (
+          <div className={`${styles['status-tag']} bg-gray-100 text-gray-800`}>
+            <FiClock className="text-gray-500" />
+            Non démarrée
+          </div>
+        )}
+      </td>
+      <td>
                             <div className={styles['actions-container']}>
                               <button
                                 className={`${styles['action-btn']} ${styles['action-btn-primary']}`}

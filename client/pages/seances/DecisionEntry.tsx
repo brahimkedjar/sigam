@@ -7,11 +7,28 @@ import { fr } from 'date-fns/locale';
 import styles from './DecisionEntry.module.css';
 
 // Types
+
+interface Detenteur {
+  nom_sociétéFR: string;
+}
+
+interface Demande {
+  id_demande: number;
+  detenteur: Detenteur | null;
+}
+
+interface Permis {
+  procedures: Array<{
+    demandes: Demande[];
+  }>;
+}
+
 interface Procedure {
   id_proc: number;
   num_proc: string;
-  typeProcedure: { libelle: string };
-  demandes: { detenteur: { nom_sociétéFR: string } }[];
+  typeProcedure: { libelle: string } | null;
+  demandes: Demande[];
+  permis: Permis[];
 }
 
 interface Decision {
@@ -41,6 +58,8 @@ interface SeanceWithDecisions {
   comites: ComiteDirection[];
   procedures: Procedure[];
 }
+
+
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -76,7 +95,20 @@ export default function DecisionEntry() {
   const [error, setError] = useState<string | null>(null);
 
   const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
-
+ // Get the company name - tries current demande first, then original demande from permis
+  const getSocieteName = (proc: Procedure): string => {
+    // Try current demande first
+    const currentDetenteur = proc.demandes[0]?.detenteur?.nom_sociétéFR;
+    if (currentDetenteur) return currentDetenteur;
+    
+    // For procedures linked to permis, get the original demande
+    if (proc.permis.length > 0) {
+      const originalProcedure = proc.permis[0].procedures[0];
+      return originalProcedure?.demandes[0]?.detenteur?.nom_sociétéFR || 'N/A';
+    }
+    
+    return 'N/A';
+  };
   // Fetch seances with error handling and abort controller
   const fetchSeances = useCallback(async () => {
   if (!apiURL) {
@@ -438,17 +470,16 @@ export default function DecisionEntry() {
                             </tr>
                           </thead>
                           <tbody>
-                            {seance.procedures.map((procedure) => {
-  // Find comité for this specific procedure
+                          
+{seance.procedures.map((procedure) => {
   const procedureComite = seance.comites.find(comite => 
     comite.numero_decision.endsWith(`-${procedure.id_proc}`)
   );
   const decision = procedureComite?.decisionCDs[0];
-
   return (
     <tr key={`${seance.id_seance}-${procedure.id_proc}`}>
       <td>{procedure.num_proc}</td>
-      <td>{procedure.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A'}</td>
+      <td>{getSocieteName(procedure)}</td>
       <td>{procedure.typeProcedure?.libelle || 'N/A'}</td>
       <td>
         {decision?.decision_cd ? (
@@ -576,11 +607,13 @@ export default function DecisionEntry() {
               
               <div className={styles.sectionTitle}>Décision</div>
               <div className={styles.formGroup}>
-                <label>Société</label>
-                <div className={styles.staticField}>
-                  {currentProcedure?.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A'}
-                </div>
-              </div>
+  <label>Société</label>
+  <div className={styles.staticField}>
+    {currentProcedure ? (
+      getSocieteName(currentProcedure)
+    ) : 'N/A'}
+  </div>
+</div>
               <div className={styles.formGroup}>
                 <label>Type de procédure</label>
                 <div className={styles.staticField}>

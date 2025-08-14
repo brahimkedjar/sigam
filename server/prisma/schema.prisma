@@ -301,7 +301,6 @@ model Procedure {
   SubstanceAssocieeDemande SubstanceAssocieeDemande[]
   InteractionWali InteractionWali[]
   ProcedureEtape ProcedureEtape[]
-  renouvellement  ProcedureRenouvellement?
 
   id_seance       Int?
   seance          SeanceCDPrevue? @relation("SeanceProcedures", fields: [id_seance], references: [id_seance])
@@ -348,21 +347,20 @@ model Demande {
   expertMinier ExpertMinier? @relation(fields: [id_expert], references: [id_expert])
   typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id])
   dossiersFournis DossierFournis[]
-
+  renouvellement              ProcedureRenouvellement?
   @@map("demande")
   CahierCharge CahierCharge[]
 }
 
 model ProcedureRenouvellement {
   id_renouvellement       Int       @id @default(autoincrement())
-  id_proc                 Int       @unique
+  id_demande              Int       @unique
   num_decision            String?
-  date_decision       DateTime? // Optional (set later)
-  date_debut_validite DateTime? // Set when finalized
-  date_fin_validite   DateTime? // Set when finalized
-  commentaire         String?   // Optional
-  procedure               Procedure @relation(fields: [id_proc], references: [id_proc])
-
+  date_decision           DateTime? // Optional (set later)
+  date_debut_validite     DateTime? // Set when finalized
+  date_fin_validite       DateTime? // Set when finalized
+  commentaire             String?   // Optional
+  demande                 Demande   @relation(fields: [id_demande], references: [id_demande])
 }
 
 

@@ -228,7 +228,7 @@ async getSeancesWithDecisions() {
         comites: {
           include: {
             decisionCDs: {
-              orderBy: { id_decision: 'asc' } // Ensure consistent ordering
+              orderBy: { id_decision: 'asc' }
             }
           }
         },
@@ -236,6 +236,27 @@ async getSeancesWithDecisions() {
           include: {
             typeProcedure: {
               select: { libelle: true }
+            },
+            permis: {
+              include: {
+                procedures: {
+                  where: {
+                    typeProcedure: {
+                      libelle: 'demande' // Get only initial demand procedures
+                    }
+                  },
+                  include: {
+                    demandes: {
+                      take: 1,
+                      include: {
+                        detenteur: {
+                          select: { nom_sociétéFR: true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             },
             demandes: {
               take: 1,
@@ -246,7 +267,7 @@ async getSeancesWithDecisions() {
               }
             }
           },
-          orderBy: { id_proc: 'asc' } // Ensure consistent ordering
+          orderBy: { id_proc: 'asc' }
         }
       },
       orderBy: { date_seance: 'desc' }
@@ -256,6 +277,5 @@ async getSeancesWithDecisions() {
     throw new Error('Failed to fetch seances with decisions');
   }
 }
-
 
 }
