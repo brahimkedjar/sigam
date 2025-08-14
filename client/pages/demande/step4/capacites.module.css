@@ -466,3 +466,11 @@
     padding: 1.5rem;
   }
 }
+
+/* form.module.css */
+.formInput:disabled {
+  background-color: #f3f4f6; /* light grey */
+  color: #6b7280;           /* dark grey text */
+  cursor: not-allowed;
+  opacity: 1;               /* avoid faded look in some browsers */
+}

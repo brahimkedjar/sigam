@@ -581,7 +581,7 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
             <div className={styles.cardContent}>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonPrimary}`}
-                disabled={permis.typePermis.code_type === 'PEM'}
+                //disabled={permis.typePermis.code_type === 'PEM'}
                 onClick={() => {
                   if ((permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) {
                     setShowMaxRenewalModal(true);
@@ -591,9 +591,9 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
                 }}
                 style={{
                   position: 'relative',
-                  opacity: (permis.typePermis.code_type === 'PEM' ||
+                  opacity: (
                     (permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) ? 0.7 : 1,
-                  cursor: (permis.typePermis.code_type === 'PEM' ||
+                  cursor: (
                     (permis.renewals?.length || 0) >= permis.typePermis.nbr_renouv_max) ? 'not-allowed' : 'pointer'
                 }}
               >
@@ -607,33 +607,33 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
               </button>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonSuccess}`}
-                disabled={permis.typePermis.code_type === 'PEM'}
-                style={{
+                //disabled={permis.typePermis.code_type === 'PEM'}
+                /*style={{
                   opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
                   cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
-                }}
+                }}*/
               >
                 <Edit2 size={18} />
                 Demander une modification
               </button>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonWarning}`}
-                disabled={permis.typePermis.code_type === 'PEM'}
-                style={{
+                //disabled={permis.typePermis.code_type === 'PEM'}
+                /*style={{
                   opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
                   cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
-                }}
+                }}*/
               >
                 <FileSearch size={18} />
                 Consulter les documents
               </button>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonDanger}`}
-                disabled={permis.typePermis.code_type === 'PEM'}
-                style={{
+                //disabled={permis.typePermis.code_type === 'PEM'}
+                /*style={{
                   opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
                   cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
-                }}
+                }}*/
               >
                 <XCircle size={18} />
                 Demander une renonciation

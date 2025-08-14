@@ -31,16 +31,28 @@
 
 .clearButton {
   margin-left: 0.5rem;
-  color: #a0aec0;
-  padding: 0.25rem;
-  border-radius: 9999px;
-  transition: background-color 0.2s;
+  color: #f36886; /* slate-400 */
+  padding: 0.35rem;
+  border-radius: 50%;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: 
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.2s ease;
 }
 
 .clearButton:hover {
-  background-color: #f7fafc;
-  color: #718096;
+  background-color: rgba(148, 163, 184, 0.1); /* soft hover bg */
+  color: #f15c8b; /* slate-500 */
+  transform: scale(1.08); /* slight grow */
 }
+
+.clearButton:active {
+  transform: scale(0.95); /* smooth press */
+}
+
 
 .arrow {
   transition: transform 0.2s;
