@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { CessionController } from './cession.controller';
 import { CessionService } from './cession.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PaymentService } from 'src/demandes/paiement/payment.service';
 
 @Module({
   controllers: [CessionController],
-  providers: [CessionService, PrismaService]
+  providers: [CessionService, PrismaService, PaymentService]
 })
 export class CessionModule {}

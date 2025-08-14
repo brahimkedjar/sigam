@@ -385,7 +385,7 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
                         <tr key={d.id_demande}>
                           <td>{d.code_demande}</td>
                           <td>{d.detenteur?.nom_sociétéFR || '---'}</td>
-                          <td>{d.procedure?.typeProcedure?.description || '---'}</td>
+                          <td>{d.procedure?.typeProcedure?.libelle || '---'}</td>
                           <td>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</td>
                           <td>
                             <div

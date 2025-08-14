@@ -848,11 +848,11 @@ model ProcedureCession {
   id_proc            Int
   id_ancien_cessionaire   Int?               // FK vers PersonnePhysique (ancien)
   id_nouveau_cessionaire  Int?               // FK vers PersonnePhysique (nouveau)
-  taux_cession            Float
+  taux_cession            Float?
   motif                   String?            @db.Text
-  nature_cession          NatureCession
+  nature_cession          NatureCession?
   observation             String?            @db.Text
-  statut                  StatutCession
+  statut                  StatutCession?
 
   // Relations
   procedure               Procedure          @relation(fields: [id_proc], references: [id_proc])

@@ -140,6 +140,7 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
   const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
+  const [ShowCessionModal, setShowCessionModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [pendingPermisId, setPendingPermisId] = useState<number | null>(null);
   const [showMaxRenewalModal, setShowMaxRenewalModal] = useState(false);
@@ -300,6 +301,7 @@ const handleProcedureTypeClick = (type: string) => {
   }
 };
 
+
 const handleNotificationClose = () => {
   setNotif(null);
 };
@@ -332,6 +334,62 @@ const handleSubmitDate = async () => {
 
   const substances = getAllSubstances();
 
+// Vérification avant lancement de la cession
+const handleCessionClick = async (permisId: number) => {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
+  try {
+    const response = await axios.post(`${apiURL}/api/procedures/cession/check-payments`, {
+      permisId,
+    });
+
+    // Si tout est OK → on sauvegarde l'ID et on affiche la modal (date ou confirmation)
+    setPendingPermisId(permisId);
+    setShowCessionModal(true); // modal spécifique à la cession
+
+  } catch (error: any) {
+    let errorMessage = "Erreur inconnue";
+    
+    if (error.response) {
+      errorMessage = error.response.data.message || error.response.statusText;
+    } else if (error.request) {
+      errorMessage = "Pas de réponse du serveur";
+    } else {
+      errorMessage = error.message;
+    }
+    
+    setNotif({ 
+      message: `⛔ ${errorMessage}`,
+      type: 'error' 
+    });
+  }
+};
+
+//Lancer réellement la procédure de cession
+const handleSubmitCession = async () => {
+  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!selectedDate || !pendingPermisId) return;
+
+  try {
+    const res = await axios.post(`${apiURL}/api/procedures/cession/start`, {
+      permisId: pendingPermisId,
+      date_demande: selectedDate.toISOString().split('T')[0], 
+    });
+
+    const { original_demande_id, original_proc_id, new_proc_id } = res.data;
+
+    router.push(
+      `/cession/step1/page1?id=${new_proc_id}&originalDemandeId=${original_demande_id}&original_proc_id=${original_proc_id}`
+    );
+  } catch (error: any) {
+    setNotif({ message: 'Erreur lors de la cession.', type: 'error' });
+  } finally {
+    setShowCessionModal(false);
+    setPendingPermisId(null);
+    setSelectedDate(null);
+  }
+};
 
   return (
   <div className={styles.container}>
@@ -608,33 +666,47 @@ const handleSubmitDate = async () => {
 </button>
       <button 
         className={`${styles.actionButton} ${styles.actionButtonSuccess}`}
-        disabled={permis.typePermis.code_type === 'PEM'}
-        style={{
-          opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
-          cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
-        }}
+        // disabled={permis.typePermis.code_type === 'PEM'}
+        // style={{
+        //   opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+        //   cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+        // }}
       >
         <Edit2 size={18} />
         Demander une modification
       </button>
+      <button
+        className={`${styles.actionButton} ${styles.actionButtonInfo}`}
+        // disabled={permis.typePermis.code_type === 'PEM'}
+        onClick={() => {
+            handleCessionClick(permis.id);
+        }}
+        // style={{
+        //   opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+        //   cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+        // }}
+      >
+        <ChevronRight size={18} />
+        Demander une cession
+      </button>
       <button 
         className={`${styles.actionButton} ${styles.actionButtonWarning}`}
-       disabled={permis.typePermis.code_type === 'PEM'}
-        style={{
-          opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
-          cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
-        }}
+      //  disabled={permis.typePermis.code_type === 'PEM'}
+      //   style={{
+      //     opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+      //     cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+      //   }}
       >
         <FileSearch size={18} />
         Consulter les documents
       </button>
       <button 
         className={`${styles.actionButton} ${styles.actionButtonDanger}`}
-        disabled={permis.typePermis.code_type === 'PEM'}
-        style={{
-          opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
-          cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
-        }}
+        // disabled={permis.typePermis.code_type === 'PEM'}
+        // style={{
+        //   opacity: permis.typePermis.code_type === 'PEM' ? 0.5 : 1,
+        //   cursor: permis.typePermis.code_type === 'PEM' ? 'not-allowed' : 'pointer'
+        // }}
       >
         <XCircle size={18} />
         Demander une renonciation
@@ -770,6 +842,42 @@ const handleSubmitDate = async () => {
         </button>
         <button
           onClick={handleSubmitDate}
+          disabled={!selectedDate}
+          className={styles.modalPrimaryButton}
+        >
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+{ShowCessionModal&& (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalContent}>
+      <h2 className={styles.modalTitle}>Demande de Cession</h2>
+      
+
+      <h3 className={styles.modalSubtitle}>Choisir une date de demande</h3>
+
+      <input
+        type="date"
+        value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+        onChange={(e) => setSelectedDate(new Date(e.target.value))}
+        className={styles.modalDateInput}
+      />
+
+      <div className={styles.modalFooter}>
+        <button
+          onClick={() => {
+            setShowCessionModal(false);
+            setSelectedDate(null);
+          }}
+          className={styles.modalSecondaryButton}
+        >
+          Annuler
+        </button>
+        <button
+          onClick={handleSubmitCession}
           disabled={!selectedDate}
           className={styles.modalPrimaryButton}
         >

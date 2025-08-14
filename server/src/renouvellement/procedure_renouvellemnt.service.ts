@@ -70,10 +70,6 @@ export class ProcedureRenouvellementService {
     }
   });
 
-
-
-
-
   return {
     original_demande_id: initialDemande?.id_demande,
     original_proc_id: initialProcedure?.id_proc,
