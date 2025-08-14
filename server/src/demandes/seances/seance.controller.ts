@@ -41,11 +41,9 @@ export class SeanceController {
 
 @Get('procedures')
 async getAllProcedures(
-  @Query('search') search?: string,
-  @Query('page') page = 1,
-  @Query('pageSize') pageSize = 20
+  
 ) {
-  return this.seanceService.getAllProcedures(search, +page, +pageSize);
+  return this.seanceService.getAllProcedures();
 }
 
 @Get('member/:memberId')

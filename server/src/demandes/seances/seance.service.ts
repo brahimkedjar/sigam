@@ -88,31 +88,11 @@ async findAllmembers() {
   }
 
 // seance.service.ts
-async getAllProcedures(search?: string, page = 1, pageSize = 20) {
-  const where: any = {};
+async getAllProcedures() {
   
-  if (search) {
-    where.OR = [
-      { num_proc: { contains: search, mode: 'insensitive' } },
-      { 
-        demandes: {
-          some: {
-            detenteur: {
-              nom_sociétéFR: { contains: search, mode: 'insensitive' }
-            }
-          }
-        }
-      },
-      {
-        typeProcedure: {
-          libelle: { contains: search, mode: 'insensitive' }
-        }
-      }
-    ];
-  }
 
   return this.prisma.procedure.findMany({
-    where,
+    
     include: {
       typeProcedure: {
         select: { libelle: true }
@@ -123,12 +103,10 @@ async getAllProcedures(search?: string, page = 1, pageSize = 20) {
             select: { nom_sociétéFR: true }
           }
         },
-        take: 1 // Only get the first demande for detenteur
       }
     },
     orderBy: { date_debut_proc: 'desc' },
-    skip: (page - 1) * pageSize,
-    take: pageSize
+   
   });
 }
 
