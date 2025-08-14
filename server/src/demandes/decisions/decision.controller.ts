@@ -1,5 +1,5 @@
 // decisions/decision.controller.ts
-import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
+import { Controller, Post, Put, Param, Body } from '@nestjs/common';
 import { DecisionService } from './decision.service';
 import { CreateDecisionDto } from '../dto/create-decision.dto';
 

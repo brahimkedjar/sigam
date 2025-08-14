@@ -28,4 +28,10 @@ export class DecisionService {
       }
     });
   }
+
+  async getDecisionForProcedure(id_comite: number) {
+    return this.prisma.decisionCD.findFirst({
+      where: { id_comite }
+    });
+  }
 }

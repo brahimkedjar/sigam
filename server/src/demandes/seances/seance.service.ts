@@ -220,36 +220,42 @@ async getSeancesForMember(memberId: number) {
   });
 }
 
+// seances/seance.service.ts
 async getSeancesWithDecisions() {
-  return this.prisma.seanceCDPrevue.findMany({
-    include: {
-      comites: {
-        include: {
-          decisionCDs: true
-        }
-      },
-      procedures: {
-        include: {
-          typeProcedure: true,
-          demandes: {
-            include: {
-              detenteur: true
+  try {
+    return await this.prisma.seanceCDPrevue.findMany({
+      include: {
+        comites: {
+          include: {
+            decisionCDs: {
+              orderBy: { id_decision: 'asc' } // Ensure consistent ordering
             }
           }
+        },
+        procedures: {
+          include: {
+            typeProcedure: {
+              select: { libelle: true }
+            },
+            demandes: {
+              take: 1,
+              include: {
+                detenteur: {
+                  select: { nom_sociétéFR: true }
+                }
+              }
+            }
+          },
+          orderBy: { id_proc: 'asc' } // Ensure consistent ordering
         }
       },
-      membres: {
-        select: {
-          id_membre: true,
-          nom_membre: true,
-          prenom_membre: true
-        }
-      }
-    },
-    orderBy: {
-      date_seance: 'desc'
-    }
-  });
+      orderBy: { date_seance: 'desc' }
+    });
+  } catch (error) {
+    console.error('Error fetching seances with decisions:', error);
+    throw new Error('Failed to fetch seances with decisions');
+  }
 }
+
 
 }

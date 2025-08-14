@@ -40,7 +40,6 @@ CREATE TABLE "ComiteDirection" (
     "fiche_technique" TEXT,
     "carte_projettee" TEXT,
     "rapport_police" TEXT,
-    "instructeur" TEXT,
 
     CONSTRAINT "ComiteDirection_pkey" PRIMARY KEY ("id_comite")
 );

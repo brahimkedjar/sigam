@@ -20,7 +20,6 @@ export class CreateComiteDto {
   fiche_technique?: string;
   carte_projettee?: string;
   rapport_police?: string;
-  instructeur?: string;
   decisions?: CreateDecisionDto[];
 }
 
@@ -32,7 +31,6 @@ export class UpdateComiteDto {
   fiche_technique?: string;
   carte_projettee?: string;
   rapport_police?: string;
-  instructeur?: string;
   decisions?: CreateDecisionDto[];
 }
 

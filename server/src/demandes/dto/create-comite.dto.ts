@@ -8,5 +8,9 @@ export class CreateComiteDto {
   fiche_technique?: string;
   carte_projettee?: string;
   rapport_police?: string;
-  instructeur?: string;
+  id_proc?: number; // Make it optional for backward compatibility
+}
+
+export class CreateComiteWithProcedureDto extends CreateComiteDto {
+  declare id_proc: number; // Required for procedure-specific comités
 }

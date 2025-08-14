@@ -372,15 +372,13 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
                     {filteredDemandes.map((d: any) => {
 
   const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
-
+  console.log("ssssssssss:", d.procedure?.ProcedureEtape);
                       const phaseConfig = currentPhase
                         ? STATUS_CONFIG[
                             currentPhase.etape.lib_etape as keyof typeof STATUS_CONFIG
                           ]
                         : STATUS_CONFIG.default;
-
                       const statusConfig = getStatusConfig(d.procedure?.statut_proc);
-
                       return (
                         <tr key={d.id_demande}>
                           <td>{d.code_demande}</td>
@@ -392,7 +390,7 @@ const currentPhase = getCurrentPhase(d.procedure?.ProcedureEtape || []);
                               className={`${styles['status-tag']} ${statusConfig.bg} ${statusConfig.text}`}
                             >
                               {statusConfig.icon}
-                              {getStatutLabel(d.procedure?.statut_proc)}
+                              {d.procedure?.statut_proc}
                             </div>
                           </td>
                           <td>

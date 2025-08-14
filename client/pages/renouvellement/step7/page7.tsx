@@ -58,7 +58,6 @@ type ComiteDirection = {
   fiche_technique?: string;
   carte_projettee?: string;
   rapport_police?: string;
-  instructeur?: string;
   decisions: DecisionCD[];
 };
 
@@ -77,7 +76,6 @@ interface ComiteFormData {
   fiche_technique: string;
   carte_projettee: string;
   rapport_police: string;
-  instructeur: string;
   decisions?: DecisionCD[];
 }
 
@@ -213,7 +211,6 @@ const [comiteForm, setComiteForm] = useState<ComiteFormData>({
   fiche_technique: '',
   carte_projettee: '',
   rapport_police: '',
-  instructeur: '',
   decisions: []
 });
 
@@ -437,7 +434,6 @@ const handleEditComite = () => {
     fiche_technique: currentComite.fiche_technique || '',
     carte_projettee: currentComite.carte_projettee || '',
     rapport_police: currentComite.rapport_police || '',
-    instructeur: currentComite.instructeur || '',
     decisions: currentComite.decisions.map(d => ({
       decision_cd: d.decision_cd,
       duree_decision: d.duree_decision,
@@ -457,7 +453,6 @@ const handleCreateComite = () => {
     fiche_technique: '',
     carte_projettee: '',
     rapport_police: '',
-    instructeur: '',
     decisions: [{
       decision_cd: 'favorable',
       duree_decision: undefined,
@@ -786,9 +781,7 @@ const handleNext = () => {
                               <div className={styles.detailItem}>
                                 <strong>Date du comité:</strong> {new Date(currentComite.date_comite).toLocaleDateString()}
                               </div>
-                              <div className={styles.detailItem}>
-                                <strong>Instructeur:</strong> {currentComite.instructeur || 'Non spécifié'}
-                              </div>
+                             
                             </div>
 
                             <div className={styles.detailItem}>
@@ -916,19 +909,6 @@ const handleNext = () => {
                           })}
                           placeholder="Compte-rendu des discussions..."
                           rows={4}
-                        />
-                      </div>
-
-                      <div className={styles.formGroup}>
-                        <label>Instructeur assigné</label>
-                        <input
-                          type="text"
-                          value={comiteForm.instructeur}
-                          onChange={(e) => setComiteForm({
-                            ...comiteForm,
-                            instructeur: e.target.value
-                          })}
-                          placeholder="Nom de l'instructeur"
                         />
                       </div>
 

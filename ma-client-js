@@ -39,7 +39,7 @@ model AuditLog {
   previousState    Json?     // Stores the complete previous state for undo
   contextId        String?   // For grouping related actions
   sessionId        String?   // For tracking user sessions
-
+  
   @@index([entityType])
   @@index([entityId])
   @@index([userId])
@@ -58,7 +58,7 @@ model User {
   roleId    Int?
   role      Role?    @relation(fields: [roleId], references: [id])
   userGroups UserGroup[]
-  sessions  Session[]
+  sessions  Session[]  
   createdAt DateTime @default(now())
   AuditLog AuditLog[]
 }
@@ -140,10 +140,10 @@ model DossierFournis {
   date_depot      DateTime @default(now())
   statut_dossier  String   // e.g., 'complet', 'incomplet', 'en_revision'
   remarques       String?
-
+  
   demande         Demande  @relation(fields: [id_demande], references: [id_demande])
   documents       DossierFournisDocument[]
-
+  
   @@map("dossier_fournis")
 }
 
@@ -187,12 +187,12 @@ model TypePermis {
   code_type         String    @unique // ppm / PEM / PXC ...
   regime            String    // mines / carriere
   duree_initiale    Float       // in years
-  nbr_renouv_max  Int
+  nbr_renouv_max  Int  
   duree_renouv    Float     // max renewal times
   delai_renouv      Int       // days before expiration
   superficie_max    Float?
   permis            Permis[]
-
+  
   @@map("typepermis")
   DossierAdministratif DossierAdministratif[]
   Demande Demande[]
@@ -339,14 +339,14 @@ model Demande {
   id_daira         Int?
   id_commune       Int?
   lieu_dit_ar      String?
-  statut_demande              StatutDemande?
+  statut_demande              StatutDemande? 
   wilaya           Wilaya?    @relation(fields: [id_wilaya], references: [id_wilaya])
   daira            Daira?     @relation(fields: [id_daira], references: [id_daira])
   commune          Commune?   @relation(fields: [id_commune], references: [id_commune])
   procedure       Procedure     @relation(fields: [id_proc], references: [id_proc])
   detenteur       DetenteurMorale? @relation(fields: [id_detenteur], references: [id_detenteur])
   expertMinier ExpertMinier? @relation(fields: [id_expert], references: [id_expert])
-  typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id])
+  typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id]) 
   dossiersFournis DossierFournis[]
 
   @@map("demande")
@@ -362,7 +362,7 @@ model ProcedureRenouvellement {
   date_fin_validite   DateTime? // Set when finalized
   commentaire         String?   // Optional
   procedure               Procedure @relation(fields: [id_proc], references: [id_proc])
-
+  
 }
 
 
@@ -561,7 +561,6 @@ model ComiteDirection {
   fiche_technique    String?
   carte_projettee    String?
   rapport_police     String?
-
   decisionCDs        DecisionCD[]
 }
 
@@ -569,7 +568,7 @@ model DecisionCD {
   id_decision     Int              @id @default(autoincrement())
   id_comite       Int
   comite          ComiteDirection  @relation(fields: [id_comite], references: [id_comite])
-
+  
   decision_cd     EnumDecisionComite
   duree_decision  Int?
   commentaires    String?

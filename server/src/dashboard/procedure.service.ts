@@ -32,6 +32,22 @@ export class ProcedureService {
   });
 }
 
+// In your procedure.service.ts
+async getProcedureById(id: number) {
+  return this.prisma.procedure.findUnique({
+    where: { id_proc: id },
+    include: {
+      typeProcedure: true,
+      demandes: {
+        include: {
+          detenteur: true
+        },
+        take: 1
+      }
+    }
+  });
+}
+
 async getProceduresEnCours() {
   const data = await this.prisma.demande.findMany({
     where: {

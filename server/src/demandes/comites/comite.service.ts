@@ -1,24 +1,33 @@
 // comites/comite.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateComiteDto } from '../dto/create-comite.dto';
+import { CreateComiteWithProcedureDto, CreateComiteDto } from '../dto/create-comite.dto';
 
 @Injectable()
 export class ComiteService {
   constructor(private prisma: PrismaService) {}
 
-  async createComite(createComiteDto: CreateComiteDto) {
+  async createComite(createComiteDto: CreateComiteWithProcedureDto) {
     return this.prisma.comiteDirection.create({
       data: {
         id_seance: createComiteDto.id_seance,
         date_comite: createComiteDto.date_comite,
-        numero_decision: createComiteDto.numero_decision,
-        objet_deliberation: createComiteDto.objet_deliberation,
+        numero_decision: `${createComiteDto.numero_decision}-${createComiteDto.id_proc}`,
+        objet_deliberation: `${createComiteDto.objet_deliberation} (Procédure ${createComiteDto.id_proc})`,
         resume_reunion: createComiteDto.resume_reunion,
         fiche_technique: createComiteDto.fiche_technique,
         carte_projettee: createComiteDto.carte_projettee,
         rapport_police: createComiteDto.rapport_police,
-        instructeur: createComiteDto.instructeur
+        decisionCDs: {
+          create: {
+            decision_cd: 'favorable', // Default value
+            duree_decision: null,
+            commentaires: null
+          }
+        }
+      },
+      include: {
+        decisionCDs: true
       }
     });
   }
@@ -34,7 +43,20 @@ export class ComiteService {
         fiche_technique: updateComiteDto.fiche_technique,
         carte_projettee: updateComiteDto.carte_projettee,
         rapport_police: updateComiteDto.rapport_police,
-        instructeur: updateComiteDto.instructeur
+      }
+    });
+  }
+
+  async getComiteBySeanceAndProcedure(seanceId: number, procedureId: number) {
+    return this.prisma.comiteDirection.findFirst({
+      where: {
+        id_seance: seanceId,
+        numero_decision: {
+          endsWith: `-${procedureId}`
+        }
+      },
+      include: {
+        decisionCDs: true
       }
     });
   }

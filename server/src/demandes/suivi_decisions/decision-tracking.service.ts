@@ -17,6 +17,7 @@ export class DecisionTrackingService {
           include: {
             detenteur: true,
           },
+          take: 1,
         },
         seance: {
           include: {
@@ -39,65 +40,44 @@ export class DecisionTrackingService {
       where: { id_seance: { not: null } },
     });
 
-    const approved = await this.prisma.procedure.count({
-      where: {
-        id_seance: { not: null },
-        seance: {
-          comites: {
-            some: {
-              decisionCDs: {
-                some: { decision_cd: 'favorable' },
-              },
-            },
-          },
-        },
-      },
+    const approved = await this.prisma.decisionCD.count({
+      where: { decision_cd: 'favorable' }
     });
 
-    const rejected = await this.prisma.procedure.count({
-      where: {
-        id_seance: { not: null },
-        seance: {
-          comites: {
-            some: {
-              decisionCDs: {
-                some: { decision_cd: 'defavorable' },
-              },
-            },
-          },
-        },
-      },
+    const rejected = await this.prisma.decisionCD.count({
+      where: { decision_cd: 'defavorable' }
     });
 
     return { total, approved, rejected };
   }
 
   async getProcedureDetails(id: number) {
-    return this.prisma.procedure.findUnique({
-      where: { id_proc: id },
-      include: {
-        typeProcedure: true,
-        demandes: {
-          include: {
-            detenteur: true,
-            typePermis: true,
-          },
+  return this.prisma.procedure.findUnique({
+    where: { id_proc: id },
+    include: {
+      typeProcedure: true,
+      demandes: {
+        include: {
+          detenteur: true,
+          typePermis: true,
         },
-        seance: {
-          include: {
-            comites: {
-              include: {
-                decisionCDs: true,
-              },
+        take: 1,
+      },
+      seance: {
+        include: {
+          comites: {
+            include: {
+              decisionCDs: true,
             },
           },
         },
-        permis: {
-          include: {
-            detenteur: true,
-          },
+      },
+      permis: {
+        include: {
+          detenteur: true,
         },
       },
-    });
-  }
+    },
+  });
+}
 }
