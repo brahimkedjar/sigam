@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Divider, Paper } from '@mui/material';
-import { AuditLogChange } from '../../types/audit-log';
+import { AuditLogChange } from '../../src/types/audit-log';
 
 interface ChangeRendererProps {
   changes: AuditLogChange;

@@ -14,74 +14,87 @@ export class ProcedureRenouvellementService {
     private readonly procedureEtapeService: ProcedureEtapeService,
   ) {}
 
-  async startRenewalWithOriginalData(permisId: number, date_demande: string, statut: StatutProcedure) {
-    const now = new Date();
+  async startRenewalWithOriginalData(
+  permisId: number,
+  date_demande: string,
+  statut: StatutProcedure,
+) {
+  const now = new Date();
 
-    if (!date_demande || isNaN(Date.parse(date_demande))) {
-      throw new BadRequestException('La date de la demande est invalide.');
-    }
-
-    const permis = await this.prisma.permis.findUnique({
-      where: { id: permisId },
-      include: {
-        typePermis: true,
-        procedures: {
-          where: {
-            typeProcedure: {
-              libelle: 'demande',
-            },
-          },
-          include: { demandes: true },
-          orderBy: { date_debut_proc: 'asc' },
-        },
-      },
-    });
-
-    if (!permis || permis.procedures.length === 0) {
-      throw new NotFoundException('Aucune procédure initiale trouvée pour ce permis.');
-    }
-
-    const initialProcedure = permis.procedures[0];
-    const initialDemande = initialProcedure.demandes[0];
-
-    const typeProc = await this.prisma.typeProcedure.findFirst({
-      where: { libelle: { contains: 'renouvellement', mode: 'insensitive' } },
-    });
-
-    const newProcedure = await this.prisma.procedure.create({
-      data: {
-        id_typeproc: typeProc!.id,
-        num_proc: `PROC-R-${Date.now()}`,
-        date_debut_proc: new Date(),
-        statut_proc: 'EN_COURS',
-        permis: { connect: { id: permis.id } },
-      },
-    });
-
-    const parsedDate = new Date(date_demande);
-    const newDemande = await this.prisma.demande.create({
-      data: {
-        id_proc: newProcedure.id_proc,
-        id_typePermis: permis.id_typePermis,
-        code_demande: `DEM-R-${Date.now()}`,
-        statut_demande: 'EN_COURS',
-        date_demande: parsedDate,
-      },
-    });
-
-    await this.prisma.procedureRenouvellement.create({
-      data: {
-        id_demande: newDemande.id_demande,
-      },
-    });
-
-    return {
-      original_demande_id: initialDemande?.id_demande,
-      original_proc_id: initialProcedure?.id_proc,
-      new_proc_id: newProcedure.id_proc,
-      new_demande_id: newDemande.id_demande,
-    };
+  if (!date_demande || isNaN(Date.parse(date_demande))) {
+    throw new BadRequestException('La date de la demande est invalide.');
   }
+
+  const permis = await this.prisma.permis.findUnique({
+    where: { id: permisId },
+    include: {
+      typePermis: true,
+      procedures: {
+        include: {
+          demandes: {
+            include: { typeProcedure: true },
+          },
+        },
+        orderBy: { date_debut_proc: 'asc' },
+      },
+    },
+  });
+
+  if (!permis || permis.procedures.length === 0) {
+    throw new NotFoundException(
+      'Aucune procédure initiale trouvée pour ce permis.',
+    );
+  }
+
+  const initialProcedure = permis.procedures[0];
+  const initialDemande = initialProcedure.demandes[0];
+
+  const typeProc = await this.prisma.typeProcedure.findFirst({
+    where: { libelle: { contains: 'renouvellement', mode: 'insensitive' } },
+  });
+
+  if (!typeProc) {
+    throw new NotFoundException('TypeProcedure "renouvellement" introuvable');
+  }
+
+  // 🔑 Create only procedure (no id_typeproc here)
+  const newProcedure = await this.prisma.procedure.create({
+    data: {
+      num_proc: `PROC-R-${Date.now()}`,
+      date_debut_proc: new Date(),
+      statut_proc: statut,
+      permis: { connect: { id: permis.id } },
+    },
+  });
+
+  const parsedDate = new Date(date_demande);
+
+  // 🔑 Link typeProcedure here at demande level
+  const newDemande = await this.prisma.demande.create({
+    data: {
+      id_proc: newProcedure.id_proc,
+      id_typePermis: permis.id_typePermis,
+      id_typeproc: typeProc.id, // moved here
+      code_demande: `DEM-R-${Date.now()}`,
+      statut_demande: 'EN_COURS',
+      date_demande: parsedDate,
+    },
+  });
+
+  await this.prisma.procedureRenouvellement.create({
+    data: {
+      id_demande: newDemande.id_demande,
+    },
+  });
+
+  return {
+    original_demande_id: initialDemande?.id_demande,
+    original_proc_id: initialProcedure?.id_proc,
+    new_proc_id: newProcedure.id_proc,
+    new_demande_id: newDemande.id_demande,
+  };
+}
+
 
   async getPermisForProcedure(procedureId: number) {
     const procedure = await this.prisma.procedure.findUnique({
@@ -304,11 +317,15 @@ export class ProcedureRenouvellementService {
 
   async getProcedureWithType(id: number) {
     const procedure = await this.prisma.procedure.findUnique({
-      where: { id_proc: id },
-      include: {
-        typeProcedure: true,
+    where: { id_proc: id },
+    include: {
+      demandes: {
+        include: {
+          typeProcedure: true, // 🔑 typeProcedure now via demande
+        },
       },
-    });
+    },
+  });
 
     if (!procedure) {
       throw new NotFoundException('Procédure non trouvée');

@@ -13,22 +13,22 @@ async getFullDemandeSummaryByProc(@Param('idProc', ParseIntPipe) idProc: number)
     include: {
       procedure: {
         include: {
-          typeProcedure: {
-            include: {
-              DossierAdministratif: {
-                include: {
-                  dossierDocuments: {
-                    include: {
-                      document: true,
-                    },
-                  },
-                  typePermis: true,
-                },
-              },
-            },
-          },
           SubstanceAssocieeDemande: {
             include: { substance: true },
+          },
+        },
+      },
+      typeProcedure: {
+        include: {
+          DossierAdministratif: {
+            include: {
+              dossierDocuments: {
+                include: {
+                  document: true,
+                },
+              },
+              typePermis: true,
+            },
           },
         },
       },
@@ -70,29 +70,35 @@ async getFullDemandeSummaryByProc(@Param('idProc', ParseIntPipe) idProc: number)
   return demande;
 }
 
+
   @Get('demande/:idDemande/summary')
-  async getFullDemandeSummary(@Param('idDemande', ParseIntPipe) id: number) {
+async getFullDemandeSummary(@Param('idDemande', ParseIntPipe) id: number) {
   return this.prisma.demande.findUnique({
     where: { id_demande: id },
     include: {
       procedure: {
         include: {
-          typeProcedure: {
-            include: {
-              DossierAdministratif: {
-                include: {
-                  dossierDocuments: {
-                    include: {
-                      document: true
-                    }
-                  },
-                  typePermis: true
-                }
-              }
-            }
-          },
           SubstanceAssocieeDemande: {
             include: { substance: true }
+          },
+          coordonnees: {
+            include: {
+              coordonnee: true
+            }
+          }
+        }
+      },
+      typeProcedure: {   // ✅ moved here (linked directly to demande now)
+        include: {
+          DossierAdministratif: {
+            include: {
+              dossierDocuments: {
+                include: {
+                  document: true
+                }
+              },
+              typePermis: true
+            }
           }
         }
       },
@@ -121,10 +127,11 @@ async getFullDemandeSummaryByProc(@Param('idProc', ParseIntPipe) idProc: number)
         orderBy: {
           date_depot: 'desc'
         },
-        take: 1 // Get only the latest dossier
+        take: 1
       },
       expertMinier: true
     }
   });
 }
+
 }

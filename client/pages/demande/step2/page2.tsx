@@ -10,7 +10,8 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiFileText,
-  FiAlertCircle
+  FiAlertCircle,
+  FiCheckCircle
 } from "react-icons/fi";
 import styles from "./documents.module.css";
 import Navbar from "../../navbar/Navbar";
@@ -22,6 +23,7 @@ import ProgressStepper from "../../../components/ProgressStepper";
 import { STEP_LABELS } from "../../../src/constants/steps";
 import { useViewNavigator } from "../../../src/hooks/useViewNavigator";
 import { useRouterWithLoading } from "@/src/hooks/useRouterWithLoading";
+import { toast } from "react-toastify";
 
 type Document = {
   id_doc: number;
@@ -69,29 +71,26 @@ export default function Step5_Documents() {
   const [statutProc, setStatutProc] = useState<string | null>(null);
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const [stepsReady, setStepsReady] = useState(false);
-  
+  const [showCheckAllModal, setShowCheckAllModal] = useState(false);
 
-useEffect(() => {
-  if (!idProc || !statutProc  || window.self !== window.top) return;
+  useEffect(() => {
+    if (!idProc || !statutProc || window.self !== window.top) return;
 
-  if (statutProc === 'TERMINEE') return; 
+    if (statutProc === 'TERMINEE') return; 
 
-  const activateStep = async () => {
-    try {
-      const currentUrl = window.location.pathname + window.location.search;
-      await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/2` , {
-         link: currentUrl
-      });
-    } catch (err) {
-      console.error("Échec de l'activation de l'étape");
-    }
-  };
+    const activateStep = async () => {
+      try {
+        const currentUrl = window.location.pathname + window.location.search;
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/2`, {
+           link: currentUrl
+        });
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
 
-  activateStep();
-}, [idProc, statutProc]);
-
-
-
+    activateStep();
+  }, [idProc, statutProc]);
 
   const handleOpenCahierForm = (doc: DocumentWithStatus) => {
     setSelectedCahierDoc(doc);
@@ -120,15 +119,58 @@ useEffect(() => {
     </div>
   );
 
+  const CheckAllModal = () => (
+    <div className={styles['modal-overlay']}>
+      <div className={styles['modal-content']}>
+        <div className={styles['modal-header']}>
+          <h3>Vérifier tous les documents</h3>
+          <button
+            onClick={() => setShowCheckAllModal(false)}
+            className={styles['modal-close']}
+          >
+            &times;
+          </button>
+        </div>
+        <div className={styles['modal-body']}>
+          <p>Êtes-vous sûr de vouloir marquer tous les documents comme présents ?</p>
+          <div className={styles['modal-actions']}>
+            <button 
+              className={styles['btn']} 
+              onClick={() => setShowCheckAllModal(false)}
+            >
+              Annuler
+            </button>
+            <button 
+              className={`${styles['btn']} ${styles['btn-primary']}`}
+              onClick={handleCheckAllPresent}
+            >
+              Confirmer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const handleCheckAllPresent = () => {
+    const newStatusMap: Record<number, DocStatus> = {};
+    documents.forEach(doc => {
+      newStatusMap[doc.id_doc] = "present";
+    });
+    setStatusMap(newStatusMap);
+    setShowCheckAllModal(false);
+    setSuccess("Tous les documents ont été marqués comme présents");
+  };
+
   useEffect(() => {
     if (!idProc) return;
 
     axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
-  .then(res => {
-    setIdDemande(res.data.id_demande.toString());
-    setCodeDemande(res.data.code_demande);
-    setStatutProc(res.data.procedure.statut_proc); 
-  })
+      .then(res => {
+        setIdDemande(res.data.id_demande.toString());
+        setCodeDemande(res.data.code_demande);
+        setStatutProc(res.data.procedure.statut_proc); 
+      })
       .catch(err => {
         console.error("Erreur lors de la récupération de la demande", err);
         setError("Impossible de récupérer la demande");
@@ -216,27 +258,25 @@ useEffect(() => {
       setError("Erreur lors de l'approbation");
     }
   };
+const rejectDemande = async () => {
+  if (!rejectionReason) {
+    toast.warning("⚠️ Veuillez spécifier un motif de rejet");
+    return;
+  }
 
-  const rejectDemande = async () => {
-    if (!rejectionReason) {
-      setError("Veuillez spécifier un motif de rejet");
-      return;
-    }
+  try {
+    await axios.put(`${apiURL}/api/demande/${idDemande}/status`, {
+      statut_demande: 'REJETEE',
+      motif_rejet: rejectionReason,
+    });
 
-    try {
-      await axios.put(
-        `${apiURL}/api/demande/${idDemande}/status`,
-        {
-          statut_demande: 'REJETEE',
-          motif_rejet: rejectionReason
-        }
-      );
-      setSuccess("Demande rejetée avec succès");
-    } catch (err) {
-      console.error("Erreur lors du rejet", err);
-      setError("Erreur lors du rejet");
-    }
-  };
+    toast.success("✅ Demande rejetée avec succès");
+  } catch (err) {
+    console.error("Erreur lors du rejet", err);
+
+    toast.error("❌ Erreur lors du rejet");
+  }
+};
 
   const handleFileUpload = async (id: number, file: File) => {
     const formData = new FormData();
@@ -283,8 +323,6 @@ useEffect(() => {
       const dossierSubmitted = await submitDossier();
       if (!dossierSubmitted) return;
       router.push(`/demande/step3/page3?id=${idProc}`);
-
-
     } catch (err) {
       console.error("Erreur lors de la récupération du résumé", err);
       setError("Erreur lors de submitted dossier");
@@ -299,33 +337,29 @@ useEffect(() => {
   };
 
   const handleSaveEtape = async () => {
-  if (!idProc) {
-    setEtapeMessage("ID procedure introuvable !");
-    return;
-  }
+    if (!idProc) {
+      setEtapeMessage("ID procedure introuvable !");
+      return;
+    }
 
-  if (statutProc === 'TERMINEE') {
-    setEtapeMessage("Procédure déjà terminée.");
-    return;
-  }
+    if (statutProc === 'TERMINEE') {
+      setEtapeMessage("Procédure déjà terminée.");
+      return;
+    }
 
-  setSavingEtape(true);
-  setEtapeMessage(null);
+    setSavingEtape(true);
+    setEtapeMessage(null);
 
-  try {
-     
-    await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/2`);
-
-    setEtapeMessage("Étape 2 enregistrée avec succès !");
-  } catch (err) {
-    console.error(err);
-    setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
-  } finally {
-    setSavingEtape(false);
-  }
-};
-
-
+    try {
+      await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/2`);
+      setEtapeMessage("Étape 2 enregistrée avec succès !");
+    } catch (err) {
+      console.error(err);
+      setEtapeMessage("Erreur lors de l'enregistrement de l'étape.");
+    } finally {
+      setSavingEtape(false);
+    }
+  };
 
   return (
     <div className={styles['app-container']}>
@@ -343,7 +377,6 @@ useEffect(() => {
             <div className={styles['content-wrapper']}>
               {/* Progress Steps */}
               <ProgressStepper steps={STEP_LABELS} currentStep={currentStep} />
-
 
               <h2 className={styles['page-title']}>
                 <CgFileDocument className={styles['title-icon']} />
@@ -401,7 +434,7 @@ useEffect(() => {
                   <div className={styles['demande-actions']}>
                     <div className={styles['reject-section']}>
                       <input
-                      disabled={statutProc === 'TERMINEE'}
+                        disabled={statutProc === 'TERMINEE'}
                         type="text"
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
@@ -439,6 +472,14 @@ useEffect(() => {
                       <h3 className={styles['overview-title']}>Documents requis</h3>
                       <div className={styles['overview-value']}>{total}</div>
                     </div>
+                    <button
+                      className={styles['check-all-btn']}
+                      onClick={() => setShowCheckAllModal(true)}
+                      disabled={statutProc === 'TERMINEE' || !statutProc}
+                    >
+                      <FiCheckCircle className={styles['btn-icon']} />
+                      Tout marquer comme présent
+                    </button>
                   </div>
 
                   <div className={styles['documents-list']}>
@@ -475,7 +516,7 @@ useEffect(() => {
                           </div>
                           <div className={styles['document-actions']}>
                             <button
-                            disabled={statutProc === 'TERMINEE' || !statutProc}
+                              disabled={statutProc === 'TERMINEE' || !statutProc}
                               className={`${styles['status-btn']} ${status === "present" ? styles['active'] : ""}`}
                               onClick={() => toggleStatus(doc.id_doc, "present")}
                             >
@@ -491,14 +532,14 @@ useEffect(() => {
                               Manquant
                             </button>
                             <div className={styles['upload-section']}>
-  <label
-    htmlFor={`file-upload-${doc.id_doc}`}
-    className={`${styles['upload-btn']} ${styles['btn-outline']} ${statutProc === 'TERMINEE' || !statutProc ? styles['disabled'] : ''}`}
-  >
-    <FiUpload className={styles['btn-icon']} />
-    {fileUrl ? "Modifier" : "Upload"}
-  </label>
-</div>
+                              <label
+                                htmlFor={`file-upload-${doc.id_doc}`}
+                                className={`${styles['upload-btn']} ${styles['btn-outline']} ${statutProc === 'TERMINEE' || !statutProc ? styles['disabled'] : ''}`}
+                              >
+                                <FiUpload className={styles['btn-icon']} />
+                                {fileUrl ? "Modifier" : "Upload"}
+                              </label>
+                            </div>
 
                             {doc.nom_doc === "Cahier des charges renseigné" && (
                               <button
@@ -508,7 +549,6 @@ useEffect(() => {
                                 Remplir cahier de charge
                               </button>
                             )}
-
                           </div>
                         </div>
                       );
@@ -531,7 +571,6 @@ useEffect(() => {
                         <div className={styles['stat-value']}>{manquants}</div>
                         <div className={styles['stat-label']}>Manquants</div>
                       </div>
-
                     </div>
 
                     <div className={styles['completion-bar']}>
@@ -600,7 +639,7 @@ useEffect(() => {
               )}
             </div>
             {showCahierForm && <CahierFormModal />}
-
+            {showCheckAllModal && <CheckAllModal />}
           </div>
         </main>
       </div>

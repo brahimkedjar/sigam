@@ -8,7 +8,6 @@ import router from 'next/router';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { ViewType } from '../../src/types/viewtype';
 import { useViewNavigator } from '../../src/hooks/useViewNavigator';
-import { logAuditAction } from '../../src/utils/auditLogger';
 
 type Role = {
   id: number;

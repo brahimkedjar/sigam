@@ -7,7 +7,6 @@ import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import styles from './PersonalPlanning.module.css';
 import Link from 'next/link';
-
 interface Member {
   id_membre: number;
   nom_membre: string;
@@ -19,10 +18,11 @@ interface Procedure {
   num_proc: string;
   demandes: Array<{
     detenteur: { nom_sociétéFR: string };
+    typeProcedure: { // 🔑 Moved typeProcedure inside demande
+      libelle: string;
+    };
   }>;
-  typeProcedure: {
-    libelle: string;
-  };
+  // 🔑 Removed typeProcedure from Procedure level
 }
 
 interface Seance {
@@ -34,6 +34,8 @@ interface Seance {
   membres: Member[];
   procedures: Procedure[];
 }
+
+
 
 const localizer = dateFnsLocalizer({
   format,
@@ -49,6 +51,7 @@ export default function PersonalPlanning() {
   const [activeFilter, setActiveFilter] = useState<'today' | 'upcoming' | 'month' | 'all'>('today');
   const [calendarView, setCalendarView] = useState<boolean>(false);
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
 
   useEffect(() => {
     const fetchSeances = async () => {
@@ -232,7 +235,15 @@ export default function PersonalPlanning() {
 function SeanceRow({ seance }: { seance: Seance }) {
   const date = parseISO(seance.date_seance);
   if (!isValid(date)) return null;
+// Helper function to get procedure type
+const getProcedureType = (procedure: Procedure): string => {
+  return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
+};
 
+// Helper function to get company name
+const getSocieteName = (procedure: Procedure): string => {
+  return procedure.demandes[0]?.detenteur?.nom_sociétéFR || 'N/A';
+};
   const startTime = format(date, "HH:mm");
   const formattedDate = format(date, "EEEE d MMMM yyyy", { locale: fr });
 
@@ -269,9 +280,9 @@ function SeanceRow({ seance }: { seance: Seance }) {
                 {seance.procedures.map(proc => {
                   const societe = proc.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A';
                   return (
-                    <div key={proc.id_proc} className={styles.procedureItem}>
-                      <strong>{proc.num_proc}</strong> - {societe} ({proc.typeProcedure?.libelle || 'N/A'})
-                    </div>
+                   <div key={proc.id_proc} className={styles.procedureItem}>
+  <strong>{proc.num_proc}</strong> - {getSocieteName(proc)} ({getProcedureType(proc)})
+</div>
                   );
                 })}
               </div>

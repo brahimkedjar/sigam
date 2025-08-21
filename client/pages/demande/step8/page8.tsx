@@ -14,20 +14,20 @@ import { useViewNavigator } from '@/src/hooks/useViewNavigator';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '@/public/logo.jpg';
+import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 interface Procedure {
   id_proc: number;
   num_proc: string;
   id_seance?: number;
-  typeProcedure: {
-    libelle: string;
-  };
   demandes: Array<{
+    typeProcedure: { // 🔑 Moved typeProcedure to demande level
+      libelle: string;
+    };
     detenteur: {
       nom_sociétéFR: string;
     };
   }>;
 }
-
 interface Seance {
   id_seance: number;
   num_seance: string;
@@ -67,7 +67,8 @@ interface Decision {
 const Page8: React.FC = () => {
   const router = useRouterWithLoading();
   const searchParams = useSearchParams();
-  const id = searchParams?.get('id');
+  const idProcStr = searchParams?.get('id');
+  const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const currentStep = 7;
 
   const [procedure, setProcedure] = useState<Procedure | null>(null);
@@ -80,7 +81,9 @@ const Page8: React.FC = () => {
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const { currentView, navigateTo } = useViewNavigator();
   const [detenteur, setDetenteur] = useState<string | ''>('');
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
 
+  useActivateEtape({ idProc, etapeNum: 8, statutProc });
   const getDataUrlFromImage = async (src: string): Promise<string> => {
   const response = await fetch(src);
   const blob = await response.blob();
@@ -90,7 +93,9 @@ const Page8: React.FC = () => {
     reader.readAsDataURL(blob);
   });
 };
-
+const getProcedureType = (procedure: Procedure): string => {
+  return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
+};
 const generatePDFReport = async () => {
   if (!procedure || !seance || !comite || !decision) return;
 
@@ -120,7 +125,7 @@ const generatePDFReport = async () => {
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.text(`Procédure: ${procedure.num_proc}`, 15, 45);
-    doc.text(`Type: ${procedure.typeProcedure.libelle}`, 15, 50);
+    doc.text(`Type: ${procedure ? getProcedureType(procedure) : 'N/A'}`, 15, 50);
     doc.text(`Société: ${detenteur}`, 15, 55);
 
     // Seance info
@@ -201,21 +206,21 @@ const pageCount = (doc.internal as any).getNumberOfPages();
 
 
   useEffect(() => {
-    if (id) {
+    if (idProc) {
       fetchData();
     } else {
       setError('ID de procédure manquant');
       setLoading(false);
     }
-  }, [id]);
+  }, [idProc]);
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       const [procRes,detenteur, seancesBasicRes, seancesWithDecRes] = await Promise.all([
-        axios.get(`${apiURL}/api/procedures/${id}`),
-        axios.get(`${apiURL}/api/procedures/${id}/demande`),
+        axios.get(`${apiURL}/api/procedures/${idProc}`),
+        axios.get(`${apiURL}/api/procedures/${idProc}/demande`),
         axios.get(`${apiURL}/api/seances`),
         axios.get(`${apiURL}/api/seances/with-decisions`),
       ]);
@@ -223,6 +228,7 @@ console.log('Procedure fetched:', detenteur?.data);
 
       setProcedure(procRes.data);
       setDetenteur(detenteur.data.detenteur?.nom_sociétéFR || '');
+      setStatutProc(detenteur.data.procedure.statut_proc);
       const idSeance = procRes.data.id_seance;
       if (!idSeance) {
         setError('Aucune séance associée à cette procédure');
@@ -246,7 +252,7 @@ console.log('Procedure fetched:', detenteur?.data);
       setSeance(fullSeance);
 
       const foundComite = foundSeanceWithDec.comites.find((c: Comite) =>
-        c.numero_decision.endsWith(`-${id}`)
+        c.numero_decision.endsWith(`-${idProc}`)
       );
 
       if (foundComite) {
@@ -268,7 +274,7 @@ console.log('Procedure fetched:', detenteur?.data);
   const handleSaveEtape = async () => {
     setSaving(true);
     try {
-      await axios.post(`${apiURL}/api/procedure-etape/finish/${id}/8`);
+      await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/8`);
       // Show success message or update UI
     } catch (err) {
       console.error('Erreur lors de la sauvegarde:', err);
@@ -278,11 +284,11 @@ console.log('Procedure fetched:', detenteur?.data);
   };
 
   const handleNext = () => {
-    router.push(`/demande/step9/page9?id=${id}`);
+    router.push(`/demande/step9/page9?id=${idProc}`);
   };
 
   const handlePrevious = () => {
-    router.push(`/demande/step7/page7?id=${id}`);
+    router.push(`/demande/step7/page7?id=${idProc}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -360,8 +366,8 @@ console.log('Procedure fetched:', detenteur?.data);
               <div className={styles.summaryHeader}>
                 <h2>Procédure {procedure?.num_proc}</h2>
                 <span className={styles.procedureType}>
-                  {procedure?.typeProcedure.libelle}
-                </span>
+  {procedure ? getProcedureType(procedure) : 'N/A'}
+</span>
               </div>
               <div className={styles.summaryContent}>
                 <div className={styles.summaryItem}>

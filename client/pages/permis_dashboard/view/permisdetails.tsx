@@ -48,16 +48,17 @@ interface PermisDetails {
   renewals: RenewalInfo[]; // Add this line
 }
 
-
 interface Procedure {
   id_proc: number;
   num_proc: string;
   date_debut_proc: Date;
   date_fin_proc: Date | null;
   statut_proc: string;
-  typeProcedure: {
-    libelle: string;
-  };
+  demandes: { // 🔑 Added demandes array to access typeProcedure
+    typeProcedure: {
+      libelle: string;
+    };
+  }[];
   SubstanceAssocieeDemande: {
     substance: {
       id_sub: number;
@@ -148,10 +149,13 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
   const formatDate = (date: Date | null) => {
     return date ? format(new Date(date), 'PPP', { locale: fr }) : 'Non définie';
   };
+const getProcedureType = (procedure: Procedure): string => {
+  return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
+};
 
   const procedureTypes = Array.from(
-    new Set(permis.procedures.map(p => p.typeProcedure.libelle))
-  );
+  new Set(permis.procedures.map(p => getProcedureType(p))) // 🔑 Use helper function
+);
 
   const [selectedProcedures, setSelectedProcedures] = useState<Procedure[]>([]);
 
@@ -168,14 +172,14 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
     return 'Valide';
   };
 
-  const handleProcedureTypeClick = (type: string) => {
-    const matchingProcedures = permis.procedures.filter(p => p.typeProcedure.libelle === type);
-    if (matchingProcedures.length > 0) {
-      setSelectedProcedures(matchingProcedures);
-      setSelectedProcedure(matchingProcedures[0]); // default selection
-      setIsModalOpen(true);
-    }
-  };
+ const handleProcedureTypeClick = (type: string) => {
+  const matchingProcedures = permis.procedures.filter(p => getProcedureType(p) === type); // 🔑 Use helper function
+  if (matchingProcedures.length > 0) {
+    setSelectedProcedures(matchingProcedures);
+    setSelectedProcedure(matchingProcedures[0]); // default selection
+    setIsModalOpen(true);
+  }
+};
 
 
 
@@ -225,43 +229,44 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
     return allSubstances;
   };
 
-  const handleViewProcedure = (procedure: Procedure) => {
-    const isRenewal = procedure.typeProcedure.libelle.toLowerCase() === 'renouvellement';
-    const currentStep = procedure.ProcedureEtape.find(step => step.statut === 'EN_COURS');
+ const handleViewProcedure = (procedure: Procedure) => {
+  const procedureType = getProcedureType(procedure); // 🔑 Use helper function
+  const isRenewal = procedureType.toLowerCase() === 'renouvellement';
+  const currentStep = procedure.ProcedureEtape.find(step => step.statut === 'EN_COURS');
 
-    let url: string;
+  let url: string;
 
-    if (isRenewal) {
-      // Find the original procedure (non-renouvellement)
-      const original = permis.procedures.find(p =>
-        p.typeProcedure.libelle.toLowerCase() !== 'renouvellement'
-      );
+  if (isRenewal) {
+    // Find the original procedure (non-renouvellement)
+    const original = permis.procedures.find(p =>
+      getProcedureType(p).toLowerCase() !== 'renouvellement' // 🔑 Use helper function
+    );
 
-      const originalDemandeId = original?.ProcedureEtape?.[0]?.id_etape || null;
-      const originalProcId = original?.id_proc || null;
+    const originalDemandeId = original?.ProcedureEtape?.[0]?.id_etape || null;
+    const originalProcId = original?.id_proc || null;
 
-      if (currentStep) {
-        url = `/renouvellement/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
-      } else {
-        url = `/renouvellement/step2/page2?id=${procedure.id_proc}`;
-      }
-
-      // Add original params if found
-      if (originalDemandeId && originalProcId) {
-        url += `&originalDemandeId=${originalDemandeId}&original_proc_id=${originalProcId}`;
-      }
-
+    if (currentStep) {
+      url = `/renouvellement/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
     } else {
-      // Non-renewal
-      if (currentStep) {
-        url = `/demande/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
-      } else {
-        url = `/demande/step2/page2?id=${procedure.id_proc}`;
-      }
+      url = `/renouvellement/step2/page2?id=${procedure.id_proc}`;
     }
 
-    window.open(url, '_blank');
-  };
+    // Add original params if found
+    if (originalDemandeId && originalProcId) {
+      url += `&originalDemandeId=${originalDemandeId}&original_proc_id=${originalProcId}`;
+    }
+
+  } else {
+    // Non-renewal
+    if (currentStep) {
+      url = `/demande/step${currentStep.etape.ordre_etape}/page${currentStep.etape.ordre_etape}?id=${procedure.id_proc}`;
+    } else {
+      url = `/demande/step2/page2?id=${procedure.id_proc}`;
+    }
+  }
+
+  window.open(url, '_blank');
+};
 
 
 
@@ -654,8 +659,8 @@ const PermisViewPage: React.FC<Props> = ({ permis }) => {
             </button>
 
             <h2 className={styles.modalTitle}>
-              {selectedProcedure.typeProcedure.libelle} - {selectedProcedure.num_proc}
-            </h2>
+  {getProcedureType(selectedProcedure)} - {selectedProcedure.num_proc}
+</h2>
 
             <div className={styles.modalBody}>
               <div className={styles.modalProcedureInfo}>

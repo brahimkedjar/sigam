@@ -119,32 +119,34 @@ async findAll1(pagination: { skip?: number; take?: number } = {}) {
       statut: true,
       procedures: {
         include: {
-          typeProcedure: true,
+          // ❌ remove typeProcedure (not on Procedure anymore)
           SubstanceAssocieeDemande: {
             include: {
-              substance: true
-            }
+              substance: true,
+            },
           },
           ProcedureEtape: {
             include: {
-              etape: true
+              etape: true,
             },
             orderBy: {
               etape: {
-                ordre_etape: 'asc'
-              }
-            }
+                ordre_etape: 'asc',
+              },
+            },
           },
           demandes: {
             include: {
-              detenteur: true
-            }
-          }
-        }
-      }
-    }
+              detenteur: true,
+              typeProcedure: true, // ✅ now included via demande
+            },
+          },
+        },
+      },
+    },
   });
 }
+
 
 async delete(id: number) {
   return this.prisma.permis.delete({

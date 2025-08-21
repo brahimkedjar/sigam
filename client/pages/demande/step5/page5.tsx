@@ -91,6 +91,7 @@ export default function Step4_Substances() {
   const [savingEtape, setSavingEtape] = useState(false);
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<any>(null);
+  const [superficiermax, setsuperficier] = useState(0);
 
   // Administrative divisions state
   const [wilayas, setWilayas] = useState<Wilaya[]>([]);
@@ -124,8 +125,9 @@ export default function Step4_Substances() {
         setIdDemande(demande.id_demande);
         setCodeDemande(demande.code_demande);
         setStatutProc(res.data.procedure.statut_proc);
+        setsuperficier(demande.typePermis.superficie_max)
         if (demande.coordonnees) setPoints(demande.coordonnees);
-
+        console.log("sssssssssssssssssss",demande)
         // Set initial values
         const wilayaId = demande.id_wilaya?.toString() || '';
         const dairaId = demande.id_daira?.toString() || '';
@@ -257,7 +259,7 @@ export default function Step4_Substances() {
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
-  const submitCoordinates = async (statutCoord: 'DEMANDE_INITIALE'= 'DEMANDE_INITIALE') => {
+  const submitCoordinates = async (statutCoord: 'DEMANDE_INITIALE' = 'DEMANDE_INITIALE') => {
   setIsSaving(true);
 
   const payload = {
@@ -298,6 +300,16 @@ const saveCoordinatesToBackend = async () => {
     return;
   }
 
+  // 🔥 Check superficie max before saving
+  if (polygonArea !== null && polygonArea / 10000 > superficiermax) {
+    toast.warning(
+      `⚠️ La superficie calculée (${(polygonArea / 10000).toFixed(
+        2
+      )} Ha) dépasse la limite autorisée (${superficiermax} Ha)`
+    );
+    return;
+  }
+
   const newPoints = points.map((p) => ({
     x: parseFloat(p.x),
     y: parseFloat(p.y),
@@ -306,7 +318,8 @@ const saveCoordinatesToBackend = async () => {
 
   try {
     const existingRes = await fetch(`${apiURL}/coordinates/procedure/${idProc}`);
-    if (!existingRes.ok) throw new Error('Erreur lors de la récupération des coordonnées existantes');
+    if (!existingRes.ok)
+      throw new Error('Erreur lors de la récupération des coordonnées existantes');
 
     const existing = await existingRes.json();
 
@@ -316,7 +329,6 @@ const saveCoordinatesToBackend = async () => {
       z: parseFloat(pc.coordonnee.z),
     }));
 
-    // Save to state to pass into modal if needed
     setExistingCoords(existingPoints);
 
     const areEqual =
@@ -335,7 +347,6 @@ const saveCoordinatesToBackend = async () => {
       return;
     }
 
-    // Ask confirmation before replacing existing coordinates
     if (existingPoints.length > 0) {
       setShowModal(true);
     } else {
@@ -346,6 +357,7 @@ const saveCoordinatesToBackend = async () => {
     toast.error('Erreur de vérification des coordonnées existantes');
   }
 };
+
 
 
 
@@ -655,7 +667,7 @@ const saveCoordinatesToBackend = async () => {
                       {/* Add/Save Buttons */}
                       <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'space-between', marginBottom: '6px' }}>
                         <button
-                        disabled={statutProc === 'TERMINEE' || !statutProc}
+                        disabled={ !statutProc}
                           className={styles['btn-add-row']}
                           onClick={() => addPoint()}
                         >
@@ -664,32 +676,76 @@ const saveCoordinatesToBackend = async () => {
                         </button>
 
                         <>
-      <button  className={styles['btn-save']} onClick={saveCoordinatesToBackend} disabled={isSaving || statutProc === 'TERMINEE' || !statutProc}>
-        Enregistrer les coordonnées  <FiSave className={styles['btn-icon']} />
-      </button>
+     <button
+  className={`${styles['btn-save']} ${
+    isSaving ||
+    !statutProc ||
+    (polygonArea !== null && polygonArea / 10000 > superficiermax)
+      ? styles['btn-disabled']
+      : ''
+  }`}
+  onClick={saveCoordinatesToBackend}
+  disabled={
+    isSaving ||
+    !statutProc ||
+    (polygonArea !== null && polygonArea / 10000 > superficiermax)
+  }
+>
+  {isSaving ? (
+    <>
+      <span className={styles['spinner']} /> Enregistrement...
+    </>
+  ) : (
+    <>
+      Enregistrer les coordonnées <FiSave className={styles['btn-icon']} />
+    </>
+  )}
+</button>
+
 
       {showModal && (
-        <ConfirmReplaceModal
-          coordinates={existingCoords}
-          onCancel={() => setShowModal(false)}
-          onConfirm={submitCoordinates}
-        />
-      )}
+  <ConfirmReplaceModal
+    coordinates={existingCoords}
+    onCancel={() => setShowModal(false)}
+    onConfirm={() => submitCoordinates()} // <-- wrap it!
+  />
+)}
+
     </>
                       </div>
                     </div>
 
                     {/* Polygon Area Display */}
-                    {polygonArea && (
-                      <div className={styles['polygon-info']}>
-                        <div className={styles['info-row']}>
-                          <span className={styles['info-label']}>Superficie calculée :&nbsp;</span>
-                          <span className={styles['info-value']}>
-                            {(polygonArea / 10000).toFixed(2)} Ha
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {polygonArea && superficiermax && (
+  <div className={styles['polygon-info']}>
+    <div className={styles['info-row']}>
+      <span className={styles['info-label']}>Superficie calculée :&nbsp;</span>
+      <span
+        className={`${styles['info-value']} ${
+          polygonArea / 10000 > superficiermax
+            ? styles['error-text']
+            : styles['success-text']
+        }`}
+      >
+        {(polygonArea / 10000).toFixed(2)} Ha
+      </span>
+    </div>
+
+    <div className={styles['info-row']}>
+      <span className={styles['info-label']}>Superficie maximale autorisée :&nbsp;</span>
+      <span className={styles['info-value']}>
+        {superficiermax} Ha
+      </span>
+    </div>
+
+    {polygonArea / 10000 > superficiermax && (
+      <div className={styles['warning-box']}>
+        ⚠️ La superficie calculée dépasse la limite maximale autorisée pour ce type de permis.
+      </div>
+    )}
+  </div>
+)}
+
                   </div>
                 </div>
               {/* Location Information Card */}

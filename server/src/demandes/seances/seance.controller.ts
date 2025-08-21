@@ -38,14 +38,14 @@ export class SeanceController {
   async findAllMembers() {
     return this.seanceService.findAllmembers();
   }
-
 @Get('procedures')
 async getAllProcedures(
   @Query('search') search?: string,
   @Query('page') page = 1,
-  @Query('pageSize') pageSize = 20
+  @Query('pageSize') pageSize = 100
 ) {
-  return this.seanceService.getAllProcedures(search, +page, +pageSize);
+  const result = await this.seanceService.getAllProcedures(search, +page, +pageSize);
+  return result.data; // Return just the array
 }
 
 @Get('member/:memberId')

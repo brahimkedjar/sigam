@@ -28,4 +28,11 @@ export class PermisDashboardController {
     return this.dashboardService.getPermisTypesDistribution();
   }
 
+  @Get('status-distribution')
+  @ApiOperation({ summary: 'Get permis status distribution' })
+  @ApiResponse({ status: 200, description: 'Status distribution retrieved successfully' })
+  async getStatusDistribution() {
+    return this.dashboardService.getPermisStatusDistribution();
+  }
+
 }

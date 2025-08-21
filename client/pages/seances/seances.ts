@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 // lib/api/seances.ts
 const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -93,25 +95,27 @@ export async function getMembers(): Promise<Member[]> {
   return response.json();
 }
 
-export async function getProcedures(): Promise<Procedure[]> {
-  const response = await fetch(`${apiURL}/api/seances/procedures`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch procedures');
-  }
-  
-  const data = await response.json();
-  console.log('Procedures data:', data); // Debug log
-  
-  // Transform the data if needed
-  return data.map((proc: any) => ({
-  id_proc: proc.id_proc,
-  num_proc: proc.num_proc,
-  type: proc.typeProcedure?.libelle || 'N/A',
-  detenteur: proc.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A',
-  statut: proc.statut_proc,
-  date_debut: proc.date_debut_proc,
-  date_fin: proc.date_fin_proc
-}));
 
+// Update your getProcedures function
+export async function getProcedures(search = '', page = 1): Promise<Procedure[]> {
+  try {
+    const response = await fetch(
+      `${apiURL}/api/seances/procedures?search=${encodeURIComponent(search)}&page=${page}`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch procedures');
+    }
+    
+    const data = await response.json();
+    return data.map((proc: any) => ({
+      id_proc: proc.id_proc,
+      num_proc: proc.num_proc,
+      type: proc.typeProcedure?.libelle || 'N/A',
+      detenteur: proc.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A'
+    }));
+  } catch (error) {
+    console.error('Error in getProcedures:', error);
+    return [];
+  }
 }

@@ -60,7 +60,8 @@ export default function Sidebar({ currentView, navigateTo }: SidebarProps) {
         { id: 'manage_documents', icon: <FiFile />, label: 'Manage Documents', permission: 'manage_documents' },
         { id: 'Audit_Logs', icon: <FiFile />, label: 'Audit Logs', permission: 'Audit_Logs' },
         { id: 'gestion_experts', icon: <FiUsers />, label: 'gestion experts', permission: 'manage_documents' },
- 
+        { id: 'Configurations', icon: <FiSettings />, label: 'Configurations', permission: 'Admin-Panel' },
+
       ]
     },
     { id: 'Payments', icon: <FiDollarSign />, label: 'Paiements', permission: 'Payments' },

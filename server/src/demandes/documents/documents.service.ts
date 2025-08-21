@@ -6,46 +6,47 @@ export class DocumentsService {
   constructor(private prisma: PrismaService) {}
 
   async getDocumentsByDemande(id_demande: number) {
-    // First get the complete demande with its typePermis
-    const demande = await this.prisma.demande.findUnique({
-      where: { id_demande },
-      include: { 
-        procedure: true,
-        typePermis: true,
-        dossiersFournis: {
-          include: {
-            documents: {
-              include: {
-                document: true
-              }
+  // First get the complete demande with its typePermis and typeProcedure
+  const demande = await this.prisma.demande.findUnique({
+    where: { id_demande },
+    include: { 
+      procedure: true,
+      typePermis: true,
+      typeProcedure: true, // 🔑 now included directly
+      dossiersFournis: {
+        include: {
+          documents: {
+            include: {
+              document: true
             }
-          },
-          orderBy: {
-            date_depot: 'desc'
-          },
-          take: 1
-        }
-      },
-    });
+          }
+        },
+        orderBy: {
+          date_depot: 'desc'
+        },
+        take: 1
+      }
+    },
+  });
 
-    if (!demande?.procedure?.id_typeproc || !demande?.id_typePermis) {
-      throw new Error("Données de procédure ou type de permis manquantes.");
-    }
+  if (!demande?.id_typeproc || !demande?.id_typePermis) {
+    throw new Error("Données de type procédure ou type de permis manquantes.");
+  }
 
-    // Get the specific dossier that matches BOTH procedure type AND permit type
-    const dossier = await this.prisma.dossierAdministratif.findFirst({
-      where: { 
-        id_typeproc: demande.procedure.id_typeproc,
-        id_typePermis: demande.id_typePermis 
-      },
-      include: {
-        dossierDocuments: {
-          include: {
-            document: true,
-          },
+  // Get the specific dossier that matches BOTH procedure type AND permit type
+  const dossier = await this.prisma.dossierAdministratif.findFirst({
+    where: { 
+      id_typeproc: demande.id_typeproc,        // 🔑 from demande
+      id_typePermis: demande.id_typePermis,    // from demande
+    },
+    include: {
+      dossierDocuments: {
+        include: {
+          document: true,
         },
       },
-    });
+    },
+  });
 
     if (!dossier) {
       throw new Error("Aucun dossier administratif trouvé pour cette combinaison procédure/permis.");
@@ -167,25 +168,39 @@ export class DocumentsService {
     });
   }
 
- async updateDemandeStatus(
+async updateDemandeStatus(
   id_demande: number,
   statut_demande: 'ACCEPTEE' | 'REJETEE',
   motif_rejet?: string
 ) {
-  return this.prisma.demande.update({
+  // First, update the Demande
+  const updatedDemande = await this.prisma.demande.update({
     where: { id_demande },
     data: {
       statut_demande,
-      // Set appropriate dates and fields based on status
       ...(statut_demande === 'ACCEPTEE' && { 
         date_enregistrement: new Date(),
-        motif_rejet: null // Clear rejection reason if approving
+        motif_rejet: null,
       }),
       ...(statut_demande === 'REJETEE' && { 
         date_refus: new Date(),
-        motif_rejet: motif_rejet || "Raison non spécifiée"
+        motif_rejet: motif_rejet || "Raison non spécifiée",
       })
-    }
+    },
   });
+
+  // If the demande is rejected, also update the related Procedure
+  if (statut_demande === 'REJETEE') {
+    await this.prisma.procedure.update({
+      where: { id_proc: updatedDemande.id_proc },
+      data: {
+        statut_proc: 'TERMINEE',
+        date_fin_proc: new Date(), // optional: set the end date
+      },
+    });
+  }
+
+  return updatedDemande;
 }
+
 }

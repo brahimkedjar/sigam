@@ -11,7 +11,7 @@ import {
   deleteSeance,
   getMembers, 
   getProcedures, 
-  getNextSeanceNumber 
+  getNextSeanceNumber,
 } from './seances';
 import styles from './NewSeanceForm.module.css';
 import Link from 'next/link';
@@ -49,6 +49,8 @@ export default function SeanceManager() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentSeance, setCurrentSeance] = useState<Seance | null>(null);
+  const [loadingProcedures, setLoadingProcedures] = useState(false);
+
   const [formData, setFormData] = useState({
     date_seance: '',
     exercice: new Date().getFullYear(),
@@ -59,18 +61,67 @@ export default function SeanceManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const proceduresPerPage = 10;
+  const proceduresPerPage = 20;
   const procedureListRef = useRef<HTMLDivElement>(null);
+  const [allProcedures, setAllProcedures] = useState<Procedure[]>([]);
+  const [hasMoreProcedures, setHasMoreProcedures] = useState(true);
+
+   const fetchMoreProcedures = async () => {
+  if (loadingProcedures || !hasMoreProcedures) return;
+  
+  setLoadingProcedures(true);
+  try {
+    const nextPage = Math.ceil(allProcedures.length / 100) + 1;
+    const newProcedures = await getProcedures(searchTerm, nextPage);
+    
+    if (newProcedures.length === 0) {
+      setHasMoreProcedures(false);
+    } else {
+      setAllProcedures(prev => [...prev, ...newProcedures]);
+      setProcedures(prev => [...prev, ...newProcedures]); // Update both states
+    }
+  } catch (error) {
+    console.error('Error fetching more procedures:', error);
+  } finally {
+    setLoadingProcedures(false);
+  }
+};
+
+useEffect(() => {
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      // Reset and load new results when search changes
+      const newProcedures = await getProcedures(searchTerm, 1);
+      setProcedures(newProcedures);
+      setAllProcedures(newProcedures);
+      setCurrentPage(1);
+      setHasMoreProcedures(true);
+    } catch (error) {
+      console.error('Error searching procedures:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const debounceTimer = setTimeout(() => {
+    if (searchTerm !== '' || selectedType !== 'all') {
+      handleSearch();
+    }
+  }, 500);
+
+  return () => clearTimeout(debounceTimer);
+}, [searchTerm, selectedType]);
 
   // Filter procedures based on search term and type
   const filteredProcedures = useMemo(() => {
-    return procedures.filter(proc => {
-      const matchesSearch = proc.num_proc.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          proc.detenteur?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = selectedType === 'all' || proc.type === selectedType;
-      return matchesSearch && matchesType;
-    });
-  }, [procedures, searchTerm, selectedType]);
+  return allProcedures.filter(proc => {
+    const matchesSearch = proc.num_proc.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        proc.detenteur?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === 'all' || proc.type === selectedType;
+    return matchesSearch && matchesType;
+  });
+}, [allProcedures, searchTerm, selectedType]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredProcedures.length / proceduresPerPage);
@@ -98,25 +149,27 @@ export default function SeanceManager() {
   }, [currentPage]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [seancesData, membersData, proceduresData] = await Promise.all([
-          getSeances(),
-          getMembers(),
-          getProcedures()
-        ]);
-        setSeances(seancesData);
-        setMembers(membersData);
-        console.log('proccccccccccc:', proceduresData);
-        setProcedures(proceduresData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    try {
+      const [seancesData, membersData] = await Promise.all([
+        getSeances(),
+        getMembers()
+      ]);
+      setSeances(seancesData);
+      setMembers(membersData);
+      
+      // Load initial procedures with pagination
+      const initialProcedures = await getProcedures('', 1);
+      setProcedures(initialProcedures);
+      setAllProcedures(initialProcedures);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, []);
 
   const openCreateModal = async () => {
     const nextNumber = await getNextSeanceNumber();
@@ -443,7 +496,14 @@ export default function SeanceManager() {
               </div>
 
               {/* Procedure List with CSS Scroll */}
-              <div className={styles.procedureListContainer} ref={procedureListRef}>
+              <div className={styles.procedureListContainer} ref={procedureListRef}
+              onScroll={() => {
+    if (procedureListRef.current && 
+        procedureListRef.current.scrollTop + procedureListRef.current.clientHeight >= 
+        procedureListRef.current.scrollHeight - 100) {
+      fetchMoreProcedures();
+    }
+  }}>
                 {paginatedProcedures.length > 0 ? (
                   <div className={styles.procedureList}>
                     {paginatedProcedures.map(procedure => (
@@ -475,7 +535,9 @@ export default function SeanceManager() {
                         </div>
                       </div>
                     ))}
+                     {loadingProcedures && <div className={styles.loadingMore}>Chargement...</div>}
                   </div>
+                 
                 ) : (
                   <div className={styles.noResults}>
                     Aucune procédure trouvée

@@ -181,34 +181,36 @@ model StatutPermis {
 
 model TypePermis {
   id                Int       @id @default(autoincrement())
-  id_droit         Int
-  id_taxe          Int
-  lib_type          String    @unique   //Permis de prospection / Permis d'exploration ...
-  code_type         String    @unique // ppm / PEM / PXC ...
-  regime            String    // mines / carriere
-  duree_initiale    Float       // in years
-  nbr_renouv_max  Int
-  duree_renouv    Float     // max renewal times
-  delai_renouv      Int       // days before expiration
+  lib_type          String    
+  code_type         String   
+  regime            String
+  duree_initiale    Float
+  nbr_renouv_max    Int
+  duree_renouv      Float
+  delai_renouv      Int
   superficie_max    Float?
   permis            Permis[]
 
+  barems            BaremProduitetDroit[]
+
   @@map("typepermis")
   DossierAdministratif DossierAdministratif[]
-  Demande Demande[]
-  barem            BaremProduitetDroit @relation(fields: [id_droit], references: [id])
-  taxe             SuperficiaireBareme @relation(fields: [id_taxe], references: [id])
+  Demande            Demande[]
+  taxe               SuperficiaireBareme @relation(fields: [id_taxe], references: [id])
+  id_taxe            Int
+  PermisTemplate     PermisTemplate[]
 }
 
 model TypeProcedure {
   id                Int         @id @default(autoincrement())
-  libelle           String?     // demande / extention / renouvellement / mofification / fusion ...
+  libelle           String?
   description       String?
-  procedures        Procedure[]
-  id_droit         Int?
+  demandes          Demande[]
+
+  barems            BaremProduitetDroit[]
+
   @@map("typeprocedure")
   DossierAdministratif DossierAdministratif[]
-  barem            BaremProduitetDroit? @relation(fields: [id_droit], references: [id])
 }
 
 
@@ -246,6 +248,38 @@ model Permis {
   @@map("permis") // Optional: maps to actual SQL table name
   CahierCharge CahierCharge[]
   ObligationFiscale ObligationFiscale[]
+  PermisTemplate PermisTemplate[]
+  PermisHistory PermisHistory[]
+}
+
+model PermisTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  elements    Json
+  typePermis  TypePermis @relation(fields: [typePermisId], references: [id])
+  typePermisId Int
+  permis      Permis?   @relation(fields: [permisId], references: [id])
+  permisId    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  version     Int      @default(1)
+
+  @@index([typePermisId])
+  @@index([permisId])
+  @@map("permis_templates")
+}
+
+model PermisHistory {
+  id          Int      @id @default(autoincrement())
+  permis      Permis   @relation(fields: [permisId], references: [id])
+  permisId    Int
+  elements    Json
+  version     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      Int?
+
+  @@map("permis_history")
 }
 
 enum StatutProcedure {
@@ -285,7 +319,6 @@ model ProcedureEtape {
 }
 model Procedure {
   id_proc         Int         @id @default(autoincrement())
-  id_typeproc     Int
   num_proc        String      @unique
   date_debut_proc DateTime
   date_fin_proc   DateTime?
@@ -293,7 +326,6 @@ model Procedure {
   resultat        String?
   observations    String?
 
-  typeProcedure   TypeProcedure @relation(fields: [id_typeproc], references: [id])
   permis          Permis[]      @relation("PermisProcedure")
   demandes        Demande[]
   coordonnees     ProcedureCoord[]
@@ -310,6 +342,7 @@ model Procedure {
 model Demande {
   id_demande                  Int      @id @default(autoincrement())
   id_proc                     Int
+  id_typeproc                 Int
   id_detenteur                Int?
   id_expert                   Int?
   id_typePermis               Int
@@ -347,6 +380,7 @@ model Demande {
   expertMinier ExpertMinier? @relation(fields: [id_expert], references: [id_expert])
   typePermis      TypePermis    @relation(fields: [id_typePermis], references: [id])
   dossiersFournis DossierFournis[]
+  typeProcedure   TypeProcedure @relation(fields: [id_typeproc], references: [id])
   renouvellement              ProcedureRenouvellement?
   @@map("demande")
   CahierCharge CahierCharge[]
@@ -409,7 +443,7 @@ model ExpertMinier {
 
 
 model StatutJuridique {
-  id_statutJuridique Int    @id @unique
+  id_statutJuridique Int    @id @default(autoincrement())
   code_statut        String    @unique
   statut_fr          String
   statut_ar          String
@@ -816,13 +850,20 @@ model Paiement {
 }
 
 model BaremProduitetDroit {
-  id               Int       @id @default(autoincrement())
-  montant_droit_etab Float
+  id                  Int           @id @default(autoincrement())
+  montant_droit_etab  Float
   produit_attribution Float
-  typePermis       TypePermis[]
-  typeProcedures   TypeProcedure[]
+
+  typePermisId        Int
+  typePermis          TypePermis    @relation(fields: [typePermisId], references: [id])
+
+  typeProcedureId     Int
+  typeProcedure       TypeProcedure @relation(fields: [typeProcedureId], references: [id])
+
   @@map("barem_produit_droit")
 }
+
+
 
 model SuperficiaireBareme {
   id               Int       @id @default(autoincrement())

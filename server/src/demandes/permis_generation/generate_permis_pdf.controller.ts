@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { DemandeSummaryController } from '../popup/popup.controller';
-import { PdfService } from './generate_permis_pdf.service';
+import { PdfGeneratorService } from './generate_permis_pdf.service';
 
 @Controller('api/procedure')
 export class ProcedureController {
   constructor(
     private readonly procedureService: DemandeSummaryController,
-    private readonly pdfService: PdfService,
+    private readonly pdfService: PdfGeneratorService,
   ) {}
 
   @Get(':id/generate-pdf')
@@ -36,7 +36,7 @@ const data = await this.procedureService.getFullDemandeSummaryByProc(procedureId
     }
 
     try {
-      const buffer = await this.pdfService.generatePermisPDF(data, lang);
+      const buffer = await this.pdfService.generatePdf(data);
 
       res.set({
         'Content-Type': 'application/pdf',

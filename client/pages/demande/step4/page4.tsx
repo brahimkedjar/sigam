@@ -15,6 +15,7 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import ExpertDropdown from '@/components/ExpertDropdown';
+import { toast } from 'react-toastify';
 
 type ExpertMinier = {
   id_expert: number;
@@ -64,7 +65,7 @@ export default function Capacites() {
       fonction: selectedExpert.fonction,
       num_registre: selectedExpert.num_registre || '',
       organisme: selectedExpert.organisme,
-      id_expert: selectedExpert.id_expert
+      id_expert: selectedExpert.id_expert, 
     }));
   }
 }, [selectedExpert]);
@@ -148,47 +149,36 @@ const handleSaveEtape = async () => {
 
 
   const handleNext = async () => {
-    if (!idProc) {
-      setError("Identifiant de la procedure manquant");
-      return;
-    }
+  if (!idProc) {
+    toast.error("Identifiant de la procédure manquant");
+    return;
+  }
 
-    if (!form.nom_expert || !form.fonction || !form.organisme) {
-      setError("Veuillez remplir le nom de l'expert, la fonction et l'organisme");
-      return;
-    }
+  if (!form.id_expert) {
+    toast.error("Veuillez sélectionner un expert");
+    return;
+  }
 
-    try {
-     await axios.post(`${apiURL}/api/capacites`, {
-  id_demande: idDemande,
-  duree_travaux: form.duree_travaux,
-  capital_social: form.capital_social,
-  budget: form.budget,
-  description: form.description,
-  financement: form.financement,
-  nom_expert: form.nom_expert,
-  fonction: form.fonction,
-  num_registre: form.num_registre,
-  organisme: form.organisme,
-  date_demarrage_prevue: form.date_demarrage_prevue 
+  try {
+    await axios.put(`${apiURL}/api/capacites`, {
+      id_demande: idDemande,
+      duree_travaux: form.duree_travaux,
+      capital_social: form.capital_social,
+      budget: form.budget,
+      description: form.description,
+      financement: form.financement,
+      date_demarrage_prevue: form.date_demarrage_prevue,
+      id_expert: form.id_expert, // ✅ existing expert
+    });
 
-});
+    toast.success("✅ Capacités enregistrées avec succès");
+    router.push(`/demande/step5/page5?id=${idProc}`);
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ Erreur lors de l'enregistrement");
+  }
+};
 
-
-      setSuccess("Expert minier enregistré avec succès");
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement de l'expert", error);
-      setError("Erreur lors de l'enregistrement");
-    } finally {
-      setIsLoading(false);
-    }
-    if (!idProc) {
-      setError("Informations de la demande manquantes");
-      return;
-    }
-         router.push(`/demande/step5/page5?id=${idProc}`);
-  };
 
    const handleBack = () => {
   if (!idProc) {

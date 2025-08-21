@@ -35,9 +35,9 @@ async getProcedure(@Param('id') id: number) {
     return this.paymentService.getPaymentsForObligation(parseInt(obligationId));
   }
 
-  @Post('initialize/:permisId')
-  initializeObligations(@Param('permisId') permisId: string) {
-    return this.paymentService.createInitialObligations(parseInt(permisId));
+  @Post('initialize/:permisId/:procedureId')
+  initializeObligations(@Param('permisId') permisId: string,@Param('procedureId') procedureId: string) {
+    return this.paymentService.createInitialObligations(parseInt(permisId),parseInt(procedureId));
   }
 
   @Get('obligations')

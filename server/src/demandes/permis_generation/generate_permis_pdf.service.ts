@@ -1,92 +1,87 @@
+// pdf-generator.service.ts
 import { Injectable } from '@nestjs/common';
-const PdfPrinter = require('pdfmake'); // ✅ Fix import
-import * as path from 'path';
+import path from 'path';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import * as fs from 'fs';
 
 @Injectable()
-export class PdfService {
-  async generatePermisPDF(data: any, lang: 'fr' | 'ar'): Promise<Buffer> {
-   const fonts = {
-  Helvetica: {
-    normal: 'Helvetica',
-    bold: 'Helvetica-Bold',
-  },
-  Arabic: {
-    normal: path.join(process.cwd(), 'assets', 'fonts', 'Amiri-Regular.ttf'),
-    bold: path.join(process.cwd(), 'assets', 'fonts', 'Amiri-Bold.ttf'),
-  },
-};
+export class PdfGeneratorService {
+  async generatePdf(design: any): Promise<Buffer> {
+  const { elements, data } = design;
 
-    const printer = new PdfPrinter(fonts); // ✅ no more error
+  try {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595, 842]);
 
-    const docDefinition = lang === 'ar'
-      ? this.getArabicDefinition(data)
-      : this.getFrenchDefinition(data);
+    // Load custom font (Arabic compatible)
+    const fontPath = path.resolve(__dirname, './Amiri-Regular.ttf');
+    const fontBytes = fs.readFileSync(fontPath);
+    const customFont = await pdfDoc.embedFont(fontBytes);
 
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-    const chunks: any[] = [];
+    for (const element of elements) {
+      if (element.type === 'text') {
+        const text = this.replacePlaceholders(element.text, data);
 
-    return new Promise((resolve, reject) => {
-      pdfDoc.on('data', (chunk) => chunks.push(chunk));
-      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-      pdfDoc.end();
-    });
+        page.drawText(text, {
+          x: element.x,
+          y: 842 - element.y - (element.fontSize || 12),
+          size: element.fontSize || 12,
+          font: customFont,   // ✅ use custom font
+          color: this.hexToRgb(element.color || '#000000'),
+          maxWidth: element.width || 500,
+          lineHeight: element.lineHeight || 14,
+          opacity: element.opacity || 1,
+        });
+      } else if (element.type === 'rectangle') {
+          page.drawRectangle({
+            x: element.x,
+            y: 842 - element.y - (element.height || 0),
+            width: element.width || 0,
+            height: element.height || 0,
+            borderWidth: element.strokeWidth || 1,
+            borderColor: this.hexToRgb(element.stroke || '#000000'),
+            color: this.hexToRgb(element.fill || '#ffffff'),
+            opacity: element.opacity || 1
+          });
+        } else if (element.type === 'line') {
+          page.drawLine({
+            start: { x: element.x, y: 842 - element.y },
+            end: { x: element.x + (element.width || 0), y: 842 - element.y },
+            thickness: element.strokeWidth || 1,
+            color: this.hexToRgb(element.stroke || '#000000'),
+            opacity: element.opacity || 1
+          });
+        }
+      }
+      
+      return Buffer.from(await pdfDoc.save());
+    } catch (error) {
+      console.error('Error in PDF generation:', error);
+      throw new Error('Failed to generate PDF');
+    }
   }
 
-  private getFrenchDefinition(data: any): any {
-    return {
-      content: [
-        { text: 'Permis d’exploitation', style: 'header' },
-        { text: `Code permis : ${data.code_demande}`, style: 'field' },
-        { text: `Type de permis : ${data.typePermis?.lib_type}`, style: 'field' },
-        { text: `Titulaire : ${data.detenteur?.nom_sociétéFR}`, style: 'field' },
-        { text: `Wilaya : ${data.wilaya?.nom_wilaya}`, style: 'field' },
-        { text: `Daira : ${data.daira?.nom_daira}`, style: 'field' },
-        { text: `Commune : ${data.commune?.nom_commune}`, style: 'field' },
-        { text: `Lieu dit : ${data.lieu_dit || ''}`, style: 'field' },
-        { text: `Superficie : ${data.superficie || 0} ha`, style: 'field' },
-      ],
-      styles: {
-        header: { fontSize: 20, bold: true, alignment: 'center', margin: [0, 0, 0, 20] },
-        field: { fontSize: 12, margin: [0, 5] },
-      },
-      defaultStyle: { font: 'Helvetica' },
-    };
+  private hexToRgb(hex: string) {
+    const r = parseInt(hex.substring(1, 3), 16) / 255;
+    const g = parseInt(hex.substring(3, 5), 16) / 255;
+    const b = parseInt(hex.substring(5, 7), 16) / 255;
+    return rgb(r, g, b);
   }
 
-  private getArabicDefinition(data: any): any {
-  const toField = (label: string, value: string) => ({
-    columns: [
-      { text: value, alignment: 'left' },
-      { text: label, alignment: 'right' }
-    ],
-    margin: [0, 4],
-  });
+  private replacePlaceholders(text: string, data: any): string {
+    if (!text) return '';
+    
+    return text
+      .replace(/\{\{code_demande\}\}/g, data.code_demande || '')
+      .replace(/\{\{typePermis\.lib_type\}\}/g, data.typePermis?.lib_type || '')
+      .replace(/\{\{detenteur\.nom_sociétéFR\}\}/g, data.detenteur?.nom_sociétéFR || '')
+      .replace(/\{\{wilaya\.nom_wilaya\}\}/g, data.wilaya?.nom_wilaya || '')
+      .replace(/\{\{daira\.nom_daira\}\}/g, data.daira?.nom_daira || '')
+      .replace(/\{\{commune\.nom_commune\}\}/g, data.commune?.nom_commune || '')
+      .replace(/\{\{superficie\}\}/g, data.superficie || '0')
+      .replace(/\{\{duree\}\}/g, data.typePermis?.duree_initiale || '0')
+      .replace(/\{\{date\}\}/g, new Date().toLocaleDateString('fr-FR'));
+  }
 
-  return {
-    content: [
-      { text: 'رخصة الاستغلال', style: 'header' },
-      toField('رمز الرخصة:', data.code_demande),
-      toField('نوع الرخصة:', data.typePermis?.lib_type || ''),
-      toField('صاحب الامتياز:', data.detenteur?.nom_sociétéAR || ''),
-      toField('الولاية:', data.wilaya?.nom_wilaya || ''),
-      toField('الدائرة:', data.daira?.nom_daira || ''),
-      toField('البلدية:', data.commune?.nom_commune || ''),
-      toField('المكان:', data.lieu_dit || ''),
-      toField('المساحة:', `${data.superficie || 0} هكتار`),
-    ],
-    styles: {
-      header: {
-        fontSize: 20,
-        bold: true,
-        alignment: 'center',
-        margin: [0, 0, 0, 20],
-      },
-    },
-    defaultStyle: {
-      font: 'Arabic',
-      alignment: 'right',
-    },
-  };
-}
-
+  
 }

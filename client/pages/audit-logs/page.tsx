@@ -49,7 +49,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
-import { AuditLog, AuditLogChange } from '../../types/audit-log';
+import { AuditLog, AuditLogChange } from '../../src/types/audit-log';
 import ChangeRenderer from '../../components/audit/ChangeRenderer';
 import AuditTimeline from '../../components/audit/AuditTimeline';
 import AuditStats from '../../components/audit/AuditStats';

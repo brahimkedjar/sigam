@@ -6,84 +6,88 @@ export class TimelineService {
   constructor(private prisma: PrismaService) {}
 
   async getProcedureTimeline(procedureId: number) {
-    const procedure = await this.prisma.procedure.findUnique({
-      where: { id_proc: procedureId },
-      include: {
-        typeProcedure: true,
-        ProcedureEtape: {
-          include: {
-            etape: true,
-          },
-          orderBy: {
-            etape: {
-              ordre_etape: 'asc',
-            },
-          },
+  const procedure = await this.prisma.procedure.findUnique({
+    where: { id_proc: procedureId },
+    include: {
+      ProcedureEtape: {
+        include: {
+          etape: true,
         },
-        permis: true,
-        demandes: {
-          include: {
-            typePermis: true,
-            dossiersFournis: true,
+        orderBy: {
+          etape: {
+            ordre_etape: 'asc',
           },
         },
       },
-    });
-
-    if (!procedure) {
-      throw new Error('Procedure not found');
-    }
-
-    // Calculate durations and delays
-    const timeline = {
-      procedure: {
-        id: procedure.id_proc,
-        number: procedure.num_proc,
-        type: procedure.typeProcedure?.libelle || 'Unknown',
-        startDate: procedure.date_debut_proc,
-        endDate: procedure.date_fin_proc,
-        status: procedure.statut_proc,
-        totalDuration: this.calculateDuration(
-          procedure.date_debut_proc,
-          procedure.date_fin_proc
-        ),
+      permis: true,
+      demandes: {
+        include: {
+          typePermis: true,
+          typeProcedure: true, // 🔑 fetch typeProcedure here
+          dossiersFournis: true,
+        },
       },
-      steps: procedure.ProcedureEtape?.map((step) => ({
-        id: step.id_etape,
-        name: step.etape.lib_etape,
-        order: step.etape.ordre_etape,
-        plannedDuration: step.etape.duree_etape,
-        actualDuration: this.calculateDuration(
-          step.date_debut,
-          step.date_fin,
-          true
-        ),
-        startDate: step.date_debut,
-        endDate: step.date_fin,
-        status: step.statut,
-        delay: this.calculateDelay(
-          step.date_debut,
-          step.date_fin,
-          step.etape.duree_etape,
-          true
-        ),
-      })) || [],
-      demands: procedure.demandes?.map((demand) => ({
-        id: demand.id_demande,
-        code: demand.code_demande,
-        type: demand.typePermis?.lib_type || 'Unknown',
-        status: demand.statut_demande,
-        submissionDate: demand.date_demande,
-        processingTime: this.calculateDuration(
-          demand.date_demande,
-          demand.date_fin,
-          true
-        ),
-      })) || [],
-    };
+    },
+  });
 
-    return timeline;
+  if (!procedure) {
+    throw new Error('Procedure not found');
   }
+
+  // Get typeProcedure from the first demande (if exists)
+  const demandeType = procedure.demandes[0]?.typeProcedure?.libelle || 'Unknown';
+
+  // Calculate durations and delays
+  const timeline = {
+    procedure: {
+      id: procedure.id_proc,
+      number: procedure.num_proc,
+      type: demandeType, // 🔑 now from demande.typeProcedure
+      startDate: procedure.date_debut_proc,
+      endDate: procedure.date_fin_proc,
+      status: procedure.statut_proc,
+      totalDuration: this.calculateDuration(
+        procedure.date_debut_proc,
+        procedure.date_fin_proc
+      ),
+    },
+    steps: procedure.ProcedureEtape?.map((step) => ({
+      id: step.id_etape,
+      name: step.etape.lib_etape,
+      order: step.etape.ordre_etape,
+      plannedDuration: step.etape.duree_etape,
+      actualDuration: this.calculateDuration(
+        step.date_debut,
+        step.date_fin,
+        true
+      ),
+      startDate: step.date_debut,
+      endDate: step.date_fin,
+      status: step.statut,
+      delay: this.calculateDelay(
+        step.date_debut,
+        step.date_fin,
+        step.etape.duree_etape,
+        true
+      ),
+    })) || [],
+    demands: procedure.demandes?.map((demand) => ({
+      id: demand.id_demande,
+      code: demand.code_demande,
+      type: demand.typeProcedure?.libelle || 'Unknown', // 🔑 from demande
+      permitType: demand.typePermis?.lib_type || 'Unknown', // if you want both
+      status: demand.statut_demande,
+      submissionDate: demand.date_demande,
+      processingTime: this.calculateDuration(
+        demand.date_demande,
+        demand.date_fin,
+        true
+      ),
+    })) || [],
+  };
+
+  return timeline;
+}
 
   private calculateDuration(
     startDate: Date,

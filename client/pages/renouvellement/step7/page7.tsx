@@ -19,10 +19,10 @@ interface Procedure {
   id_proc: number;
   num_proc: string;
   id_seance?: number;
-  typeProcedure: {
-    libelle: string;
-  };
   demandes: Array<{
+    typeProcedure: { // 🔑 Moved typeProcedure to demande level
+      libelle: string;
+    };
     detenteur: {
       nom_sociétéFR: string;
     };
@@ -100,7 +100,9 @@ const Page8: React.FC = () => {
     reader.readAsDataURL(blob);
   });
 };
-
+const getProcedureType = (procedure: Procedure): string => {
+  return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
+};
 const handleBack = () => {
   if (!idProc) {
     setError("ID procédure manquant");
@@ -139,7 +141,7 @@ const generatePDFReport = async () => {
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.text(`Procédure: ${procedure.num_proc}`, 15, 45);
-    doc.text(`Type: ${procedure.typeProcedure.libelle}`, 15, 50);
+    doc.text(`Type: ${procedure ? getProcedureType(procedure) : 'N/A'}`, 15, 50);
     doc.text(`Société: ${detenteur}`, 15, 55);
 
     // Seance info
@@ -387,8 +389,8 @@ console.log('Procedure fetched:', detenteur?.data);
               <div className={styles.summaryHeader}>
                 <h2>Procédure {procedure?.num_proc}</h2>
                 <span className={styles.procedureType}>
-                  {procedure?.typeProcedure.libelle}
-                </span>
+  {procedure ? getProcedureType(procedure) : 'N/A'}
+</span>
               </div>
               <div className={styles.summaryContent}>
                 <div className={styles.summaryItem}>

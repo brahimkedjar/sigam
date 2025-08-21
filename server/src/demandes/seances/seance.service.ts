@@ -88,7 +88,7 @@ async findAllmembers() {
   }
 
 // seance.service.ts
-async getAllProcedures(search?: string, page = 1, pageSize = 20) {
+async getAllProcedures(search?: string, page = 1, pageSize = 100) {
   const where: any = {};
   
   if (search) {
@@ -97,39 +97,59 @@ async getAllProcedures(search?: string, page = 1, pageSize = 20) {
       { 
         demandes: {
           some: {
-            detenteur: {
-              nom_sociétéFR: { contains: search, mode: 'insensitive' }
-            }
+            OR: [
+              {
+                detenteur: {
+                  nom_sociétéFR: { contains: search, mode: 'insensitive' }
+                }
+              },
+              {
+                typeProcedure: {
+                  libelle: { contains: search, mode: 'insensitive' }
+                }
+              }
+            ]
           }
-        }
-      },
-      {
-        typeProcedure: {
-          libelle: { contains: search, mode: 'insensitive' }
         }
       }
     ];
   }
 
-  return this.prisma.procedure.findMany({
-    where,
-    include: {
-      typeProcedure: {
-        select: { libelle: true }
+  const [procedures, totalCount] = await Promise.all([
+    this.prisma.procedure.findMany({
+      where,
+      include: {
+        demandes: {
+          include: {
+            detenteur: {
+              select: { nom_sociétéFR: true }
+            },
+            typeProcedure: {
+              select: { libelle: true, id: true }
+            }
+          },
+          take: 1 // Take the first demande if there are multiple
+        }
       },
-      demandes: {
-        select: {
-          detenteur: {
-            select: { nom_sociétéFR: true }
-          }
-        },
-        take: 1 // Only get the first demande for detenteur
-      }
-    },
-    orderBy: { date_debut_proc: 'desc' },
-    skip: (page - 1) * pageSize,
-    take: pageSize
-  });
+      orderBy: { date_debut_proc: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    }),
+    this.prisma.procedure.count({ where })
+  ]);
+
+  // Transform the data to match the expected format
+  const transformedData = procedures.map(procedure => ({
+    ...procedure,
+    typeProcedure: procedure.demandes[0]?.typeProcedure || null,
+    detenteur: procedure.demandes[0]?.detenteur || null
+  }));
+
+  return {
+    data: transformedData,
+    totalCount,
+    hasMore: (page * pageSize) < totalCount
+  };
 }
 
 async update(id: number, updateSeanceDto: CreateSeanceDto) {
@@ -181,17 +201,17 @@ async getSeancesForMember(memberId: number) {
     where: {
       membres: {
         some: {
-          id_membre: memberId
-        }
-      }
+          id_membre: memberId,
+        },
+      },
     },
     include: {
       membres: {
         select: {
           id_membre: true,
           nom_membre: true,
-          prenom_membre: true
-        }
+          prenom_membre: true,
+        },
       },
       procedures: {
         select: {
@@ -201,24 +221,25 @@ async getSeancesForMember(memberId: number) {
             select: {
               detenteur: {
                 select: {
-                  nom_sociétéFR: true
-                }
-              }
-            }
+                  nom_sociétéFR: true,
+                },
+              },
+              typeProcedure: {
+                select: {
+                  libelle: true, // 🔑 get typeProcedure via demande
+                },
+              },
+            },
           },
-          typeProcedure: {
-            select: {
-              libelle: true
-            }
-          }
-        }
-      }
+        },
+      },
     },
     orderBy: {
-      date_seance: 'asc'
-    }
+      date_seance: 'asc',
+    },
   });
 }
+
 
 // seances/seance.service.ts
 async getSeancesWithDecisions() {
@@ -228,54 +249,59 @@ async getSeancesWithDecisions() {
         comites: {
           include: {
             decisionCDs: {
-              orderBy: { id_decision: 'asc' }
-            }
-          }
+              orderBy: { id_decision: 'asc' },
+            },
+          },
         },
         procedures: {
           include: {
-            typeProcedure: {
-              select: { libelle: true }
-            },
+            // 🔑 no direct typeProcedure on Procedure anymore
             permis: {
               include: {
                 procedures: {
-                  where: {
-                    typeProcedure: {
-                      libelle: 'demande' // Get only initial demand procedures
-                    }
-                  },
                   include: {
                     demandes: {
+                      where: {
+                        typeProcedure: {
+                          libelle: 'demande', // 🔑 filter via demande.typeProcedure
+                        },
+                      },
                       take: 1,
                       include: {
                         detenteur: {
-                          select: { nom_sociétéFR: true }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+                          select: { nom_sociétéFR: true },
+                        },
+                        typeProcedure: { // 🔑 now included here
+                          select: { libelle: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
             },
             demandes: {
               take: 1,
               include: {
                 detenteur: {
-                  select: { nom_sociétéFR: true }
-                }
-              }
-            }
+                  select: { nom_sociétéFR: true },
+                },
+                typeProcedure: { // 🔑 here too
+                  select: { libelle: true },
+                },
+              },
+            },
           },
-          orderBy: { id_proc: 'asc' }
-        }
+          orderBy: { id_proc: 'asc' },
+        },
       },
-      orderBy: { date_seance: 'desc' }
+      orderBy: { date_seance: 'desc' },
     });
   } catch (error) {
     console.error('Error fetching seances with decisions:', error);
     throw new Error('Failed to fetch seances with decisions');
   }
 }
+
 
 }

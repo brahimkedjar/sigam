@@ -8,8 +8,8 @@ export class CapacitesService {
  async saveCapacites(data: any) {
   const id_demande = parseInt(data.id_demande);
 
-  // 🔁 Update the demande
-  await this.prisma.demande.update({
+  // Update the Demande with capacities and selected expert
+  return this.prisma.demande.update({
     where: { id_demande },
     data: {
       duree_travaux_estimee: parseInt(data.duree_travaux),
@@ -18,27 +18,9 @@ export class CapacitesService {
       description_travaux: data.description,
       sources_financement: data.financement,
       date_demarrage_prevue: new Date(data.date_demarrage_prevue),
-    }
+      id_expert: data.id_expert, 
+    },
   });
-
-  // ✅ Insert expertMinier
-  const expert = await this.prisma.expertMinier.create({
-    data: {
-      nom_expert: data.nom_expert,
-      fonction: data.fonction,
-      num_registre: data.num_registre,
-      organisme: data.organisme
-    }
-  });
-
-  // ✅ Mise à jour de l'ID de l'expert dans la demande
-  await this.prisma.demande.update({
-    where: { id_demande },
-    data: {
-      id_expert: expert.id_expert
-    }
-  });
-
-  return { message: 'Capacités mises à jour avec succès.' };
 }
+
 }

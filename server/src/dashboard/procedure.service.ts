@@ -6,25 +6,28 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProcedureService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllProcedures() {
+async getAllProcedures() {
   return this.prisma.demande.findMany({
     include: {
+      typeProcedure: true,  // 🔑 directly from Demande now
       procedure: {
         include: {
-          typeProcedure: true,
           permis: {
             include: {
               detenteur: true,
               procedures: {
                 where: {
-                  typeProcedure: {
-                    libelle: 'demande'
+                  demandes: {
+                    some: {
+                      typeProcedure: { libelle: 'demande' }
+                    }
                   }
                 },
                 include: {
                   demandes: {
                     include: {
-                      detenteur: true
+                      detenteur: true,
+                      typeProcedure: true, // also here for consistency
                     }
                   }
                 }
@@ -51,21 +54,36 @@ export class ProcedureService {
   });
 }
 
-// In your procedure.service.ts
 async getProcedureById(id: number) {
   return this.prisma.procedure.findUnique({
     where: { id_proc: id },
     include: {
-      typeProcedure: true,
       demandes: {
         include: {
-          detenteur: true
+          detenteur: true,
+          typeProcedure: true, // 🔑 moved here instead of procedure
         },
-        take: 1
-      }
-    }
+        take: 1, // first demande
+      },
+      ProcedureEtape: {
+        include: {
+          etape: true,
+        },
+        orderBy: {
+          etape: {
+            ordre_etape: 'asc',
+          },
+        },
+      },
+      permis: {
+        include: {
+          detenteur: true,
+        },
+      },
+    },
   });
 }
+
 
 async getProceduresEnCours() {
   const data = await this.prisma.demande.findMany({
@@ -75,12 +93,10 @@ async getProceduresEnCours() {
           notIn: ['TERMINEE'],
         },
       },
-      // You can also add optional filters here
     },
     include: {
       procedure: {
         include: {
-          typeProcedure: true,
           ProcedureEtape: {
             include: {
               etape: true,
@@ -93,6 +109,7 @@ async getProceduresEnCours() {
           },
         },
       },
+      typeProcedure: true,   // ✅ now linked via demande
       detenteur: true,
     },
     orderBy: {
@@ -106,43 +123,52 @@ async getProceduresEnCours() {
 
 async deleteProcedureAndRelatedData(procedureId: number) { 
   return this.prisma.$transaction(async (prisma) => {
-    // First check if this is a renewal procedure
-    const procedure = await prisma.procedure.findUnique({
+    // First get the demande for this procedure
+    const demande = await prisma.demande.findFirst({
       where: { id_proc: procedureId },
       include: {
         typeProcedure: true,
-        permis: {
-          select: {
-            id: true,
-            nombre_renouvellements: true
-          }
-        }
-      }
+        procedure: {
+          include: {
+            permis: {
+              select: {
+                id: true,
+                nombre_renouvellements: true,
+              },
+            },
+          },
+        },
+      },
     });
 
+    if (!demande) {
+      throw new Error('Demande not found for this procedure');
+    }
+
     // If this is a renewal procedure, decrement the count
-    if (procedure?.typeProcedure.libelle!.toLowerCase() === 'renouvellement' && 
-        procedure.permis.length > 0) {
-      const permisId = procedure.permis[0].id;
-      const currentCount = procedure.permis[0].nombre_renouvellements || 0;
+    if (demande.typeProcedure.libelle?.toLowerCase() === 'renouvellement' && 
+        demande.procedure.permis.length > 0) {
+      const permisId = demande.procedure.permis[0].id;
+      const currentCount = demande.procedure.permis[0].nombre_renouvellements || 0;
       
       await prisma.permis.update({
         where: { id: permisId },
         data: {
-          nombre_renouvellements: Math.max(0, currentCount - 1)
-        }
+          nombre_renouvellements: Math.max(0, currentCount - 1),
+        },
       });
     }
-    // First get all related demandes for this procedure
+
+    // Get all related demandes for this procedure (usually 1, but safe)
     const demandes = await prisma.demande.findMany({
       where: { id_proc: procedureId },
       select: {
         id_demande: true,
         id_detenteur: true,
-        id_expert: true
-      }
+        id_expert: true,
+      },
     });
-    
+
     const demandeIds = demandes.map(d => d.id_demande);
     const detenteurIds = demandes.map(d => d.id_detenteur).filter(id => id !== null) as number[];
     const expertIds = demandes.map(d => d.id_expert).filter(id => id !== null) as number[];
@@ -152,8 +178,8 @@ async deleteProcedureAndRelatedData(procedureId: number) {
       where: { 
         dossierFournis: { 
           id_demande: { in: demandeIds } 
-        } 
-      }
+        }, 
+      },
     });
 
     // 2. Delete related DossierFournis records
@@ -315,17 +341,17 @@ if (seances?.id_seance) {
     }
 
     // 12. Delete ProcedureRenouvellement if exists
-    const demande = await this.prisma.demande.findFirst({
+    const demande1 = await this.prisma.demande.findFirst({
       where: { id_proc: procedureId },
     });
 
-    if (!demande) {
+    if (!demande1) {
       throw new NotFoundException('Demande not found for this procedure');
     }
 
     // Delete ProcedureRenouvellement records associated with the demande
     await this.prisma.procedureRenouvellement.deleteMany({
-      where: { id_demande: demande.id_demande },
+      where: { id_demande: demande1.id_demande },
     });
 
     // 13. Finally, delete the Procedure itself

@@ -38,12 +38,30 @@ import { SeanceModule } from './demandes/seances/seance.module';
 import { DecisionModule } from './demandes/decisions/decision.module';
 import { ComitenModule } from './demandes/comites/comite.module';
 import { DecisionTrackingModule } from './demandes/suivi_decisions/decision-tracking.module';
+import { TypePermisconfModule } from './configurations/type-permis/type-permis.module';
+import { StatutPermisconfModule } from './configurations/status-permis/statuts-permis.module';
+import { TypeProceduresconfModule } from './configurations/type-procedure/type-procedures.module';
+import { SuperficiaireBaremeModule } from './configurations/superficier_and_droit/superficiaire-bareme.module';
+import { BaremProduitDroitModule } from './configurations/superficier_and_droit/barem-produit-droit.module';
+import { RedevancesconfModule } from './configurations/redevance/redevances.module';
+import { SubstancesconfModule } from './configurations/substances/substances.module';
+import { StatutsJuridiquesconfconfModule } from './configurations/status_juridiques/status-juridiques.module';
+import { WilayasconfModule } from './configurations/wilayas/wilayas.module';
+import { DairasconfModule } from './configurations/dairas/dairas.module';
+import { CommunesconfModule } from './configurations/communs/communes.module';
+import { AntennesconfModule } from './configurations/antennes/antennes.module';
 
 
 @Module({
   imports: [DemandesModule,PaymentModule,ConfigModule.forRoot({
       isGlobal: true,
-    }),ProcedureRenouvellementModule,DecisionTrackingModule,ComitenModule,DecisionModule,SeanceModule,ExpertMinierModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule],
+    }),ProcedureRenouvellementModule,BaremProduitDroitModule,SuperficiaireBaremeModule,TypeProceduresconfModule,
+    RedevancesconfModule,StatutPermisconfModule,TypePermisconfModule,DecisionTrackingModule,ComitenModule,DecisionModule,
+    SeanceModule,ExpertMinierModule,SessionModule,AuditLogModule,PermisDashboardfModule,TimelineModule,CahierChargeModule,
+    GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,
+    TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,
+    InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule,SubstancesconfModule,
+    StatutsJuridiquesconfconfModule,WilayasconfModule,DairasconfModule,CommunesconfModule,AntennesconfModule],
   controllers: [DemandesController],
   providers: [DemandeService,/*{
       provide: APP_INTERCEPTOR,

@@ -1,6 +1,7 @@
 // components/ui/ProgressStepper.tsx
 import React from 'react';
 import { FiCheck } from 'react-icons/fi';
+import { useRouter } from 'next/router';
 import styles from './ProgressStepper.module.css';
 
 interface Props {
@@ -9,6 +10,23 @@ interface Props {
 }
 
 const ProgressStepper: React.FC<Props> = ({ steps, currentStep }) => {
+  const router = useRouter();
+
+  const handleStepClick = (index: number) => {
+    const stepNum = index + 1;
+
+    // take current path (e.g. /demande/step4/page4)
+    let basePath = router.asPath.split('/step')[0]; 
+
+    // preserve query params if any (?id=8, etc.)
+    const query = router.asPath.includes('?') ? router.asPath.split('?')[1] : '';
+
+    // build new url
+    const newUrl = `${basePath}/step${stepNum}/page${stepNum}${query ? `?${query}` : ''}`;
+
+    router.push(newUrl);
+  };
+
   return (
     <div className={styles.progressContainer}>
       <div className={styles.progressSteps}>
@@ -19,7 +37,10 @@ const ProgressStepper: React.FC<Props> = ({ steps, currentStep }) => {
 
           return (
             <React.Fragment key={index}>
-              <div className={styles.stepContainer}>
+              <div
+                className={`${styles.stepContainer} ${styles.clickable}`}
+                onClick={() => handleStepClick(index)}
+              >
                 <div
                   className={`
                     ${styles.stepContent}
@@ -33,10 +54,12 @@ const ProgressStepper: React.FC<Props> = ({ steps, currentStep }) => {
                   <div className={styles.stepLabel}>{label}</div>
                 </div>
                 {!isLastStep && (
-                  <div className={`
-                    ${styles.stepConnector}
-                    ${isCompleted ? styles.completedConnector : ''}
-                  `} />
+                  <div
+                    className={`
+                      ${styles.stepConnector}
+                      ${isCompleted ? styles.completedConnector : ''}
+                    `}
+                  />
                 )}
               </div>
             </React.Fragment>

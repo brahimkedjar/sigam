@@ -7,33 +7,34 @@ export class DecisionTrackingService {
   constructor(private prisma: PrismaService) {}
 
   async getDecisionTrackingData() {
-    return this.prisma.procedure.findMany({
-      where: {
-        id_seance: { not: null },
-      },
-      include: {
-        typeProcedure: true,
-        demandes: {
-          include: {
-            detenteur: true,
-          },
-          take: 1,
+  return this.prisma.procedure.findMany({
+    where: {
+      id_seance: { not: null },
+    },
+    include: {
+      demandes: {
+        include: {
+          detenteur: true,
+          typeProcedure: true, // 🔑 get TypeProcedure from demande
         },
-        seance: {
-          include: {
-            comites: {
-              include: {
-                decisionCDs: true,
-              },
+        take: 1, // only first demande
+      },
+      seance: {
+        include: {
+          comites: {
+            include: {
+              decisionCDs: true,
             },
           },
         },
       },
-      orderBy: {
-        date_debut_proc: 'desc',
-      },
-    });
-  }
+    },
+    orderBy: {
+      date_debut_proc: 'desc',
+    },
+  });
+}
+
 
   async getDecisionStats() {
     const total = await this.prisma.procedure.count({
@@ -55,13 +56,13 @@ export class DecisionTrackingService {
   return this.prisma.procedure.findUnique({
     where: { id_proc: id },
     include: {
-      typeProcedure: true,
       demandes: {
         include: {
           detenteur: true,
           typePermis: true,
+          typeProcedure: true, // 🔑 moved here
         },
-        take: 1,
+        take: 1, // you’re taking only the first demande
       },
       seance: {
         include: {

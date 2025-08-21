@@ -85,4 +85,79 @@ export class PermisDashboardService {
       color: colors[index % colors.length]
     }));
   }
+
+  // Add this new method for status distribution
+  async getPermisStatusDistribution() {
+    // Get all statuses with their counts
+    const statusData = await this.prisma.statutPermis.findMany({
+      include: {
+        _count: {
+          select: { Permis: true }
+        }
+      }
+    });
+
+    // Define colors for different statuses
+    const statusColors: Record<string, string> = {
+      'Actif': '#10B981',      // Green
+      'Expiré': '#EF4444',     // Red
+      'En attente': '#F59E0B', // Amber
+      'Suspendu': '#8B5CF6',   // Violet
+      'Révoqué': '#64748B',    // Gray
+      'default': '#3B82F6'     // Blue (default)
+    };
+
+    return statusData.map(status => ({
+      name: status.lib_statut,
+      value: status._count.Permis,
+      color: statusColors[status.lib_statut] || statusColors.default
+    }));
+  }
+
+  // Alternative method if you want to include expiration-based status
+  async getPermisStatusDistributionWithExpiration() {
+    // Get status-based counts
+    const statusData = await this.prisma.statutPermis.findMany({
+      include: {
+        _count: {
+          select: { Permis: true }
+        }
+      }
+    });
+
+    // Get count of expired permits regardless of their status
+    const expiredCount = await this.prisma.permis.count({
+      where: {
+        date_expiration: {
+          lt: new Date()
+        }
+      }
+    });
+
+    // Define colors for different statuses
+    const statusColors: Record<string, string> = {
+      'Actif': '#10B981',      // Green
+      'Expiré': '#EF4444',     // Red
+      'En attente': '#F59E0B', // Amber
+      'Suspendu': '#8B5CF6',   // Violet
+      'Révoqué': '#64748B',    // Gray
+      'default': '#3B82F6'     // Blue (default)
+    };
+
+    const result = statusData.map(status => ({
+      name: status.lib_statut,
+      value: status._count.Permis,
+      color: statusColors[status.lib_statut] || statusColors.default
+    }));
+
+    // Add expired count as a separate category if needed
+    // Note: This might double-count permits that are marked as expired in both status and date
+    result.push({
+      name: 'Expiré (par date)',
+      value: expiredCount,
+      color: '#EF4444'
+    });
+
+    return result;
+  }
 }

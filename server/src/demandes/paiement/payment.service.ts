@@ -91,7 +91,7 @@ async getObligationsForPermis(permisId: number): Promise<ObligationResponseDto[]
     return payments.map(payment => this.mapToPaymentResponseDto(payment));
   }
 
-  async createInitialObligations(permisId: number) {
+  async createInitialObligations(permisId: number,procedureId: number) {
   // First check if obligations already exist
   const existingObligations = await this.prisma.obligationFiscale.findMany({
     where: { id_permis: permisId }
@@ -103,37 +103,37 @@ async getObligationsForPermis(permisId: number): Promise<ObligationResponseDto[]
 
   // Only create new obligations if none exist
   const [establishmentFee, surfaceTax, attributionProduct] = await Promise.all([
-    this.calculateEstablishmentFee(permisId),
+    this.calculateEstablishmentFee(permisId, procedureId),
     this.calculateSurfaceTax(permisId),
-    this.calculateAttributionProduct(permisId)
+    this.calculateAttributionProduct(permisId,procedureId)
   ]);
 
   const obligations = [
-    {
-      id_typePaiement: 1, // Produit d'attribution
-      id_permis: permisId,
-      annee_fiscale: new Date().getFullYear(),
-      montant_attendu: attributionProduct,
-      date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-      statut: 'A payer',
-    },
-    {
-      id_typePaiement: 2, // Droit d'établissement
-      id_permis: permisId,
-      annee_fiscale: new Date().getFullYear(),
-      montant_attendu: establishmentFee,
-      date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-      statut: 'A payer',
-    },
-    {
-      id_typePaiement: 3, // Taxe superficiaire
-      id_permis: permisId,
-      annee_fiscale: new Date().getFullYear(),
-      montant_attendu: surfaceTax,
-      date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-      statut: 'A payer',
-    },
-  ];
+  {
+    id_typePaiement: 1,
+    id_permis: permisId,
+    annee_fiscale: new Date().getFullYear(),
+    montant_attendu: attributionProduct, // ✅ number only
+    date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+    statut: 'A payer',
+  },
+  {
+    id_typePaiement: 2,
+    id_permis: permisId,
+    annee_fiscale: new Date().getFullYear(),
+    montant_attendu: establishmentFee, // ✅ number only
+    date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+    statut: 'A payer',
+  },
+  {
+    id_typePaiement: 3,
+    id_permis: permisId,
+    annee_fiscale: new Date().getFullYear(),
+    montant_attendu: surfaceTax, // ✅ number only
+    date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+    statut: 'A payer',
+  },
+];
 
   return this.prisma.obligationFiscale.createMany({
     data: obligations,
@@ -202,44 +202,6 @@ async getGlobalPaymentSummary() {
   return summary;
 }
 
-/*async getPaymentSummary(permisId: number) {
-  const obligations = await this.prisma.obligationFiscale.findMany({
-    where: { id_permis: permisId },
-    include: { paiements: true }
-  });
-
-  const now = new Date();
-  const summary = {
-    totalObligations: obligations.length,
-    paid: 0,
-    overdue: 0,
-    pending: 0,
-    totalAmount: 0,
-    paidAmount: 0,
-    overdueAmount: 0
-  };
-
-  obligations.forEach(obligation => {
-    const totalPaid = obligation.paiements.reduce(
-      (sum, payment) => sum + payment.montant_paye, 0
-    );
-    
-    summary.totalAmount += obligation.montant_attendu;
-    summary.paidAmount += totalPaid;
-
-    if (totalPaid >= obligation.montant_attendu) {
-      summary.paid++;
-    } else if (obligation.date_echeance < now) {
-      summary.overdue++;
-      summary.overdueAmount += (obligation.montant_attendu - totalPaid);
-    } else {
-      summary.pending++;
-    }
-  });
-
-  return summary;
-}
-*/
 private async updateObligationStatus(obligationId: number) {
   const obligation = await this.prisma.obligationFiscale.findUnique({
     where: { id: obligationId },
@@ -301,6 +263,158 @@ private async updateObligationStatus(obligationId: number) {
   });
 }*/
 
+  private mapToPaymentResponseDto(payment: any): PaymentResponseDto {
+    return {
+      id: payment.id,
+      amount: payment.montant_paye,
+      currency: payment.devise,
+      paymentDate: payment.date_paiement,
+      paymentMethod: payment.mode_paiement,
+      receiptNumber: payment.num_quittance,
+      status: payment.etat_paiement,
+      proofUrl: payment.justificatif_url,
+    };
+  }
+
+private mapToObligationResponseDto(obligation: any): ObligationResponseDto {
+  return {
+    id: obligation.id,
+    typePaiement: {
+      id: obligation.typePaiement.id,
+      libelle: obligation.typePaiement.libelle,
+    },
+    amount: obligation.montant_attendu,
+    fiscalYear: obligation.annee_fiscale,
+    dueDate: obligation.date_echeance.toISOString(),
+    status: obligation.statut,
+    payments: obligation.paiements?.map((p: any) => this.mapToPaymentResponseDto(p)) || [],
+    permis: {
+      code_permis: obligation.permis?.code_permis || '',
+      detenteur: obligation.permis?.detenteur ? {
+        id: obligation.permis.detenteur.id_detenteur,
+        nom_sociétéFR: obligation.permis.detenteur.nom_sociétéFR,
+        registreCommerce: obligation.permis.detenteur.registreCommerce ? {
+          nif: obligation.permis.detenteur.registreCommerce.nif
+        } : undefined
+      } : null
+    }
+  };
+}
+
+async calculateEstablishmentFee(permisId: number, procedureId: number) {
+  const permis = await this.prisma.permis.findUnique({
+    where: { id: permisId },
+    include: { typePermis: true },
+  });
+
+  if (!permis) throw new Error('Permis not found');
+
+    // 🔑 Get demande from procedure
+  const demande = await this.prisma.demande.findFirst({
+    where: { id_proc: procedureId },
+    include: { typeProcedure: true },
+  });
+
+  if (!demande) throw new Error('Demande not found for this procedure');
+
+  const barem = await this.prisma.baremProduitetDroit.findFirst({
+    where: {
+      typePermisId: permis.typePermis.id,      // from permis
+      typeProcedureId: demande.typeProcedure.id, // from demande
+    },
+  });
+
+  if (!barem) throw new Error('Barem not found');
+
+
+  if (!barem) throw new Error('Barem not found');
+
+  return barem.montant_droit_etab; 
+}
+
+
+
+
+
+  async calculateSurfaceTax(permisId: number) {
+  const permis = await this.prisma.permis.findUnique({
+    where: { id: permisId },
+    include: { 
+      typePermis: {
+        include: {
+          taxe: true
+        }
+      } 
+    },
+  });
+
+  if (!permis) throw new Error('Permis not found');
+  if (!permis.superficie) throw new Error('Surface area not defined for this permit');
+  if (!permis.typePermis.taxe) throw new Error('Taxe not defined for this permit type');
+
+  const { taxe } = permis.typePermis;
+  const superficie = permis.superficie;
+
+  // Calculation formula using values from taxe table
+  const taxAmount = (taxe.droit_fixe + (taxe.periode_initiale * superficie)) * 12 / 5;
+  return Math.round(taxAmount);
+}
+
+  async calculateAttributionProduct(permisId: number, procedureId: number) {
+  const permis = await this.prisma.permis.findUnique({
+    where: { id: permisId },
+    include: { typePermis: true },
+  });
+
+  if (!permis) throw new Error('Permis not found');
+
+  // 🔑 Get demande from procedure
+  const demande = await this.prisma.demande.findFirst({
+    where: { id_proc: procedureId },
+    include: { typeProcedure: true },
+  });
+
+  if (!demande) throw new Error('Demande not found for this procedure');
+
+  const barem = await this.prisma.baremProduitetDroit.findFirst({
+    where: {
+      typePermisId: permis.typePermis.id,
+      typeProcedureId: demande.typeProcedure.id,
+    },
+  });
+
+  if (!barem) {
+    throw new Error(
+      `Barem not found for TypePermis ${permis.typePermis.id} and TypeProcedure ${demande.typeProcedure.id}`
+    );
+  }
+
+  return barem.produit_attribution;
+}
+
+
+
+async checkAllObligationsPaid(permisId: number): Promise<{
+  isPaid: boolean;
+  missing: { libelle: string; montantRestant: number }[];
+}> {
+  const obligations = await this.getObligationsForPermis(permisId);
+
+  const missing = obligations
+    .filter(o => o.status !== 'Payé')
+    .map(o => {
+      const montantPayé = o.payments.reduce((sum, p) => sum + p.amount, 0);
+      return {
+        libelle: o.typePaiement.libelle,
+        montantRestant: o.amount - montantPayé,
+      };
+    });
+
+  return {
+    isPaid: missing.length === 0,
+    missing,
+  };
+}
 
 async generatePaymentReceipt(paymentId: number) {
   try {
@@ -440,128 +554,6 @@ try {
 }
 
 
-  private mapToPaymentResponseDto(payment: any): PaymentResponseDto {
-    return {
-      id: payment.id,
-      amount: payment.montant_paye,
-      currency: payment.devise,
-      paymentDate: payment.date_paiement,
-      paymentMethod: payment.mode_paiement,
-      receiptNumber: payment.num_quittance,
-      status: payment.etat_paiement,
-      proofUrl: payment.justificatif_url,
-    };
-  }
-
-private mapToObligationResponseDto(obligation: any): ObligationResponseDto {
-  return {
-    id: obligation.id,
-    typePaiement: {
-      id: obligation.typePaiement.id,
-      libelle: obligation.typePaiement.libelle,
-    },
-    amount: obligation.montant_attendu,
-    fiscalYear: obligation.annee_fiscale,
-    dueDate: obligation.date_echeance.toISOString(),
-    status: obligation.statut,
-    payments: obligation.paiements?.map((p: any) => this.mapToPaymentResponseDto(p)) || [],
-    permis: {
-      code_permis: obligation.permis?.code_permis || '',
-      detenteur: obligation.permis?.detenteur ? {
-        id: obligation.permis.detenteur.id_detenteur,
-        nom_sociétéFR: obligation.permis.detenteur.nom_sociétéFR,
-        registreCommerce: obligation.permis.detenteur.registreCommerce ? {
-          nif: obligation.permis.detenteur.registreCommerce.nif
-        } : undefined
-      } : null
-    }
-  };
-}
-
-  async calculateEstablishmentFee(permisId: number) {
-  const permis = await this.prisma.permis.findUnique({
-    where: { id: permisId },
-    include: { 
-      typePermis: {
-        include: {
-          barem: true
-        }
-      } 
-    },
-  });
-
-  if (!permis) throw new Error('Permis not found');
-  if (!permis.typePermis.barem) throw new Error('Barem not defined for this permit type');
-
-  return permis.typePermis.barem.montant_droit_etab;
-}
-
-  async calculateSurfaceTax(permisId: number) {
-  const permis = await this.prisma.permis.findUnique({
-    where: { id: permisId },
-    include: { 
-      typePermis: {
-        include: {
-          taxe: true
-        }
-      } 
-    },
-  });
-
-  if (!permis) throw new Error('Permis not found');
-  if (!permis.superficie) throw new Error('Surface area not defined for this permit');
-  if (!permis.typePermis.taxe) throw new Error('Taxe not defined for this permit type');
-
-  const { taxe } = permis.typePermis;
-  const superficie = permis.superficie;
-
-  // Calculation formula using values from taxe table
-  const taxAmount = (taxe.droit_fixe + (taxe.periode_initiale * superficie)) * 12 / 5;
-  return Math.round(taxAmount);
-}
-
-  async calculateAttributionProduct(permisId: number) {
-  const permis = await this.prisma.permis.findUnique({
-    where: { id: permisId },
-    include: { 
-      typePermis: {
-        include: {
-          barem: true
-        }
-      } 
-    },
-  });
-
-  if (!permis) throw new Error('Permis not found');
-  if (!permis.typePermis.barem) throw new Error('Barem not defined for this permit type');
-
-  return permis.typePermis.barem.produit_attribution;
-}
-
-async checkAllObligationsPaid(permisId: number): Promise<{
-  isPaid: boolean;
-  missing: { libelle: string; montantRestant: number }[];
-}> {
-  const obligations = await this.getObligationsForPermis(permisId);
-
-  const missing = obligations
-    .filter(o => o.status !== 'Payé')
-    .map(o => {
-      const montantPayé = o.payments.reduce((sum, p) => sum + p.amount, 0);
-      return {
-        libelle: o.typePaiement.libelle,
-        montantRestant: o.amount - montantPayé,
-      };
-    });
-
-  return {
-    isPaid: missing.length === 0,
-    missing,
-  };
-}
-
-
-
 /*async updatePaymentStatus(paymentId: number, status: string) {
   return this.prisma.paiement.update({
     where: { id: paymentId },
@@ -569,5 +561,43 @@ async checkAllObligationsPaid(permisId: number): Promise<{
   });
 }*/
 
+/*async getPaymentSummary(permisId: number) {
+  const obligations = await this.prisma.obligationFiscale.findMany({
+    where: { id_permis: permisId },
+    include: { paiements: true }
+  });
+
+  const now = new Date();
+  const summary = {
+    totalObligations: obligations.length,
+    paid: 0,
+    overdue: 0,
+    pending: 0,
+    totalAmount: 0,
+    paidAmount: 0,
+    overdueAmount: 0
+  };
+
+  obligations.forEach(obligation => {
+    const totalPaid = obligation.paiements.reduce(
+      (sum, payment) => sum + payment.montant_paye, 0
+    );
+    
+    summary.totalAmount += obligation.montant_attendu;
+    summary.paidAmount += totalPaid;
+
+    if (totalPaid >= obligation.montant_attendu) {
+      summary.paid++;
+    } else if (obligation.date_echeance < now) {
+      summary.overdue++;
+      summary.overdueAmount += (obligation.montant_attendu - totalPaid);
+    } else {
+      summary.pending++;
+    }
+  });
+
+  return summary;
+}
+*/
 
 }

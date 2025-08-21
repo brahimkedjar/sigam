@@ -8,25 +8,23 @@ export class DemandeService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id_demande: number) {
-    const demande = await this.prisma.demande.findUnique({
-      where: { id_demande },
-      include: {
-        procedure: {
-          include: {
-            typeProcedure: true
-          }
-        },
-        detenteur: true,
-        expertMinier: true
-      }
-    });
+  const demande = await this.prisma.demande.findUnique({
+    where: { id_demande },
+    include: {
+      procedure: true,            // keep procedure (without typeProcedure)
+      typeProcedure: true,        // now directly from Demande
+      detenteur: true,
+      expertMinier: true,
+    },
+  });
 
-    if (!demande) {
-      throw new NotFoundException('Demande introuvable');
-    }
-
-    return demande;
+  if (!demande) {
+    throw new NotFoundException('Demande introuvable');
   }
+
+  return demande;
+}
+
 
   async createDemande(data: {
   id_typepermis: number;
@@ -35,71 +33,70 @@ export class DemandeService {
   id_detenteur?: number;
   date_demande: Date;
   date_instruction: Date;
-})  {
-    // Get type permis details
-    const typePermis = await this.prisma.typePermis.findUnique({
-      where: { id: data.id_typepermis }
-    });
+}) {
+  // Get type permis details
+  const typePermis = await this.prisma.typePermis.findUnique({
+    where: { id: data.id_typepermis }
+  });
 
-    if (!typePermis) {
-      throw new NotFoundException('Type de permis introuvable');
-    }
+  if (!typePermis) {
+    throw new NotFoundException('Type de permis introuvable');
+  }
 
-    // Get the "demande" type procedure
-    const typeProcedure = await this.prisma.typeProcedure.findFirst({
-      where: { libelle: 'demande' }
-    });
+  // Get the "demande" type procedure
+  const typeProcedure = await this.prisma.typeProcedure.findFirst({
+    where: { libelle: 'demande' }
+  });
 
-    if (!typeProcedure) {
-      throw new NotFoundException('Type de procédure "demande" introuvable');
-    }
+  if (!typeProcedure) {
+    throw new NotFoundException('Type de procédure "demande" introuvable');
+  }
 
-    // Generate code if not provided
-    const currentYear = new Date().getFullYear();
-    const finalCode = data.code_demande || `${typePermis.code_type}-${currentYear}-${
-      (await this.prisma.demande.count({
+  // Generate code if not provided
+  const currentYear = new Date().getFullYear();
+  const finalCode =
+    data.code_demande ||
+    `${typePermis.code_type}-${currentYear}-${(
+      await this.prisma.demande.count({
         where: {
           date_demande: {
             gte: new Date(`${currentYear}-01-01`),
             lte: new Date(`${currentYear}-12-31`),
-          }
-        }
-      })) + 1
-    }`;
+          },
+        },
+      })
+    ) + 1}`;
 
-    // Create procedure
-    const createdProc = await this.prisma.procedure.create({
-  data: {
-    id_typeproc: typeProcedure.id,
-    num_proc: finalCode,
-    date_debut_proc: new Date(),
-    statut_proc: 'EN_COURS',
-  }
-});
+  // Create procedure (⚠️ no more id_typeproc here)
+  const createdProc = await this.prisma.procedure.create({
+    data: {
+      num_proc: finalCode,
+      date_debut_proc: new Date(),
+      statut_proc: 'EN_COURS',
+    },
+  });
 
-    // Create demande
-   return this.prisma.demande.create({
+  // Create demande (with id_typeproc now)
+  return this.prisma.demande.create({
     data: {
       id_proc: createdProc.id_proc,
+      id_typeproc: typeProcedure.id,  // ✅ link typeProcedure here
       code_demande: finalCode,
       objet_demande: data.objet_demande,
       id_detenteur: data.id_detenteur,
       id_typePermis: data.id_typepermis,
-      date_demande: data.date_demande,           
-      date_instruction: data.date_instruction  ,
+      date_demande: data.date_demande,
+      date_instruction: data.date_instruction,
       statut_demande: StatutDemande.EN_COURS,
-   
     },
     include: {
-      procedure: {
-        include: {
-          typeProcedure: true
-        }
-      },
-      detenteur: true
-    }
+      procedure: true,   // ✅ procedure is linked, no typeProcedure inside
+      typeProcedure: true, // ✅ directly include typeProcedure
+      detenteur: true,
+    },
   });
-  }
+}
+
 
   async createOrFindExpert(data: {
     nom_expert: string;

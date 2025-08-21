@@ -7,6 +7,10 @@ import { ConfigProvider } from 'antd';
 import { LoadingProvider } from '@/components/globalspinner/LoadingContext';
 import { GlobalSpinner } from '@/components/globalspinner/GlobalSpinner';
 
+// ✅ Import react-toastify
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <LoadingProvider>
@@ -14,6 +18,21 @@ function MyApp({ Component, pageProps }: AppProps) {
         <ConfigProvider componentSize="small">
           <ClientLayout>
             <GlobalSpinner />
+
+            {/* ✅ Toast container available globally */}
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="colored"
+            />
+
             <Component {...pageProps} />
           </ClientLayout>
         </ConfigProvider>

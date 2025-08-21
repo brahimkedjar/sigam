@@ -21,7 +21,8 @@ const permissionMap: Record<ViewType, string> = {
   'manage_documents': 'manage_documents',
   'Audit_Logs': 'Audit_Logs',
   'gestion_experts': 'manage_documents',
-  'Gestion_seances': 'view_dashboard'
+  'Gestion_seances': 'view_dashboard',
+  'Configurations': 'Admin-Panel'
 };
 
 const routeMap: Record<ViewType, string> = {
@@ -40,7 +41,8 @@ const routeMap: Record<ViewType, string> = {
   'manage_documents': '/admin_panel/DossierAdminPage',
   'Audit_Logs': '/audit-logs/page',
   'gestion_experts': '/gestion_experts/page',
-  'Gestion_seances': '/seances/Dashboard_seances'
+  'Gestion_seances': '/seances/Dashboard_seances',
+  'Configurations': '/configuration/ConfigurationPanel'
 
 };
 

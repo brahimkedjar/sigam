@@ -6,15 +6,20 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import styles from './DecisionEntry.module.css';
 
-// Types
+// Updated Types
 
 interface Detenteur {
   nom_sociétéFR: string;
 }
 
+interface TypeProcedure {
+  libelle: string;
+}
+
 interface Demande {
   id_demande: number;
   detenteur: Detenteur | null;
+  typeProcedure: TypeProcedure | null; // 🔑 Now typeProcedure is on demande
 }
 
 interface Permis {
@@ -26,8 +31,7 @@ interface Permis {
 interface Procedure {
   id_proc: number;
   num_proc: string;
-  typeProcedure: { libelle: string } | null;
-  demandes: Demande[];
+  demandes: Demande[]; // 🔑 typeProcedure is now in demande objects
   permis: Permis[];
 }
 
@@ -58,8 +62,6 @@ interface SeanceWithDecisions {
   comites: ComiteDirection[];
   procedures: Procedure[];
 }
-
-
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -95,7 +97,8 @@ export default function DecisionEntry() {
   const [error, setError] = useState<string | null>(null);
 
   const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
- // Get the company name - tries current demande first, then original demande from permis
+
+  // Get the company name - tries current demande first, then original demande from permis
   const getSocieteName = (proc: Procedure): string => {
     // Try current demande first
     const currentDetenteur = proc.demandes[0]?.detenteur?.nom_sociétéFR;
@@ -109,55 +112,71 @@ export default function DecisionEntry() {
     
     return 'N/A';
   };
+
+  // Get the procedure type from the demande
+  const getProcedureType = (proc: Procedure): string => {
+    // Try current demande first
+    const currentType = proc.demandes[0]?.typeProcedure?.libelle;
+    if (currentType) return currentType;
+    
+    // For procedures linked to permis, get the original demande type
+    if (proc.permis.length > 0) {
+      const originalProcedure = proc.permis[0].procedures[0];
+      return originalProcedure?.demandes[0]?.typeProcedure?.libelle || 'N/A';
+    }
+    
+    return 'N/A';
+  };
+
   // Fetch seances with error handling and abort controller
   const fetchSeances = useCallback(async () => {
-  if (!apiURL) {
-    setError('API URL is not configured');
-    setLoading(false);
-    return;
-  }
-
-  const controller = new AbortController();
-  const signal = controller.signal;
-
-  try {
-    setLoading(true);
-    setError(null);
-    const response = await fetch(`${apiURL}/api/seances/with-decisions`, {
-      signal,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, ${errorData}`);
+    if (!apiURL) {
+      setError('API URL is not configured');
+      setLoading(false);
+      return;
     }
 
-    const { data } = await response.json();
-    
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid data format received from server');
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`${apiURL}/api/seances/with-decisions`, {
+        signal,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, ${errorData}`);
+      }
+
+      const { data } = await response.json();
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid data format received from server');
+      }
+
+      // Transform the data to ensure proper structure
+      const transformedData = data.map(seance => ({
+        ...seance,
+        comites: Array.isArray(seance.comites) ? seance.comites : [],
+        procedures: Array.isArray(seance.procedures) ? seance.procedures : []
+      }));
+
+      setSeances(transformedData);
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Error fetching seances:', error.message);
+        setError(error.message);
+      }
+    } finally {
+      setLoading(false);
     }
 
-    // Transform the data to ensure proper structure
-    const transformedData = data.map(seance => ({
-      ...seance,
-      comites: Array.isArray(seance.comites) ? seance.comites : [],
-      procedures: Array.isArray(seance.procedures) ? seance.procedures : []
-    }));
-
-    setSeances(transformedData);
-  } catch (error) {
-    if (error instanceof Error && error.name !== 'AbortError') {
-      console.error('Error fetching seances:', error.message);
-      setError(error.message);
-    }
-  } finally {
-    setLoading(false);
-  }
-
-  return () => controller.abort();
-}, [apiURL]);
+    return () => controller.abort();
+  }, [apiURL]);
 
   // Initial data fetch
   useEffect(() => {
@@ -177,6 +196,9 @@ export default function DecisionEntry() {
           (proc) =>
             proc.num_proc.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (proc.demandes?.[0]?.detenteur?.nom_sociétéFR?.toLowerCase() || '').includes(
+              searchTerm.toLowerCase()
+            ) ||
+            (proc.demandes?.[0]?.typeProcedure?.libelle?.toLowerCase() || '').includes(
               searchTerm.toLowerCase()
             )
         )
@@ -213,157 +235,157 @@ export default function DecisionEntry() {
 
   // Open decision modal
   const openDecisionModal = (seance: SeanceWithDecisions, procedure: Procedure) => {
-  setSelectedSeance(seance);
-  setCurrentProcedure(procedure);
-  
-  // Find comité for this procedure
-  const procedureComite = seance.comites.find(comite => 
-    comite.numero_decision.endsWith(`-${procedure.id_proc}`)
-  );
-  const decision = procedureComite?.decisionCDs[0];
+    setSelectedSeance(seance);
+    setCurrentProcedure(procedure);
+    
+    // Find comité for this procedure
+    const procedureComite = seance.comites.find(comite => 
+      comite.numero_decision.endsWith(`-${procedure.id_proc}`)
+    );
+    const decision = procedureComite?.decisionCDs[0];
 
-  setCurrentComite(procedureComite || null);
-  setCurrentDecision(decision || null);
+    setCurrentComite(procedureComite || null);
+    setCurrentDecision(decision || null);
 
-  setComiteFormData({
-    date_comite: procedureComite?.date_comite
-      ? format(new Date(procedureComite.date_comite), "yyyy-MM-dd'T'HH:mm")
-      : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-    numero_decision: procedureComite?.numero_decision || `DEC-${format(new Date(), 'yyyyMMdd-HHmm')}-${procedure.id_proc}`,
-    objet_deliberation: procedureComite?.objet_deliberation || `Décision pour ${procedure.num_proc}`,
-    resume_reunion: procedureComite?.resume_reunion || '',
-    fiche_technique: procedureComite?.fiche_technique || '',
-    carte_projettee: procedureComite?.carte_projettee || '',
-    rapport_police: procedureComite?.rapport_police || '',
-  });
+    setComiteFormData({
+      date_comite: procedureComite?.date_comite
+        ? format(new Date(procedureComite.date_comite), "yyyy-MM-dd'T'HH:mm")
+        : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      numero_decision: procedureComite?.numero_decision || `DEC-${format(new Date(), 'yyyyMMdd-HHmm')}-${procedure.id_proc}`,
+      objet_deliberation: procedureComite?.objet_deliberation || `Décision pour ${procedure.num_proc}`,
+      resume_reunion: procedureComite?.resume_reunion || '',
+      fiche_technique: procedureComite?.fiche_technique || '',
+      carte_projettee: procedureComite?.carte_projettee || '',
+      rapport_police: procedureComite?.rapport_police || '',
+    });
 
-  setFormData({
-    id_comite: procedureComite?.id_comite || 0,
-    decision_cd: decision?.decision_cd || '',
-    duree_decision: decision?.duree_decision?.toString() || '',
-    commentaires: decision?.commentaires || ''
-  });
-  
-  setDecisionModalOpen(true);
-};
+    setFormData({
+      id_comite: procedureComite?.id_comite || 0,
+      decision_cd: decision?.decision_cd || '',
+      duree_decision: decision?.duree_decision?.toString() || '',
+      commentaires: decision?.commentaires || ''
+    });
+    
+    setDecisionModalOpen(true);
+  };
 
   // Handle form submission
   const handleSubmitDecision = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  setError(null);
-
-  try {
-    if (!selectedSeance || !currentProcedure) {
-      throw new Error('Missing required data');
-    }
-
-    // 1. Check for existing comité for this procedure
-    let comiteId: number | null = null;
-    let decisionId: number | null = null;
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      const comiteResponse = await fetch(`${apiURL}/api/comites/by-procedure`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          seanceId: selectedSeance.id_seance,
-          procedureId: currentProcedure.id_proc
-        })
-      });
+      if (!selectedSeance || !currentProcedure) {
+        throw new Error('Missing required data');
+      }
 
-      if (comiteResponse.ok) {
-        const existingComite = await comiteResponse.json();
-        if (existingComite && existingComite.id_comite) {
-          comiteId = existingComite.id_comite;
-          decisionId = existingComite.decisionCDs?.[0]?.id_decision || null;
-          
-          // Update existing comité
-          const updateResponse = await fetch(`${apiURL}/api/comites/${comiteId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...comiteFormData,
-              date_comite: new Date(comiteFormData.date_comite).toISOString()
-            })
-          });
+      // 1. Check for existing comité for this procedure
+      let comiteId: number | null = null;
+      let decisionId: number | null = null;
 
-          if (!updateResponse.ok) {
-            throw new Error('Failed to update comité');
+      try {
+        const comiteResponse = await fetch(`${apiURL}/api/comites/by-procedure`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            seanceId: selectedSeance.id_seance,
+            procedureId: currentProcedure.id_proc
+          })
+        });
+
+        if (comiteResponse.ok) {
+          const existingComite = await comiteResponse.json();
+          if (existingComite && existingComite.id_comite) {
+            comiteId = existingComite.id_comite;
+            decisionId = existingComite.decisionCDs?.[0]?.id_decision || null;
+            
+            // Update existing comité
+            const updateResponse = await fetch(`${apiURL}/api/comites/${comiteId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...comiteFormData,
+                date_comite: new Date(comiteFormData.date_comite).toISOString()
+              })
+            });
+
+            if (!updateResponse.ok) {
+              throw new Error('Failed to update comité');
+            }
           }
         }
+      } catch (error) {
+        console.warn('Error checking for existing comité:', error);
+        // Continue with creating new comité
       }
-    } catch (error) {
-      console.warn('Error checking for existing comité:', error);
-      // Continue with creating new comité
-    }
 
-    // 2. Create new comité if none exists
-    if (!comiteId) {
-      const newComiteResponse = await fetch(`${apiURL}/api/comites`, {
-        method: 'POST',
+      // 2. Create new comité if none exists
+      if (!comiteId) {
+        const newComiteResponse = await fetch(`${apiURL}/api/comites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...comiteFormData,
+            id_seance: selectedSeance.id_seance,
+            id_proc: currentProcedure.id_proc,
+            date_comite: new Date(comiteFormData.date_comite).toISOString(),
+            numero_decision: comiteFormData.numero_decision || `DEC-${format(new Date(), 'yyyyMMdd-HHmm')}-${currentProcedure.id_proc}`,
+            objet_deliberation: comiteFormData.objet_deliberation || `Décision pour ${currentProcedure.num_proc}`
+          })
+        });
+
+        if (!newComiteResponse.ok) {
+          const errorText = await newComiteResponse.text();
+          throw new Error(`Failed to create comité: ${errorText}`);
+        }
+
+        const newComite = await newComiteResponse.json();
+        comiteId = newComite.id_comite;
+        decisionId = newComite.decisionCDs?.[0]?.id_decision || null;
+      }
+
+      if (!comiteId) {
+        throw new Error('No comité ID available');
+      }
+
+      // 3. Save decision
+      const decisionData = {
+        decision_cd: formData.decision_cd as 'favorable' | 'defavorable',
+        duree_decision: formData.duree_decision ? parseInt(formData.duree_decision) : null,
+        commentaires: formData.commentaires || null
+      };
+
+      const decisionUrl = decisionId 
+        ? `${apiURL}/api/decisions/${decisionId}`
+        : `${apiURL}/api/decisions`;
+      const method = decisionId ? 'PUT' : 'POST';
+
+      const decisionResponse = await fetch(decisionUrl, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...comiteFormData,
-          id_seance: selectedSeance.id_seance,
-          id_proc: currentProcedure.id_proc,
-          date_comite: new Date(comiteFormData.date_comite).toISOString(),
-          numero_decision: comiteFormData.numero_decision || `DEC-${format(new Date(), 'yyyyMMdd-HHmm')}-${currentProcedure.id_proc}`,
-          objet_deliberation: comiteFormData.objet_deliberation || `Décision pour ${currentProcedure.num_proc}`
+          ...decisionData,
+          id_comite: comiteId
         })
       });
 
-      if (!newComiteResponse.ok) {
-        const errorText = await newComiteResponse.text();
-        throw new Error(`Failed to create comité: ${errorText}`);
+      if (!decisionResponse.ok) {
+        const errorText = await decisionResponse.text();
+        throw new Error(`Failed to save decision: ${errorText}`);
       }
 
-      const newComite = await newComiteResponse.json();
-      comiteId = newComite.id_comite;
-      decisionId = newComite.decisionCDs?.[0]?.id_decision || null;
+      // Refresh data
+      await fetchSeances();
+      setDecisionModalOpen(false);
+
+    } catch (error) {
+      console.error('Error in handleSubmitDecision:', error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (!comiteId) {
-      throw new Error('No comité ID available');
-    }
-
-    // 3. Save decision
-    const decisionData = {
-      decision_cd: formData.decision_cd as 'favorable' | 'defavorable',
-      duree_decision: formData.duree_decision ? parseInt(formData.duree_decision) : null,
-      commentaires: formData.commentaires || null
-    };
-
-    const decisionUrl = decisionId 
-      ? `${apiURL}/api/decisions/${decisionId}`
-      : `${apiURL}/api/decisions`;
-    const method = decisionId ? 'PUT' : 'POST';
-
-    const decisionResponse = await fetch(decisionUrl, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...decisionData,
-        id_comite: comiteId
-      })
-    });
-
-    if (!decisionResponse.ok) {
-      const errorText = await decisionResponse.text();
-      throw new Error(`Failed to save decision: ${errorText}`);
-    }
-
-    // Refresh data
-    await fetchSeances();
-    setDecisionModalOpen(false);
-
-  } catch (error) {
-    console.error('Error in handleSubmitDecision:', error);
-    setError(error instanceof Error ? error.message : 'An unknown error occurred');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   // Handle comité form changes
   const handleComiteFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -445,10 +467,10 @@ export default function DecisionEntry() {
                       {format(new Date(seance.date_seance), "EEEE d MMMM yyyy 'à' HH:mm", { locale: fr })}
                     </div>
                     <div className={styles.seanceStats}>
-  {seance.comites.filter(comite => 
-    comite.decisionCDs?.[0]?.decision_cd
-  ).length} / {seance.procedures.length} décisions
-</div>
+                      {seance.comites.filter(comite => 
+                        comite.decisionCDs?.[0]?.decision_cd
+                      ).length} / {seance.procedures.length} décisions
+                    </div>
                   </div>
                   <div className={styles.expandIcon}>{expandedSeances[seance.id_seance] ? '−' : '+'}</div>
                 </div>
@@ -470,39 +492,38 @@ export default function DecisionEntry() {
                             </tr>
                           </thead>
                           <tbody>
-                          
-{seance.procedures.map((procedure) => {
-  const procedureComite = seance.comites.find(comite => 
-    comite.numero_decision.endsWith(`-${procedure.id_proc}`)
-  );
-  const decision = procedureComite?.decisionCDs[0];
-  return (
-    <tr key={`${seance.id_seance}-${procedure.id_proc}`}>
-      <td>{procedure.num_proc}</td>
-      <td>{getSocieteName(procedure)}</td>
-      <td>{procedure.typeProcedure?.libelle || 'N/A'}</td>
-      <td>
-        {decision?.decision_cd ? (
-          <span className={`${styles.decisionBadge} ${
-            decision.decision_cd === 'favorable' ? styles.approved : styles.rejected
-          }`}>
-            {decision.decision_cd === 'favorable' ? 'Approuvée' : 'Rejetée'}
-          </span>
-        ) : (
-          <span className={styles.pendingBadge}>En attente</span>
-        )}
-      </td>
-      <td>
-        <button 
-          onClick={() => openDecisionModal(seance, procedure)}
-          className={decision ? styles.editButton : styles.primaryButton}
-        >
-          {decision ? 'Modifier' : 'Saisir'}
-        </button>
-      </td>
-    </tr>
-  );
-})}
+                            {seance.procedures.map((procedure) => {
+                              const procedureComite = seance.comites.find(comite => 
+                                comite.numero_decision.endsWith(`-${procedure.id_proc}`)
+                              );
+                              const decision = procedureComite?.decisionCDs[0];
+                              return (
+                                <tr key={`${seance.id_seance}-${procedure.id_proc}`}>
+                                  <td>{procedure.num_proc}</td>
+                                  <td>{getSocieteName(procedure)}</td>
+                                  <td>{getProcedureType(procedure)}</td> {/* 🔑 Updated to use new function */}
+                                  <td>
+                                    {decision?.decision_cd ? (
+                                      <span className={`${styles.decisionBadge} ${
+                                        decision.decision_cd === 'favorable' ? styles.approved : styles.rejected
+                                      }`}>
+                                        {decision.decision_cd === 'favorable' ? 'Approuvée' : 'Rejetée'}
+                                      </span>
+                                    ) : (
+                                      <span className={styles.pendingBadge}>En attente</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <button 
+                                      onClick={() => openDecisionModal(seance, procedure)}
+                                      className={decision ? styles.editButton : styles.primaryButton}
+                                    >
+                                      {decision ? 'Modifier' : 'Saisir'}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       )}
@@ -607,17 +628,15 @@ export default function DecisionEntry() {
               
               <div className={styles.sectionTitle}>Décision</div>
               <div className={styles.formGroup}>
-  <label>Société</label>
-  <div className={styles.staticField}>
-    {currentProcedure ? (
-      getSocieteName(currentProcedure)
-    ) : 'N/A'}
-  </div>
-</div>
+                <label>Société</label>
+                <div className={styles.staticField}>
+                  {currentProcedure ? getSocieteName(currentProcedure) : 'N/A'}
+                </div>
+              </div>
               <div className={styles.formGroup}>
                 <label>Type de procédure</label>
                 <div className={styles.staticField}>
-                  {currentProcedure?.typeProcedure?.libelle || 'N/A'}
+                  {currentProcedure ? getProcedureType(currentProcedure) : 'N/A'} {/* 🔑 Updated to use new function */}
                 </div>
               </div>
               <div className={styles.formGroup}>

@@ -17,4 +17,5 @@ export type ViewType =
   | 'controle_minier'
   | 'Audit_Logs'
   | 'gestion_experts'
-  | 'Gestion_seances';
+  | 'Gestion_seances'
+  | 'Configurations';

@@ -127,7 +127,7 @@ const handleTerminerProcedure = async () => {
         );
 
         if (obligationsResponse.data.length === 0) {
-          await axios.post(`${apiURL}/payments/initialize/${currentPermisId}`);
+          await axios.post(`${apiURL}/payments/initialize/${currentPermisId}/${idProc}`);
           const newObligationsResponse = await axios.get(
             `${apiURL}/payments/obligations/${currentPermisId}`
           );

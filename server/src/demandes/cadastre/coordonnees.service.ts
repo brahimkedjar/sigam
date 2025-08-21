@@ -17,16 +17,22 @@ async createCoordonnees(
   statut_coord: 'NOUVEAU' | 'ANCIENNE' | 'DEMANDE_INITIALE' = 'NOUVEAU'
 ) {
   try {
-    const procedure = await this.prisma.procedure.findUnique({
+    // 🔑 Get demande by procedureId (id_proc) with typeProcedure
+    const demande = await this.prisma.demande.findFirst({
       where: { id_proc },
       include: { typeProcedure: true },
     });
 
-const libelle = procedure?.typeProcedure?.libelle?.toLowerCase() ?? '';
-const isDemandeInitiale = libelle === 'demande';
-const effectiveStatut = isDemandeInitiale ? 'DEMANDE_INITIALE' : (statut_coord ?? 'NOUVEAU');
+    if (!demande) {
+      throw new Error(`No demande found for procedure ${id_proc}`);
+    }
+
+    const libelle = demande.typeProcedure?.libelle?.toLowerCase() ?? '';
+    const isDemandeInitiale = libelle === 'demande';
+    const effectiveStatut = isDemandeInitiale ? 'DEMANDE_INITIALE' : (statut_coord ?? 'NOUVEAU');
 
     const createdCoords = await this.prisma.$transaction(async (tx) => {
+      // create coords
       const coords = await Promise.all(points.map(p =>
         tx.coordonnee.create({
           data: {
@@ -39,6 +45,7 @@ const effectiveStatut = isDemandeInitiale ? 'DEMANDE_INITIALE' : (statut_coord ?
         })
       ));
 
+      // link coords to procedure
       await Promise.all(coords.map(coord =>
         tx.procedureCoord.create({
           data: {
@@ -61,6 +68,7 @@ const effectiveStatut = isDemandeInitiale ? 'DEMANDE_INITIALE' : (statut_coord ?
     throw new InternalServerErrorException('Erreur serveur lors de la sauvegarde.');
   }
 }
+
 
 
 

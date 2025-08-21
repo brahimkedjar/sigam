@@ -8,17 +8,16 @@ import styles from './DecisionTracking.module.css';
 
 // API URL from environment variables
 const apiURL = process.env.NEXT_PUBLIC_API_URL;
-
 interface Procedure {
   id_proc: number;
   num_proc: string;
   date_debut_proc: string;
   date_fin_proc: string | null;
   statut_proc: string;
-  typeProcedure: {
-    libelle: string;
-  };
   demandes: {
+    typeProcedure: { // 🔑 Moved typeProcedure to demande level
+      libelle: string;
+    };
     detenteur: {
       nom_sociétéFR: string;
     };
@@ -26,14 +25,14 @@ interface Procedure {
   seance: {
     num_seance: string;
     comites: {
-  numero_decision?: string; // 👈 added this
-  date_comite: string;
-  decisionCDs: {
-    decision_cd: 'favorable' | 'defavorable' | null;
-    duree_decision: number | null;
-    commentaires: string | null;
-  }[];
-}[];
+      numero_decision?: string;
+      date_comite: string;
+      decisionCDs: {
+        decision_cd: 'favorable' | 'defavorable' | null;
+        duree_decision: number | null;
+        commentaires: string | null;
+      }[];
+    }[];
   } | null;
 }
 
@@ -52,6 +51,9 @@ export default function DecisionTracking() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDecision, setSelectedDecision] = useState<Procedure | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const getProcedureType = (procedure: Procedure): string => {
+  return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
+};
 
   const getDecisionTracking = async () => {
     const response = await fetch(`${apiURL}/api/decision-tracking`);
@@ -196,8 +198,8 @@ export default function DecisionTracking() {
                         </div>
                       </td>
                       <td className={styles.tableCell}>
-                        {decision.typeProcedure?.libelle || 'N/A'}
-                      </td>
+  {getProcedureType(decision)}
+</td>
                       <td className={styles.tableCell}>
                         {decision.seance?.num_seance || 'N/A'}
                       </td>
@@ -268,8 +270,8 @@ export default function DecisionTracking() {
                 <div className={styles.infoCard}>
                   <div className={styles.infoLabel}>Type</div>
                   <div className={styles.infoValue}>
-                    {selectedDecision.typeProcedure?.libelle || 'N/A'}
-                  </div>
+  {selectedDecision ? getProcedureType(selectedDecision) : 'N/A'}
+</div>
                 </div>
                 <div className={styles.infoCard}>
                   <div className={styles.infoLabel}>Date début</div>
