@@ -217,58 +217,53 @@
 
 /* Card Color Variants */
 .card.teal {
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
-  color: white;
+  background-color: #99f6e4;
 }
 
 .card.teal .cardContent h4,
 .card.teal .cardContent p,
 .card.teal .cardPercentage {
-  color: white;
+  color: black;
 }
 
-.card.green {
-  background: linear-gradient(135deg, #22c55e, #10b981);
-  color: white;
+.card.yellow {
+  background-color: #fde68a;
 }
 
-.card.green .cardContent h4,
-.card.green .cardContent p,
-.card.green .cardPercentage {
-  color: white;
+.card.yellow .cardContent h4,
+.card.yellow .cardContent p,
+.card.yellow .cardPercentage {
+  color: black;
 }
 
 .card.blue {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: white;
+  background-color: #bfdbfe;
 }
 
 .card.blue .cardContent h4,
 .card.blue .cardContent p,
 .card.blue .cardPercentage {
-  color: white;
+  color: black;
 }
 
-.card.red {
-  background: linear-gradient(135deg, #ef4444, #f97316);
-  color: white;
+.card.pink {
+  background-color: #f0abfc;
 }
 
-.card.red .cardContent h4,
-.card.red .cardContent p,
-.card.red .cardPercentage {
-  color: white;
+.card.pink .cardContent h4,
+.card.pink .cardContent p,
+.card.pink .cardPercentage {
+  color: black;
 }
 
 .card.orange {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
-  color: white;
+  background: linear-gradient(135deg, #fdba74, #f9a468);
 }
 
 .card.orange .cardContent h4,
 .card.orange .cardContent p,
 .card.orange .cardWarning {
-  color: white;
+  color: black;
 }
 
 /* ===== CHARTS GRID ===== */
@@ -1016,4 +1011,253 @@
   .newButton {
     display: none !important;
   }
+}
+
+/* PermisView.module.css */
+
+.documentsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.documentCategory {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.documentCategoryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.documentCategoryHeader:hover {
+  background-color: #f3f4f6;
+}
+
+.documentCategoryTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.procedureStatus {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.documentCategoryInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.documentCount {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.expandIcon {
+  transition: transform 0.2s ease;
+}
+
+.expandIcon.expanded {
+  transform: rotate(180deg);
+}
+
+.documentsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+}
+
+/* Document card styles */
+.documentCard {
+  display: flex;
+  align-items: flex-start;
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.documentCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.documentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #3b82f6;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.documentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.documentName {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+  word-break: break-word;
+}
+
+.documentType {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+}
+
+.documentDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.documentMeta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.documentStatus {
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.statuspresent {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusmanquant {
+  background-color: #fee2e2;
+  color: #b91c11;
+}
+
+.statusinconnu {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.statusadministratif {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.documentActions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.documentUnavailable {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+  padding: 0.25rem 0.5rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+}
+
+.paginationInfo {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.paginationControls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.paginationButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: white;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationButton.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.paginationEllipsis {
+  padding: 0.5rem;
+  color: #64748b;
+}
+
+.pageSizeSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.pageSizeSelector select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: white;
 }

@@ -158,8 +158,9 @@ export default function SuiviDemandes() {
     totalItems: 0,
     totalPages: 0
   });
- const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
   // Filters state
   const [filters, setFilters] = useState<FilterOptions>({
     procedureType: 'Tous les types',
@@ -174,6 +175,7 @@ export default function SuiviDemandes() {
   });
 
   const Sidebar = dynamic(() => import('../sidebar/Sidebar'), { ssr: false });
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -187,7 +189,7 @@ export default function SuiviDemandes() {
     };
   }, []);
 
-  // NEW: Toggle dropdown visibility
+  // Toggle dropdown visibility
   const toggleDropdown = (id: number) => {
     setOpenDropdown(openDropdown === id ? null : id);
   };
@@ -306,17 +308,14 @@ export default function SuiviDemandes() {
       setIsLoading(true);
       const res = await axios.get(`${apiURL}/api/procedure-etape/current/${idProc}`);
       const etape = res.data;
-      
       if (etape?.link) {
-        router.push(`${etape.link}?from=suivi`);
+        router.push(`${etape.link}`);
       } else {
         setError("Lien de l'étape introuvable");
-        toast.error("Impossible de naviguer vers l'étape");
       }
     } catch (err) {
       console.error("Erreur lors de la récupération de l'étape :", err);
       setError("Impossible de récupérer l'étape actuelle");
-      toast.error("Erreur lors de la navigation");
     } finally {
       setIsLoading(false);
     }
@@ -500,10 +499,7 @@ export default function SuiviDemandes() {
 
   // Action handlers
   const handleDeleteProcedure = async (procedureId: number) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette procédure et toutes ses données associées ? Cette action est irréversible.")) {
-      return;
-    }
-
+   
     // Optimistically remove the procedure from state
     setDemandes(prevDemandes =>
       prevDemandes.filter(d => d.procedure.id_proc !== procedureId)
@@ -554,7 +550,7 @@ export default function SuiviDemandes() {
         ])
       ].map(row => row.join(',')).join('\n');
 
-      const blob = new Blob([csvContent], { type: 'text/ccsv;charset=utf-8;' });
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       
@@ -1007,85 +1003,69 @@ export default function SuiviDemandes() {
                           const isExpanded = expandedRows.has(d.id_demande);
 
                           return (
-                            <>
-                              <tr key={d.id_demande} className={isExpanded ? styles.expanded : ''}>
-                                
-                                <td>
-                                  <span className={styles.codeHighlight}>{d.procedure?.num_proc}</span>
-                                </td>
-                                <td>{getSocieteName(d)}</td>
-                                <td>
-                                  <div className={styles.procedureType}>
-                                    {getProcedureType(d)?.description || '---'}
-                                    {getProcedureType(d)?.code && (
-                                      <span className={styles.procedureCode}>
-                                        ({getProcedureType(d)?.code})
-                                      </span>
+                            <tr key={d.id_demande} className={isExpanded ? styles.expanded : ''}>
+                              <td>
+                                <span className={styles.codeHighlight}>{d.procedure?.num_proc}</span>
+                              </td>
+                              <td>{getSocieteName(d)}</td>
+                              <td>
+                                <div className={styles.procedureType}>
+                                  {getProcedureType(d)?.description || '---'}
+                                  {getProcedureType(d)?.code && (
+                                    <span className={styles.procedureCode}>
+                                      ({getProcedureType(d)?.code})
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</td>
+                              <td>
+                                <div className={`${styles.statusTag} ${statusConfig.bg} ${statusConfig.text}`}>
+                                  {statusConfig.icon}
+                                  {getStatutLabel(d.procedure?.statut_proc)}
+                                </div>
+                              </td>
+                              <td>
+                                {currentPhase ? (
+                                  <div className={`${styles.statusTag} ${phaseConfig.bg} ${phaseConfig.text}`}>
+                                    {phaseConfig.icon}
+                                    {currentPhase.etape!.lib_etape}
+                                    {currentPhase.statut === 'EN_RETARD' && (
+                                      <FiAlertTriangle className={styles.warningIcon} title="Phase en retard" />
                                     )}
                                   </div>
-                                </td>
-                                <td>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</td>
-                                <td>
-                                  <div className={`${styles.statusTag} ${statusConfig.bg} ${statusConfig.text}`}>
-                                    {statusConfig.icon}
-                                    {getStatutLabel(d.procedure?.statut_proc)}
+                                ) : (
+                                  <div className={`${styles.statusTag} ${styles['bg-gray-100']} ${styles['text-gray-800']}`}>
+                                    <FiClock className={styles['text-gray-500']} />
+                                    Non démarrée
                                   </div>
-                                </td>
-                                <td>
-                                  {currentPhase ? (
-                                    <div className={`${styles.statusTag} ${phaseConfig.bg} ${phaseConfig.text}`}>
-                                      {phaseConfig.icon}
-                                      {currentPhase.etape!.lib_etape}
-                                      {currentPhase.statut === 'EN_RETARD' && (
-                                        <FiAlertTriangle className={styles.warningIcon} title="Phase en retard" />
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className={`${styles.statusTag} ${styles['bg-gray-100']} ${styles['text-gray-800']}`}>
-                                      <FiClock className={styles['text-gray-500']} />
-                                      Non démarrée
-                                    </div>
-                                  )}
-                                </td>
-                                <td>
-                                  <div className={styles.actionsContainer}>
-                                    <button
-                                      className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-                                      onClick={() => goToEtape(d.procedure.id_proc)}
-                                      title="Continuer vers l'étape actuelle"
-                                    >
-                                      <FiChevronRight className={styles.btnIcon} />
-                                      Continuer
-                                    </button>
+                                )}
+                              </td>
+                              <td>
+                                <div className={styles.actionsContainer}>
+                                  <button
+                                    className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                                    onClick={() => goToEtape(d.procedure.id_proc)}
+                                    title="Continuer vers l'étape actuelle"
+                                  >
+                                    <FiChevronRight className={styles.btnIcon} />
+                                    Continuer
+                                  </button>
 
-                                    <div className={styles.dropdownContainer} ref={dropdownRef}>
-                                      <button
-                                        className={styles.dropdownToggle}
-                                        onClick={() => toggleDropdown(d.id_demande)}
-                                        title="Actions supplémentaires"
-                                      >
-                                        <FiMoreVertical />
-                                      </button>
-                                      {openDropdown === d.id_demande && (
-                                        <div className={styles.dropdownMenu}>
-                                          
-                                          <button
-                                            className={styles.dropdownItem}
-                                            onClick={() => {
-                                              setProcedureToDelete(d.procedure.id_proc);
-                                              setOpenDropdown(null);
-                                            }}
-                                          >
-                                            <FiTrash2 className={styles.dropdownIcon} />
-                                            Supprimer
-                                          </button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            </>
+                                  <div className={styles['actions-container']}>
+
+                              <button
+                                className={`${styles['action-btn']} ${styles['action-btn-danger']}`}
+                                onClick={() => setProcedureToDelete(d.procedure.id_proc)}
+                              >
+                                <FiTrash2 className={styles['btn-icon']} />
+                                Supprimer
+                              </button>
+                            </div>
+
+                                </div>
+                              </td>
+                            </tr>
                           );
                         })}
                       </tbody>

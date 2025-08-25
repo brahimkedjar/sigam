@@ -7,6 +7,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class PermisDashboard2Controller {
   constructor(private readonly permisService: Permisdashboard2Service) {}
 
+
   @Get()
 @ApiOperation({ summary: 'Get all permis with pagination' })
 async getAllPermis1(
@@ -62,4 +63,14 @@ async deletePermis(@Param('id') id: string) {
 async findOne(@Param('id') id: string) {
   return this.permisService.findOneWithDetails(+id);
 }
+
+@Get(':id/documents')
+@ApiOperation({ summary: 'Get all documents for a permis organized by procedure' })
+@ApiResponse({ status: 200, description: 'Documents organized by procedure' })
+@ApiResponse({ status: 404, description: 'Permis not found' })
+async getDocumentsForPermis(@Param('id') id: string) {
+  const documents = await this.permisService.getAllDocumentsForPermis(parseInt(id));
+  return { data: documents };
+}
+
 }

@@ -293,28 +293,17 @@ export class ProcedureRenouvellementService {
   }
 
   async countPreviousRenewals(permisId: number): Promise<number> {
-    const permit = await this.prisma.permis.findUnique({
-      where: { id: permisId },
-      include: {
-        procedures: {
-          include: {
-            demandes: {
-              include: {
-                renouvellement: true,
-              },
-            },
-          },
-        },
-      },
-    });
+  const permit = await this.prisma.permis.findUnique({
+    where: { id: permisId },
+    select: { nombre_renouvellements: true }
+  });
 
-    if (!permit) throw new NotFoundException('Permit not found');
-
-    return permit.procedures.reduce((count, procedure) => {
-      return count + procedure.demandes.filter((demande) => demande.renouvellement).length;
-    }, 0);
+  if (!permit) {
+    throw new NotFoundException('Permit not found');
   }
 
+  return permit.nombre_renouvellements || 0;
+}
   async getProcedureWithType(id: number) {
     const procedure = await this.prisma.procedure.findUnique({
     where: { id_proc: id },

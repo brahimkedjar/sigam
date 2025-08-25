@@ -6,6 +6,7 @@ import { StepGuardProvider } from '@/src/hooks/StepGuardContext';
 import { ConfigProvider } from 'antd';
 import { LoadingProvider } from '@/components/globalspinner/LoadingContext';
 import { GlobalSpinner } from '@/components/globalspinner/GlobalSpinner';
+import '../src/hooks/api-interceptor';
 
 // ✅ Import react-toastify
 import { ToastContainer } from 'react-toastify';

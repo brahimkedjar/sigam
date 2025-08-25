@@ -23,7 +23,7 @@ import { WilayaModule } from './demandes/antennes/wilaya/wilaya.module';
 import { DairaModule } from './demandes/antennes/daira/daira.module';
 import { GeneratePermisModule } from './demandes/permis_generation/permis.module';
 import { GeneratePdfModule } from './demandes/permis_generation/generate_permis_pdf.module';
-import { PermisDashboardfModule } from './demandes/permis_dashboard/permis-dashboard.module';
+import { PermisDashboardfModule } from './permis_dashboard/permis-dashboard.module';
 import { CahierChargeModule } from './cahiercharge/cahier-charge.module';
 import { PaymentModule } from './demandes/paiement/payement.module';
 import { ProcedureRenouvellementModule } from './renouvellement/procedure_renouvellement.module';
@@ -50,6 +50,11 @@ import { WilayasconfModule } from './configurations/wilayas/wilayas.module';
 import { DairasconfModule } from './configurations/dairas/dairas.module';
 import { CommunesconfModule } from './configurations/communs/communes.module';
 import { AntennesconfModule } from './configurations/antennes/antennes.module';
+import { DetenteurMorale_confModule } from './configurations/gestion_permis/detenteur-morale.module';
+import { Antenne_confModule } from './configurations/gestion_permis/antenne.module';
+import { Permis_confModule } from './configurations/gestion_permis/permis_conf.module';
+import { StatutPermis_confModule } from './configurations/gestion_permis/statut-permis.module';
+import { TypePermis_confModule } from './configurations/gestion_permis/type-permis.module';
 
 
 @Module({
@@ -61,12 +66,13 @@ import { AntennesconfModule } from './configurations/antennes/antennes.module';
     GeneratePdfModule,GeneratePermisModule,WilayaModule,DairaModule,CommuneModule,AdminDossierModule,CoordonneesModule,
     TypePermisModule,AuthModule,AdminModule,PrismaModule,ProcedureEtapeModule,ProcedureModule,ComiteDirectionModule,SocieteModule,
     InteractionWaliModule,CapacitesModule,SubstancesModule,DocumentsModule,DemandeSummaryControllerModule,SubstancesconfModule,
-    StatutsJuridiquesconfconfModule,WilayasconfModule,DairasconfModule,CommunesconfModule,AntennesconfModule],
+    StatutsJuridiquesconfconfModule,WilayasconfModule,DairasconfModule,CommunesconfModule,AntennesconfModule,DetenteurMorale_confModule,
+    TypePermis_confModule,StatutPermis_confModule,Permis_confModule,Antenne_confModule],
   controllers: [DemandesController],
-  providers: [DemandeService,/*{
+  providers: [DemandeService,{
       provide: APP_INTERCEPTOR,
       useClass: AuditLogInterceptor,
-    }*/],
+    }],
 
 })
 export class AppModule {}

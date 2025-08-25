@@ -40,7 +40,7 @@ export class GeneratePermisService {
   const newPermis = await this.prisma.permis.create({
     data: {
       id_typePermis: demande.typePermis.id,
-      id_antenne: antenneId, // ✅ on insère l'antenne de la wilaya
+      id_antenne: antenneId, 
       id_detenteur: demande.detenteur.id_detenteur,
       id_statut: 1,
       code_permis: demande.code_demande,

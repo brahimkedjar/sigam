@@ -133,7 +133,7 @@ const handleSaveEtape = async () => {
     }
 
     try {
-     await axios.post(`${apiURL}/api/capacites`, {
+     await axios.put(`${apiURL}/api/capacites`, {
   id_demande: idDemande,
   duree_travaux: form.duree_travaux,
   capital_social: form.capital_social,

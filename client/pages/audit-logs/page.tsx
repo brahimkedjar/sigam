@@ -370,12 +370,23 @@ const handleRevert = async (logId: number, reason: string) => {
                       Column  #${log.entityId}`}
                     </TableCell>
                     <TableCell>
-                      <Typography noWrap>
-                        {log.errorMessage || 
-                          (log.changes && `${Object.keys(log.changes).length} changes`) ||
-                          'No details'}
-                      </Typography>
-                    </TableCell>
+  <Tooltip title={log.errorMessage || 
+    (log.changes && `${Object.keys(log.changes).length} changes`) ||
+    'No details'}>
+    <Typography 
+      noWrap 
+      sx={{ 
+        maxWidth: 200, // Adjust this value as needed
+        textOverflow: 'ellipsis',
+        overflow: 'hidden'
+      }}
+    >
+      {log.errorMessage || 
+        (log.changes && `${Object.keys(log.changes).length} changes`) ||
+        'No details'}
+    </Typography>
+  </Tooltip>
+</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Tooltip title="View details">

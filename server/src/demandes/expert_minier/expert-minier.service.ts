@@ -3,16 +3,19 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateExpertDto } from './create-expert.dto';
 import { UpdateExpertDto } from './update-expert.dto';
 import { ExpertResponseDto } from './expert-response.dto';
+import { Readable } from 'stream';
 
 @Injectable()
 export class ExpertMinierService {
+ 
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createExpertDto: CreateExpertDto): Promise<ExpertResponseDto> {
     const expert = await this.prisma.expertMinier.create({
       data: createExpertDto,
     });
-    return this.toResponseDto(expert);
+    const result = this.toResponseDto(expert);
+    return result;
   }
 
   async findAll(): Promise<ExpertResponseDto[]> {
@@ -50,4 +53,64 @@ export class ExpertMinierService {
       organisme: expert.organisme,
     };
   }
+
+  async importFromCsvSimple(csvData: string): Promise<number> {
+    const lines = csvData.split('\n');
+    const headers = lines[0].split(',').map(header => header.trim());
+    
+    let importedCount = 0;
+    
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue; // Skip empty lines
+      
+      const values = lines[i].split(',').map(value => value.trim());
+      const row: any = {};
+      
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+
+      try {
+        const expertData: CreateExpertDto = {
+          nom_expert: row.nom_expert || row.nom || row.name || '',
+          fonction: row.fonction || row.function || row.role || '',
+          num_registre: row.num_registre || row.registre || row.registration || null,
+          organisme: row.organisme || row.organization || row.org || '',
+        };
+
+        if (!expertData.nom_expert || !expertData.fonction || !expertData.organisme) {
+          continue;
+        }
+
+        const existingExpert = await this.prisma.expertMinier.findFirst({
+          where: {
+            nom_expert: expertData.nom_expert,
+            organisme: expertData.organisme,
+          },
+        });
+
+        if (existingExpert) {
+          await this.prisma.expertMinier.update({
+            where: { id_expert: existingExpert.id_expert },
+            data: expertData,
+          });
+        } else {
+          await this.prisma.expertMinier.create({
+            data: expertData,
+          });
+        }
+
+        importedCount++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        // Continue with next row
+      }
+    }
+    
+    return importedCount;
+  }
 }
+
+
+
+

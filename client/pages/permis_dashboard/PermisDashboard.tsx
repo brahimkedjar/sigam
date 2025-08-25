@@ -162,13 +162,14 @@ export default function PermisDashboard() {
   const [advancedFilters, setAdvancedFilters] = useState<boolean>(false);
   
   // Permis list states
-  const [currentPermisPage, setCurrentPermisPage] = useState(1);
-  const [permisPerPage] = useState(10);
+
   const [totalPermisCount, setTotalPermisCount] = useState(0);
   const [isLoadingPermis, setIsLoadingPermis] = useState(false);
   const [permisList, setPermisList] = useState<Permis[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [permisTypes, setPermisTypes] = useState<string[]>([]);
+  const [currentPermisPage, setCurrentPermisPage] = useState(1);
+  const [permisPerPage, setPermisPerPage] = useState(1); 
  // Helper function to check if dates are equal (ignoring time)
   const isEqualDate = (date1: Date, date2: Date): boolean => {
     return date1.toDateString() === date2.toDateString();
@@ -969,7 +970,7 @@ export default function PermisDashboard() {
                   </div>
 
                   <div 
-                    className={`${styles.card} ${styles.green}`}
+                    className={`${styles.card} ${styles.yellow}`}
                     onClick={() => handleCardClick('actifs')}
                   >
                     <FiActivity className={styles.cardIcon} />
@@ -994,7 +995,7 @@ export default function PermisDashboard() {
                   </div>
 
                   <div 
-                    className={`${styles.card} ${styles.red}`}
+                    className={`${styles.card} ${styles.pink}`}
                     onClick={() => handleCardClick('expires')}
                   >
                     <FiCalendar className={styles.cardIcon} />
@@ -1158,185 +1159,254 @@ export default function PermisDashboard() {
 
                 {/* Permis Table Section */}
                 <div className={styles.permisTableSection}>
-                  <div className={styles.sectionHeader}>
-                    <h3>Liste des Permis</h3>
-                    <div className={styles.tableActions}>
-                      <div className={styles.filtersContainer}>
-                        <div className={styles.searchInputContainer}>
-                          <FiSearch className={styles.searchIcon} />
-                          <input
-                            type="text"
-                            placeholder="Rechercher par code, titulaire, type..."
-                            className={styles.searchInput}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </div>
+  <div className={styles.sectionHeader}>
+    <h3>Liste des Permis</h3>
+    <div className={styles.tableActions}>
+      <div className={styles.filtersContainer}>
+        <div className={styles.searchInputContainer}>
+          <FiSearch className={styles.searchIcon} />
+          <input
+            type="text"
+            placeholder="Rechercher par code, titulaire, type..."
+            className={styles.searchInput}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-                        <select
-                          className={styles.filterSelect}
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                          <option value="all">Tous les statuts</option>
-                          <option value="active">Actifs</option>
-                          <option value="expired">Expirés</option>
-                        </select>
+        <select
+          className={styles.filterSelect}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">Tous les statuts</option>
+          <option value="active">Actifs</option>
+          <option value="expired">Expirés</option>
+        </select>
 
-                        <select
-                          className={styles.filterSelect}
-                          value={typeFilter}
-                          onChange={(e) => setTypeFilter(e.target.value)}
-                        >
-                          <option value="all">Tous les types</option>
-                          {permisTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
+        <select
+          className={styles.filterSelect}
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+        >
+          <option value="all">Tous les types</option>
+          {permisTypes.map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
 
+        <button 
+          className={styles.exportButton}
+          onClick={() => handleExportData('csv')}
+          disabled={exporting}
+        >
+          <FiDownload /> Exporter
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  {isLoadingPermis ? (
+    <div className={styles.loading}>
+      <FiRefreshCw className={styles.spinner} size={24} />
+      <span>Chargement des permis...</span>
+    </div>
+  ) : (
+    <>
+      <div className={styles.tableResponsive}>
+        <table className={styles.permisTable}>
+          <thead>
+            <tr>
+              <th>Code Permis</th>
+              <th>Type</th>
+              <th>Titulaire</th>
+              <th>Statut</th>
+              <th>Date Octroi</th>
+              <th>Date Expiration</th>
+              <th>Surface (HA)</th>
+              <th>Substances</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPermis
+              .slice((currentPermisPage - 1) * permisPerPage, currentPermisPage * permisPerPage)
+              .map((permis) => {
+                const expDate = permis.date_expiration ? new Date(permis.date_expiration) : null;
+                const daysUntilExpiry = expDate ? differenceInDays(expDate, new Date()) : null;
+                const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry > 0 && daysUntilExpiry <= 180;
+                
+                return (
+                  <tr key={permis.id} className={isExpiringSoon ? styles.expiringRow : ''}>
+                    <td>{permis.code_permis}</td>
+                    <td>{permis.typePermis?.lib_type || 'N/A'}</td>
+                    <td>{permis.detenteur?.nom_sociétéFR || 'N/A'}</td>
+                    <td>
+                      <span className={`${styles.statusBadge} ${
+                        permis.statut?.lib_statut === 'Actif' ? styles.statusActive : 
+                        expDate && expDate < new Date() ? styles.statusExpired : styles.statusOther
+                      }`}>
+                        {permis.statut?.lib_statut || 'N/A'}
+                        {isExpiringSoon && <FiAlertTriangle className={styles.warningIcon} />}
+                      </span>
+                    </td>
+                    <td>{permis.date_octroi ? format(new Date(permis.date_octroi), 'dd/MM/yyyy', { locale: fr }) : 'N/A'}</td>
+                    <td>
+                      {expDate ? (
+                        <span className={isExpiringSoon ? styles.expiringDate : ''}>
+                          {format(expDate, 'dd/MM/yyyy', { locale: fr })}
+                          {isExpiringSoon && ` (${daysUntilExpiry}j)`}
+                        </span>
+                      ) : 'N/A'}
+                    </td>
+                    <td>{permis.superficie?.toFixed(2) || 'N/A'}</td>
+                    <td>
+                      <div className={styles.substances}>
+                        {getSubstancesForPermis(permis).slice(0, 2).join(', ')}
+                        {getSubstancesForPermis(permis).length > 2 && (
+                          <span className={styles.moreSubstances}>
+                            +{getSubstancesForPermis(permis).length - 2} plus
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className={styles.actionButtons}>
                         <button 
-                          className={styles.exportButton}
-                          onClick={() => handleExportData('csv')}
-                          disabled={exporting}
+                          className={styles.viewButton}
+                          onClick={() => handleViewPermis(permis.id)}
+                          title="Voir détails"
                         >
-                          <FiDownload /> Exporter
+                          <FiEye />
+                        </button>
+                        <button 
+                          className={styles.editButton}
+                          onClick={() => handleEditPermis(permis.id)}
+                          title="Modifier"
+                        >
+                          <FiEdit />
+                        </button>
+                        <button 
+                          className={styles.deleteButton}
+                          onClick={() => handleDeletePermis(permis.id)}
+                          title="Supprimer"
+                        >
+                          <FiTrash2 />
                         </button>
                       </div>
-                    </div>
-                  </div>
-                  
-                  {isLoadingPermis ? (
-                    <div className={styles.loading}>
-                      <FiRefreshCw className={styles.spinner} size={24} />
-                      <span>Chargement des permis...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className={styles.tableResponsive}>
-                        <table className={styles.permisTable}>
-                          <thead>
-                            <tr>
-                              <th>Code Permis</th>
-                              <th>Type</th>
-                              <th>Titulaire</th>
-                              <th>Statut</th>
-                              <th>Date Octroi</th>
-                              <th>Date Expiration</th>
-                              <th>Surface (HA)</th>
-                              <th>Substances</th>
-                              <th>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredPermis.map((permis) => {
-                              const expDate = permis.date_expiration ? new Date(permis.date_expiration) : null;
-                              const daysUntilExpiry = expDate ? differenceInDays(expDate, new Date()) : null;
-                              const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry > 0 && daysUntilExpiry <= 180;
-                              
-                              return (
-                                <tr key={permis.id} className={isExpiringSoon ? styles.expiringRow : ''}>
-                                  <td>{permis.code_permis}</td>
-                                  <td>{permis.typePermis?.lib_type || 'N/A'}</td>
-                                  <td>{permis.detenteur?.nom_sociétéFR || 'N/A'}</td>
-                                  <td>
-                                    <span className={`${styles.statusBadge} ${
-                                      permis.statut?.lib_statut === 'Actif' ? styles.statusActive : 
-                                      expDate && expDate < new Date() ? styles.statusExpired : styles.statusOther
-                                    }`}>
-                                      {permis.statut?.lib_statut || 'N/A'}
-                                      {isExpiringSoon && <FiAlertTriangle className={styles.warningIcon} />}
-                                    </span>
-                                  </td>
-                                  <td>{permis.date_octroi ? format(new Date(permis.date_octroi), 'dd/MM/yyyy', { locale: fr }) : 'N/A'}</td>
-                                  <td>
-                                    {expDate ? (
-                                      <span className={isExpiringSoon ? styles.expiringDate : ''}>
-                                        {format(expDate, 'dd/MM/yyyy', { locale: fr })}
-                                        {isExpiringSoon && ` (${daysUntilExpiry}j)`}
-                                      </span>
-                                    ) : 'N/A'}
-                                  </td>
-                                  <td>{permis.superficie?.toFixed(2) || 'N/A'}</td>
-                                  <td>
-                                    <div className={styles.substances}>
-                                      {getSubstancesForPermis(permis).slice(0, 2).join(', ')}
-                                      {getSubstancesForPermis(permis).length > 2 && (
-                                        <span className={styles.moreSubstances}>
-                                          +{getSubstancesForPermis(permis).length - 2} plus
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className={styles.actionButtons}>
-                                      <button 
-                                        className={styles.viewButton}
-                                        onClick={() => handleViewPermis(permis.id)}
-                                        title="Voir détails"
-                                      >
-                                        <FiEye />
-                                      </button>
-                                      <button 
-                                        className={styles.editButton}
-                                        onClick={() => handleEditPermis(permis.id)}
-                                        title="Modifier"
-                                      >
-                                        <FiEdit />
-                                      </button>
-                                      <button 
-                                        className={styles.deleteButton}
-                                        onClick={() => handleDeletePermis(permis.id)}
-                                        title="Supprimer"
-                                      >
-                                        <FiTrash2 />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
 
-                      {filteredPermis.length === 0 && !isLoadingPermis && (
-                        <div className={styles.noData}>
-                          <p>Aucun permis trouvé avec les filtres actuels</p>
-                        </div>
-                      )}
+      {filteredPermis.length === 0 && !isLoadingPermis && (
+        <div className={styles.noData}>
+          <p>Aucun permis trouvé avec les filtres actuels</p>
+        </div>
+      )}
 
-                      {totalPermisCount > permisPerPage && (
-                        <div className={styles.pagination}>
-                          <button
-                            className={styles.paginationButton}
-                            disabled={currentPermisPage === 1}
-                            onClick={() => handlePermisPageChange(currentPermisPage - 1)}
-                          >
-                            <FiChevronLeft />
-                          </button>
-                          
-                          {Array.from({ length: Math.ceil(totalPermisCount / permisPerPage) }, (_, i) => (
-                            <button
-                              key={i + 1}
-                              className={`${styles.paginationButton} ${currentPermisPage === i + 1 ? styles.active : ''}`}
-                              onClick={() => handlePermisPageChange(i + 1)}
-                            >
-                              {i + 1}
-                            </button>
-                          ))}
-                          
-                          <button
-                            className={styles.paginationButton}
-                            disabled={currentPermisPage === Math.ceil(totalPermisCount / permisPerPage)}
-                            onClick={() => handlePermisPageChange(currentPermisPage + 1)}
-                          >
-                            <FiChevronRight />
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+      {filteredPermis.length > permisPerPage && (
+        <div className={styles.pagination}>
+          <div className={styles.paginationInfo}>
+            Affichage de {((currentPermisPage - 1) * permisPerPage) + 1} à {Math.min(currentPermisPage * permisPerPage, filteredPermis.length)} sur {filteredPermis.length} permis
+          </div>
+          
+          <div className={styles.paginationControls}>
+            <button
+              className={styles.paginationButton}
+              disabled={currentPermisPage === 1}
+              onClick={() => setCurrentPermisPage(currentPermisPage - 1)}
+            >
+              <FiChevronLeft />
+            </button>
+            
+            {(() => {
+              const totalPages = Math.ceil(filteredPermis.length / permisPerPage);
+              const pages = [];
+              
+              // Always show first page
+              pages.push(
+                <button
+                  key={1}
+                  className={`${styles.paginationButton} ${currentPermisPage === 1 ? styles.active : ''}`}
+                  onClick={() => setCurrentPermisPage(1)}
+                >
+                  1
+                </button>
+              );
+              
+              // Show ellipsis if needed
+              if (currentPermisPage > 3) {
+                pages.push(<span key="ellipsis1" className={styles.paginationEllipsis}>...</span>);
+              }
+              
+              // Show current page and neighbors
+              for (let i = Math.max(2, currentPermisPage - 1); i <= Math.min(totalPages - 1, currentPermisPage + 1); i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    className={`${styles.paginationButton} ${currentPermisPage === i ? styles.active : ''}`}
+                    onClick={() => setCurrentPermisPage(i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              
+              // Show ellipsis if needed
+              if (currentPermisPage < totalPages - 2) {
+                pages.push(<span key="ellipsis2" className={styles.paginationEllipsis}>...</span>);
+              }
+              
+              // Always show last page if there is more than one page
+              if (totalPages > 1) {
+                pages.push(
+                  <button
+                    key={totalPages}
+                    className={`${styles.paginationButton} ${currentPermisPage === totalPages ? styles.active : ''}`}
+                    onClick={() => setCurrentPermisPage(totalPages)}
+                  >
+                    {totalPages}
+                  </button>
+                );
+              }
+              
+              return pages;
+            })()}
+            
+            <button
+              className={styles.paginationButton}
+              disabled={currentPermisPage === Math.ceil(filteredPermis.length / permisPerPage)}
+              onClick={() => setCurrentPermisPage(currentPermisPage + 1)}
+            >
+              <FiChevronRight />
+            </button>
+          </div>
+          
+          <div className={styles.pageSizeSelector}>
+            <span>Afficher :</span>
+            <select 
+              value={permisPerPage} 
+              onChange={(e) => {
+                setPermisPerPage(Number(e.target.value));
+                setCurrentPermisPage(1);
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>par page</span>
+          </div>
+        </div>
+      )}
+    </>
+  )}
+</div>
 
                 {/* Modal */}
                 {modalOpen && (

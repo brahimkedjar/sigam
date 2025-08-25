@@ -10,6 +10,8 @@ import { FiChevronRight } from 'react-icons/fi';
 import { useViewNavigator } from '@/src/hooks/useViewNavigator';
 import styles from './permis.module.css'
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import ProgressStepper from '@/components/ProgressStepper';
+import { STEP_LABELS } from '@/src/constants/steps';
 const PermisDesigner = dynamic(() => import('../../../components/PermisDesigner'), {
   ssr: false,
   loading: () => <div>Loading designer...</div>
@@ -33,6 +35,7 @@ const Step10GeneratePermis = () => {
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
   const { currentView, navigateTo } = useViewNavigator();
   useActivateEtape({ idProc, etapeNum: 9, statutProc });
+  const currentStep = 8;
 
   useEffect(() => {
     
@@ -114,6 +117,13 @@ const handleSavePermis = async (permisData: any): Promise<PermisSaveResponse> =>
       <div className={styles['app-content']}>
         <Sidebar currentView={currentView} navigateTo={navigateTo} />
         <main className={styles['main-content']}>
+          <div className={styles.headerContainer}>
+            <ProgressStepper steps={STEP_LABELS} currentStep={currentStep} />
+            <h1 className={styles.mainTitle}>
+              <span className={styles.stepNumber}>8</span>
+              Décision du Comité de Direction
+            </h1>
+          </div>
           <div className={styles['breadcrumb']}>
             <span>SIGAM</span>
             <FiChevronRight className={styles['breadcrumb-arrow']} />

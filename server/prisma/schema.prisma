@@ -249,7 +249,6 @@ model Permis {
   CahierCharge CahierCharge[]
   ObligationFiscale ObligationFiscale[]
   PermisTemplate PermisTemplate[]
-  PermisHistory PermisHistory[]
 }
 
 model PermisTemplate {
@@ -267,19 +266,6 @@ model PermisTemplate {
   @@index([typePermisId])
   @@index([permisId])
   @@map("permis_templates")
-}
-
-model PermisHistory {
-  id          Int      @id @default(autoincrement())
-  permis      Permis   @relation(fields: [permisId], references: [id])
-  permisId    Int
-  elements    Json
-  version     Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  userId      Int?
-
-  @@map("permis_history")
 }
 
 enum StatutProcedure {

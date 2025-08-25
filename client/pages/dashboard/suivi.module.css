@@ -660,7 +660,7 @@
 }
 
 .dropdownMenu {
-  position: absolute;
+  position: static;
   top: 100%;
   right: 0;
   margin-top: 4px;
@@ -668,7 +668,6 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  min-width: 160px;
   z-index: 50;
   overflow: hidden;
 }
@@ -1026,4 +1025,74 @@
 /* Animation for spinning refresh icon */
 .spinning {
   animation: spin 1s linear infinite;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
+
+.modal {
+  background:#fff;
+  padding:2rem;
+  border-radius:12px;
+  max-width:400px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modalActions {
+  margin-top:1.5rem;
+  display:flex;
+  justify-content:space-between;
+}
+
+.cancelButton {
+  background:#eee;
+  border:none;
+  padding:0.5rem 1rem;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.deleteButton {
+  background:#e63946;
+  color:#fff;
+  border:none;
+  padding:0.5rem 1rem;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+.action-btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+.action-btn-primary:hover {
+  background-color: #2563eb;
+}
+.action-btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+.action-btn-danger:hover {
+  background-color: #dc2626;
+}
+.btn-icon {
+  margin-right: 6px;
 }
