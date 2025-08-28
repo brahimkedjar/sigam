@@ -27,6 +27,12 @@ type StatutJuridique = {
   statut_ar: string;
 };
 
+type Pays = {
+  id_pays: number;
+  nom_pays: string;
+  nationalite: string;
+};
+
 type AccordionItem = {
   id: string;
   title: string;
@@ -42,6 +48,7 @@ type Actionnaire = {
   qualification: string;
   numero_carte: string;
   taux_participation: string;
+  id_pays: number | null
 };
 
 type SocieteData = {
@@ -54,6 +61,7 @@ type SocieteData = {
     fax: string;
     adresse: string;
     nationalite: string;
+    id_pays: number | null;
   };
   repLegal: {
     nom: string;
@@ -67,6 +75,7 @@ type SocieteData = {
     nationalite: string;
     nin: string;
     taux_participation: string;
+    id_pays: number | null;
   };
   rcDetails: {
     numero_rc: string;
@@ -88,7 +97,8 @@ const initialData: SocieteData = {
     email: '',
     fax: '',
     adresse: '',
-    nationalite: ''
+    nationalite: '',
+    id_pays: 0
   },
   repLegal: {
     nom: '',
@@ -101,7 +111,8 @@ const initialData: SocieteData = {
     qualite: '',
     nationalite: '',
     nin: '',
-    taux_participation: ''
+    taux_participation: '',
+    id_pays: 0
   },
   rcDetails: {
     numero_rc: '',
@@ -113,6 +124,7 @@ const initialData: SocieteData = {
   },
   actionnaires: []
 };
+
 
 export default function Step2() {
   // State management
@@ -146,6 +158,7 @@ export default function Step2() {
   const [formData, setFormData] = useState<SocieteData>(initialData);
   const [isSaving, setIsSaving] = useState<Record<string, boolean>>({});
   const [showTauxModal, setShowTauxModal] = useState(false);
+  const [paysOptions, setPaysOptions] = useState<Pays[]>([]);
 
   // Hooks
   const router = useRouterWithLoading();
@@ -156,18 +169,29 @@ export default function Step2() {
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
+  useEffect(() => {
+    const fetchPays = async () => {
+      try {
+        const response = await axios.get<Pays[]>(`${apiURL}/statuts-juridiques/pays`);
+        setPaysOptions(response.data);
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+      }
+    };
+
+    fetchPays();
+  }, [apiURL]);
   // Fetch legal statuses
   useEffect(() => {
     const fetchStatutsJuridiques = async () => {
       try {
         const response = await axios.get<StatutJuridique[]>(`${apiURL}/api/statuts-juridiques`);
-        console.log("sssssssssssss",response);
         setStatutsJuridiques(response.data);
       } catch (error) {
         console.error("Error fetching legal statuses:", error);
       }
     };
-    
+
     fetchStatutsJuridiques();
   }, [apiURL]);
 
@@ -188,24 +212,24 @@ export default function Step2() {
       setCodeDemande(demande.code_demande);
       setIdDemande(demande.id_demande.toString());
       setStatutProc(res.data.procedure.statut_proc);
-      
+
       if (demande.detenteur) {
         const fonctions = demande.detenteur.fonctions;
         const representant = fonctions.find((f: { type_fonction: string; }) => f.type_fonction === "Représentant légal");
         const actionnaires = fonctions.filter((f: { type_fonction: string; }) => f.type_fonction === "Actionnaire");
 
         setDetenteurId(demande.detenteur.id_detenteur);
-        
         setFormData({
           infos: {
-            nom_fr: demande.detenteur.nom_sociétéFR,
-            nom_ar: demande.detenteur.nom_sociétéAR,
+            nom_fr: demande.detenteur.nom_societeFR,
+            nom_ar: demande.detenteur.nom_societeAR,
             statut_id: demande.detenteur.id_statutJuridique || 0, // Changed from statutJuridique?.id_statutJuridique to id_statutJuridique
             tel: demande.detenteur.telephone,
             email: demande.detenteur.email,
             fax: demande.detenteur.fax,
-            adresse: demande.detenteur.adresse_siège,
-            nationalite: demande.detenteur.nationalité,
+            adresse: demande.detenteur.adresse_siege,
+            nationalite: demande.detenteur.nationalite,
+            id_pays: demande.detenteur.id_pays,
           },
           repLegal: representant ? {
             nom: representant.personne.nomFR,
@@ -216,9 +240,10 @@ export default function Step2() {
             email: representant.personne.email,
             fax: representant.personne.fax,
             qualite: representant.personne.qualification,
-            nationalite: representant.personne.nationalité,
-            nin: representant.personne.num_carte_identité,
-            taux_participation: representant.taux_participation.toString()
+            nationalite: representant.personne.nationalite,
+            nin: representant.personne.num_carte_identite,
+            taux_participation: representant.taux_participation.toString(),
+            id_pays: representant.personne.id_pays
           } : initialData.repLegal,
           rcDetails: {
             ...demande.detenteur.registreCommerce,
@@ -228,10 +253,11 @@ export default function Step2() {
             nom: a.personne.nomFR,
             prenom: a.personne.prenomFR,
             lieu_naissance: a.personne.lieu_naissance,
-            nationalite: a.personne.nationalité,
+            nationalite: a.personne.nationalite,
             qualification: a.personne.qualification,
-            numero_carte: a.personne.num_carte_identité,
-            taux_participation: a.taux_participation.toString()
+            numero_carte: a.personne.num_carte_identite,
+            taux_participation: a.taux_participation.toString(),
+            id_pays: a.personne.id_pays
           }))
         });
 
@@ -320,11 +346,13 @@ export default function Step2() {
   const handleSaveSection = async (section: keyof SocieteData) => {
     setIsSaving(prev => ({ ...prev, [section]: true }));
     setToastMessage(null);
-    
+
+
+
     try {
       let response;
-      
-      switch(section) {
+
+      switch (section) {
         case 'infos':
           if (detenteurId) {
             response = await axios.put(`${apiURL}/api/detenteur-morale/${detenteurId}`, formData.infos);
@@ -371,7 +399,7 @@ export default function Step2() {
 
         case 'rcDetails':
           if (!detenteurId) throw new Error("Détenteur non défini !");
-          
+
           try {
             response = await axios.put(
               `${apiURL}/api/registre-commerce/${detenteurId}`,
@@ -397,6 +425,13 @@ export default function Step2() {
 
         case 'actionnaires':
           if (!detenteurId) throw new Error("Détenteur non défini !");
+          // Validate actionnaires before sending
+          const invalidActionnaires = formData.actionnaires.filter(a => !a.id_pays);
+          if (invalidActionnaires.length > 0) {
+            console.error('Actionnaires missing country:', invalidActionnaires);
+            throw new Error("Tous les actionnaires doivent avoir un pays sélectionné");
+          }
+
           response = await axios.put(
             `${apiURL}/api/actionnaires/${detenteurId}`,
             {
@@ -406,16 +441,24 @@ export default function Step2() {
           );
           break;
       }
-      
+
       setToastType('success');
       setToastMessage(`✅ Section "${section}" enregistrée avec succès.`);
       setDisabledSections(prev => ({ ...prev, [section]: true }));
       setIsModifying(prev => ({ ...prev, [section]: false }));
+
     } catch (error: any) {
+      console.error('=== FRONTEND: SAVE SECTION ERROR ===');
+      console.error('Error details:', error);
+
       let message = 'Erreur inconnue';
       if (axios.isAxiosError(error)) {
+        console.error('Axios error response:', error.response?.data);
         message = error.response?.data?.message || error.message;
+      } else if (error.message) {
+        message = error.message;
       }
+
       setToastType('error');
       setToastMessage(`❌ ${message}`);
     } finally {
@@ -430,7 +473,7 @@ export default function Step2() {
 
   const handleDeleteActionnaires = async () => {
     if (!detenteurId) return;
-    
+
     try {
       await axios.delete(`${apiURL}/api/actionnaires/${detenteurId}`);
       setFormData(prev => ({ ...prev, actionnaires: [] }));
@@ -517,10 +560,11 @@ export default function Step2() {
                     <div className={styles.accordionBody}>
                       {id === 'infos' && (
                         <>
-                          <InfosGenerales 
-                            data={formData.infos} 
+                          <InfosGenerales
+                            data={formData.infos}
                             onChange={handleInfosChange}
                             statutsJuridiques={statutsJuridiques}
+                            paysOptions={paysOptions}
                             disabled={disabledSections.infos && !isModifying.infos}
                           />
                           <div className={styles.sectionButtons}>
@@ -555,9 +599,10 @@ export default function Step2() {
 
                       {id === 'repLegal' && (
                         <>
-                          <RepresentantLegal 
-                            data={formData.repLegal} 
+                          <RepresentantLegal
+                            data={formData.repLegal}
                             onChange={handleRepLegalChange}
+                            paysOptions={paysOptions}
                             disabled={disabledSections.repLegal && !isModifying.repLegal}
                           />
                           <div className={styles.sectionButtons}>
@@ -592,8 +637,8 @@ export default function Step2() {
 
                       {id === 'rcDetails' && (
                         <>
-                          <DetailsRC 
-                            data={formData.rcDetails} 
+                          <DetailsRC
+                            data={formData.rcDetails}
                             onChange={handleRcDetailsChange}
                             disabled={disabledSections.rcDetails && !isModifying.rcDetails}
                           />
@@ -632,6 +677,7 @@ export default function Step2() {
                           <Actionnaires
                             data={formData.actionnaires}
                             onChange={handleActionnairesChange}
+                            paysOptions={paysOptions}
                             disabled={disabledSections.actionnaires && !isModifying.actionnaires}
                           />
                           <div className={styles.sectionButtons}>
@@ -685,7 +731,7 @@ export default function Step2() {
                 <button className={styles.btnPrevious} onClick={handlePrevious}>
                   <FiChevronLeft className={styles.btnIcon} /> Précédente
                 </button>
-                
+
                 <button
                   className={styles.btnSave}
                   onClick={handleSaveEtape}
@@ -706,14 +752,14 @@ export default function Step2() {
               </div>
             </div>
           </div>
-          
+
           {toastMessage && (
             <div className={`${styles.toast} ${toastType === 'success' ? styles.toastSuccess : styles.toastError}`}>
               {toastMessage}
               <button onClick={() => setToastMessage(null)} className={styles.toastClose}>×</button>
             </div>
           )}
-          
+
           {showTauxModal && (
             <TauxWarningModal
               total={tauxSummary.total}

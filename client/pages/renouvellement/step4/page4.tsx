@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 import { useDemandeInfo } from '../../../utils/useDemandeInfo';
 import { FiChevronLeft, FiChevronRight, FiUser, FiDollarSign, FiTool, FiFileText, FiCalendar } from 'react-icons/fi';
-import styles from '@/pages/demande/step4/capacites.module.css';
+import styles from './capacites.module.css';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
@@ -14,18 +14,34 @@ import { useViewNavigator } from '../../../src/hooks/useViewNavigator';
 import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
+import ExpertDropdown from '@/components/ExpertDropdown';
+import { toast } from 'react-toastify';
+
+type ExpertMinier = {
+  id_expert: number;
+  nom_expert: string;
+  num_agrement: string;
+  date_agrement: string;
+  etat_agrement: string;
+  adresse: string | null;
+  email: string | null;
+  tel_expert: string | null;
+  fax_expert: string | null;
+  specialisation: string | null;
+};
 
 export default function Capacites() {
   const [form, setForm] = useState({
+    id_expert: 0,
     duree_travaux: '',
     capital_social: '',
     budget: '',
     description: '',
     financement: '',
     nom_expert: '',
-    fonction: '',
-    num_registre: '',
-    organisme: '',
+    specialisation: '',
+    num_agrement: '',
+    etat_agrement: '',
     date_demarrage_prevue:''
   });
   
@@ -41,47 +57,62 @@ export default function Capacites() {
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
-  const originalId  = searchParams?.get("originalDemandeId");
-  const originalprocid  = searchParams?.get("original_proc_id");
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const currentStep = 3;    
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  const [selectedExpert, setSelectedExpert] = useState<ExpertMinier | null>(null);
 
+  useEffect(() => {
+  if (selectedExpert) {
+    setForm(prev => ({
+      ...prev,
+      nom_expert: selectedExpert.nom_expert,
+      specialisation: selectedExpert.specialisation || '',
+      num_agrement: selectedExpert.num_agrement || '',
+      etat_agrement: selectedExpert.etat_agrement,
+      id_expert: selectedExpert.id_expert, 
+    }));
+  }
+}, [selectedExpert]);
+
+  /*useEffect(() => {
+    if (!idProc || from === 'suivi') return;
+    const activateStep = async () => {
+      try {
+        await axios.post(`${apiURL}/api/procedure-etape/start/${idProc}/4`);
+      } catch (err) {
+        console.error("Échec de l'activation de l'étape");
+      }
+    };
+
+    activateStep();
+  }, [idProc, from]);*/
   useActivateEtape({ idProc, etapeNum: 4, statutProc });
+
 
 
   useEffect(() => {
   const proc = searchParams?.get('id');
 
   if (proc) {
-
-    axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
-      .then(res2 => {
-        setStatutProc(res2.data.procedure.statut_proc);
-        
-      })
-      .catch(err => {
-        console.error("Erreur récupération de la demande :", err);
-        setError("Erreur récupération de la demande");
-      });
-    
-    axios.get(`${apiURL}/api/procedures/${originalprocid}/demande`)
+    axios.get(`${apiURL}/api/procedures/${proc}/demande`)
       .then(res => {
         const demande = res.data;
         setIdDemande(demande.id_demande.toString());
         setCodeDemande(demande.code_demande);
-        /*setStatutProc(res.data.procedure.statut_proc);*/
+        setStatutProc(res.data.procedure.statut_proc);
         setForm({
+          id_expert: demande.expertMinier?.id_expert || 0,
   duree_travaux: demande.duree_travaux_estimee || '',
   capital_social: demande.capital_social_disponible || '',
   budget: demande.budget_prevu || '',
   description: demande.description_travaux || '',
   financement: demande.sources_financement || '',
   nom_expert: demande.expertMinier?.nom_expert || '',
-  fonction: demande.expertMinier?.fonction || '',
-  num_registre: demande.expertMinier?.num_registre || '',
-  organisme: demande.expertMinier?.organisme || '',
+  specialisation: demande.expertMinier?.specialisation || '',
+  num_agrement: demande.expertMinier?.num_agrement || '',
+  etat_agrement: demande.expertMinier?.etat_agrement || '',
   date_demarrage_prevue: demande.date_demarrage_prevue?.split('T')[0] || ''
 });
 
@@ -110,6 +141,8 @@ const handleSaveEtape = async () => {
   setEtapeMessage(null);
 
   try {
+      const currentUrl = window.location.pathname + window.location.search; 
+
     await axios.post(`${apiURL}/api/procedure-etape/finish/${idProc}/4`);
     setEtapeMessage("Étape 4 enregistrée avec succès !");
   } catch (err) {
@@ -122,54 +155,43 @@ const handleSaveEtape = async () => {
 
 
   const handleNext = async () => {
-    if (!idProc) {
-      setError("Identifiant de la procedure manquant");
-      return;
-    }
+  if (!idProc) {
+    toast.error("Identifiant de la procédure manquant");
+    return;
+  }
 
-    if (!form.nom_expert || !form.fonction || !form.organisme) {
-      setError("Veuillez remplir le nom de l'expert, la fonction et l'organisme");
-      return;
-    }
+  if (!form.id_expert) {
+    toast.error("Veuillez sélectionner un expert");
+    return;
+  }
 
-    try {
-     await axios.put(`${apiURL}/api/capacites`, {
-  id_demande: idDemande,
-  duree_travaux: form.duree_travaux,
-  capital_social: form.capital_social,
-  budget: form.budget,
-  description: form.description,
-  financement: form.financement,
-  nom_expert: form.nom_expert,
-  fonction: form.fonction,
-  num_registre: form.num_registre,
-  organisme: form.organisme,
-  date_demarrage_prevue: form.date_demarrage_prevue 
+  try {
+    await axios.put(`${apiURL}/api/capacites`, {
+      id_demande: idDemande,
+      duree_travaux: form.duree_travaux,
+      capital_social: form.capital_social,
+      budget: form.budget,
+      description: form.description,
+      financement: form.financement,
+      date_demarrage_prevue: form.date_demarrage_prevue,
+      id_expert: form.id_expert, // ✅ existing expert
+    });
 
-});
+    toast.success("✅ Capacités enregistrées avec succès");
+    router.push(`/demande/step5/page5?id=${idProc}`);
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ Erreur lors de l'enregistrement");
+  }
+};
 
-
-      setSuccess("Expert minier enregistré avec succès");
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement de l'expert", error);
-      setError("Erreur lors de l'enregistrement");
-    } finally {
-      setIsLoading(false);
-    }
-    if (!idProc) {
-      setError("Informations de la demande manquantes");
-      return;
-    }
-         router.push(`/renouvellement/step5/page5?id=${idProc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
-  };
 
    const handleBack = () => {
   if (!idProc) {
     setError("ID procédure manquant");
     return;
   }
-      router.push(`/renouvellement/step3/page3?id=${idProc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
+      router.push(`/demande/step3/page3?id=${idProc}`);
 };
 
   if (!isReady) {
@@ -196,14 +218,8 @@ const handleSaveEtape = async () => {
                     <div className={styles.contentWrapper}>
 
           {/* Progress Steps */}
-            <ProgressStepper
-  steps={
-    originalprocid
-      ? STEP_LABELS.filter((step) => step !== "Avis Wali")
-      : STEP_LABELS
-  }
-  currentStep={currentStep}
-/>
+            <ProgressStepper steps={STEP_LABELS} currentStep={currentStep} />
+
 
             <h2 className={styles.pageTitle}>
               <span className={styles.stepNumber}>Étape 3</span>
@@ -328,11 +344,20 @@ const handleSaveEtape = async () => {
 
               {/* Expert Minier Section */}
               <section className={styles.formSection}>
-                <div className={styles.sectionHeader}>
-                  <FiUser className={styles.sectionIcon} />
-                  <h3 className={styles.sectionTitle}>Expert minier</h3>
-                </div>
-                <div className={styles.formGrid}>
+  <div className={styles.sectionHeader}>
+    <FiUser className={styles.sectionIcon} />
+    <h3 className={styles.sectionTitle}>Expert minier</h3>
+  </div>
+  
+  <div className={styles.expertSelector}>
+    <ExpertDropdown 
+      onSelect={setSelectedExpert}
+      disabled={statutProc === 'TERMINEE'}
+      initialExpert={form.id_expert ? selectedExpert : null}
+    />
+  </div>
+
+ <div className={styles.formGrid}>
   <div className={styles.formGroup}>
     <label className={styles.formLabel}>Nom complet*</label>
     <input
@@ -347,38 +372,38 @@ const handleSaveEtape = async () => {
     />
   </div>
   <div className={styles.formGroup}>
-    <label className={styles.formLabel}>Fonction*</label>
+    <label className={styles.formLabel}>Specialisation*</label>
     <input
       type="text"
-      name="fonction"
+      name="specialisation"
       className={styles.formInput}
       onChange={handleChange}
-      value={form.fonction}
+      value={form.specialisation}
       placeholder="Ex: Géologue senior"
       required
       disabled
     />
   </div>
   <div className={styles.formGroup}>
-    <label className={styles.formLabel}>Numéro de registre</label>
+    <label className={styles.formLabel}>Numéro d'aggrement</label>
     <input
       type="text"
-      name="num_registre"
+      name="numero d'aggrement"
       className={styles.formInput}
       onChange={handleChange}
-      value={form.num_registre}
+      value={form.num_agrement}
       placeholder="Numéro d'enregistrement"
       disabled
     />
   </div>
   <div className={styles.formGroup}>
-    <label className={styles.formLabel}>Organisme*</label>
+    <label className={styles.formLabel}>Etat D'aggrement*</label>
     <input
       type="text"
-      name="organisme"
+      name="etat d'aggrement"
       className={styles.formInput}
       onChange={handleChange}
-      value={form.organisme}
+      value={form.etat_agrement}
       placeholder="Organisme d'affiliation"
       required
       disabled
@@ -386,7 +411,7 @@ const handleSaveEtape = async () => {
   </div>
 </div>
 
-              </section>
+</section>
             </div>
 
             <div className={styles.actionButtons}>
@@ -402,14 +427,14 @@ const handleSaveEtape = async () => {
               <button
                 className={styles.btnSave}
                 onClick={handleSaveEtape}
-                disabled={savingEtape}
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles.btnIcon} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>
               <button
                 onClick={handleNext}
                className={styles.btnNext}
-                disabled={isLoading || !form.nom_expert || !form.fonction || !form.organisme}
+                disabled={isLoading || !form.nom_expert || !form.specialisation || !form.etat_agrement}
               >
                 Suivant
                                 <FiChevronRight className={styles.btnIcon} />

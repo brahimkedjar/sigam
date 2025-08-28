@@ -8,6 +8,7 @@ import { PaymentResponseDto } from './payment-response.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
+import { EnumStatutPaiement } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -115,7 +116,7 @@ async getObligationsForPermis(permisId: number): Promise<ObligationResponseDto[]
     annee_fiscale: new Date().getFullYear(),
     montant_attendu: attributionProduct, // ✅ number only
     date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-    statut: 'A payer',
+    statut: EnumStatutPaiement.A_payer,
   },
   {
     id_typePaiement: 2,
@@ -123,7 +124,7 @@ async getObligationsForPermis(permisId: number): Promise<ObligationResponseDto[]
     annee_fiscale: new Date().getFullYear(),
     montant_attendu: establishmentFee, // ✅ number only
     date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-    statut: 'A payer',
+    statut: EnumStatutPaiement.A_payer,
   },
   {
     id_typePaiement: 3,
@@ -131,7 +132,7 @@ async getObligationsForPermis(permisId: number): Promise<ObligationResponseDto[]
     annee_fiscale: new Date().getFullYear(),
     montant_attendu: surfaceTax, // ✅ number only
     date_echeance: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-    statut: 'A payer',
+    statut: EnumStatutPaiement.A_payer,
   },
 ];
 
@@ -219,9 +220,9 @@ private async updateObligationStatus(obligationId: number) {
   if (totalPaid >= obligation.montant_attendu) {
     newStatus = 'Payé';
   } else if (new Date() > obligation.date_echeance) {
-    newStatus = 'En retard';
+    newStatus = 'En_retard';
   } else {
-    newStatus = 'Partiellement payé';
+    newStatus = 'Partiellement_payé';
   }
 
   await this.prisma.obligationFiscale.update({
@@ -292,7 +293,7 @@ private mapToObligationResponseDto(obligation: any): ObligationResponseDto {
       code_permis: obligation.permis?.code_permis || '',
       detenteur: obligation.permis?.detenteur ? {
         id: obligation.permis.detenteur.id_detenteur,
-        nom_sociétéFR: obligation.permis.detenteur.nom_sociétéFR,
+        nom_societeFR: obligation.permis.detenteur.nom_societeFR,
         registreCommerce: obligation.permis.detenteur.registreCommerce ? {
           nif: obligation.permis.detenteur.registreCommerce.nif
         } : undefined
@@ -495,7 +496,7 @@ try {
 }): string {
   const { obligation, payment, payments } = data;
 
-  const detenteurName = obligation?.permis?.detenteur?.nom_sociétéFR || 'N/A';
+  const detenteurName = obligation?.permis?.detenteur?.nom_societeFR || 'N/A';
   const totalPaid = payments.reduce((sum, p) => sum + (p.montant_paye || 0), 0);
   const type = obligation?.typePaiement?.libelle || 'N/A';
 

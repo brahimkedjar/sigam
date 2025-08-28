@@ -22,7 +22,7 @@ export class Permisdashboard2Service {
     return this.prisma.permis.findMany({
       where: {
         statut: {
-          lib_statut: 'Actif'
+          lib_statut: 'En vigueur'
         }
       },
       include: {
@@ -43,7 +43,7 @@ export class Permisdashboard2Service {
           lt: new Date()
         },
         statut: {
-          lib_statut: 'Actif'
+          lib_statut: 'En vigueur'
         }
       },
       include: {
@@ -85,7 +85,7 @@ async findAll1(pagination: { skip?: number; take?: number } = {}) {
     return this.prisma.permis.findMany({
       where: {
         statut: {
-          lib_statut: 'Actif'
+          lib_statut: 'En vigueur'
         }
       },
       include: {

@@ -8,27 +8,37 @@ async function main() {
       {
         nom_subFR: 'Fer',
         nom_subAR: 'الحديد',
-        catégorie_sub: 'métalliques',
+        categorie_sub: 'métalliques',
+        famille_sub: '',
+        id_redevance:1
       },
       {
         nom_subFR: 'Cuivre',
         nom_subAR: 'النحاس',
-        catégorie_sub: 'métalliques',
+        categorie_sub: 'métalliques',
+        famille_sub: '',
+        id_redevance:1
       },
       {
         nom_subFR: 'Argile',
         nom_subAR: 'الطين',
-        catégorie_sub: 'non-métalliques',
+        categorie_sub: 'non-métalliques',
+        famille_sub: '',
+        id_redevance:1
       },
       {
         nom_subFR: 'Sable',
         nom_subAR: 'الرمل',
-        catégorie_sub: 'non-métalliques',
+        categorie_sub: 'non-métalliques',
+        famille_sub: '',
+        id_redevance:1
       },
       {
         nom_subFR: 'Uranium',
         nom_subAR: 'اليورانيوم',
-        catégorie_sub: 'radioactives',
+        categorie_sub: 'radioactives',
+        famille_sub: '',
+        id_redevance:1
       }
     ],
     skipDuplicates: true,

@@ -65,15 +65,16 @@ async savePermis(@Body() body: any) {
   const permis = await this.service.generatePermisFromDemande(body.id_demande);
   
   // Then save the template associated with this specific permis
-  await this.service.saveTemplate({
-    elements: body.elements,
-    permisId: permis.id,
-    name: `Template for ${permis.code_permis}`
-  });
+  if (body.elements) {
+    await this.service.saveTemplate({
+      elements: body.elements,
+      permisId: permis.id,
+      name: `Template for ${permis.code_permis}`
+    });
+  }
   
   return { 
     id: permis.id,
-    // Include any other relevant data here
     code_permis: permis.code_permis
   };
 }

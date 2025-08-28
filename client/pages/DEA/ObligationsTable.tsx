@@ -40,7 +40,7 @@ const ObligationsTable: React.FC<ObligationsTableProps> = ({
           <antd.Typography.Text strong>{code || 'N/A'}</antd.Typography.Text>
           <br />
           <antd.Typography.Text type="secondary">
-            {record.permis?.detenteur?.nom_sociétéFR || 'Détenteur non spécifié'}
+            {record.permis?.detenteur?.nom_societeFR || 'Détenteur non spécifié'}
           </antd.Typography.Text>
         </div>
       )

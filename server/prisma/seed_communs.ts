@@ -31,16 +31,16 @@ async function main() {
   // 3. Create Wilayas with their Antenne assignments
   const wilayas = [
     // Antenne Nord (id_antenne: 1)
-    { code_wilaya: '16', nom_wilaya: 'Alger', id_antenne: 1 },
-    { code_wilaya: '09', nom_wilaya: 'Blida', id_antenne: 1 },
-    { code_wilaya: '10', nom_wilaya: 'Bouira', id_antenne: 1 },
-    { code_wilaya: '35', nom_wilaya: 'Boumerdès', id_antenne: 1 },
-    { code_wilaya: '42', nom_wilaya: 'Tipaza', id_antenne: 1 },
+    { code_wilaya: '16', nom_wilayaFR: 'Alger',nom_wilayaAR: 'Alger', id_antenne: 1,zone:'zone A' },
+    { code_wilaya: '09', nom_wilayaFR: 'Blida',nom_wilayaAR: 'Alger', id_antenne: 1,zone:'zone A' },
+    { code_wilaya: '10', nom_wilayaFR: 'Bouira',nom_wilayaAR: 'Alger', id_antenne: 1,zone:'zone A' },
+    { code_wilaya: '35', nom_wilayaFR: 'Boumerdès',nom_wilayaAR: 'Alger', id_antenne: 1,zone:'zone A' },
+    { code_wilaya: '42', nom_wilayaFR: 'Tipaza',nom_wilayaAR: 'Alger', id_antenne: 1,zone:'zone A' },
     
     // Antenne Est (id_antenne: 2)
-    { code_wilaya: '25', nom_wilaya: 'Constantine', id_antenne: 2 },
-    { code_wilaya: '23', nom_wilaya: 'Annaba', id_antenne: 2 },
-    { code_wilaya: '24', nom_wilaya: 'Guelma', id_antenne: 2 },
+    { code_wilaya: '25', nom_wilayaFR: 'Constantine',nom_wilayaAR: 'Alger', id_antenne: 2,zone:'zone A' },
+    { code_wilaya: '23', nom_wilayaFR: 'Annaba',nom_wilayaAR: 'Alger', id_antenne: 2,zone:'zone A' },
+    { code_wilaya: '24', nom_wilayaFR: 'Guelma',nom_wilayaAR: 'Alger', id_antenne: 2 ,zone:'zone A'},
     
     // ... Add all 58 wilayas with their correct antenne assignments
   ];
@@ -49,8 +49,10 @@ async function main() {
     const wilaya = await prisma.wilaya.create({
       data: {
         code_wilaya: wilayaData.code_wilaya,
-        nom_wilaya: wilayaData.nom_wilaya,
+        nom_wilayaFR: wilayaData.nom_wilayaFR,
+        nom_wilayaAR:wilayaData.nom_wilayaFR,
         id_antenne: wilayaData.id_antenne,
+        zone:wilayaData.zone
       }
     });
 
@@ -60,7 +62,8 @@ async function main() {
       const daira = await prisma.daira.create({
         data: {
           code_daira: dairaData.code_daira,
-          nom_daira: dairaData.nom_daira,
+          nom_dairaFR: dairaData.nom_dairaFR,
+          nom_dairaAR: dairaData.nom_dairaAR,
           id_wilaya: wilaya.id_wilaya
         }
       });
@@ -71,7 +74,8 @@ async function main() {
         await prisma.commune.create({
           data: {
             code_commune: communeData.code_commune,
-            nom_commune: communeData.nom_commune,
+            nom_communeFR: communeData.nom_communeFR,
+            nom_communeAR: communeData.nom_communeAR,
             id_daira: daira.id_daira
           }
         });
@@ -84,22 +88,22 @@ async function main() {
 
 // Helper functions with sample data for 2 wilayas
 function getDairasForWilaya(wilayaCode: string) {
-  const dairasByWilaya: Record<string, Array<{code_daira: string, nom_daira: string}>> = {
+  const dairasByWilaya: Record<string, Array<{code_daira: string, nom_dairaFR: string,nom_dairaAR: string}>> = {
     // Alger (16)
     '16': [
-      { code_daira: '1601', nom_daira: 'Sidi M\'Hamed' },
-      { code_daira: '1602', nom_daira: 'El Madania' },
-      { code_daira: '1603', nom_daira: 'El Harrach' },
-      { code_daira: '1604', nom_daira: 'Bab El Oued' },
-      { code_daira: '1605', nom_daira: 'Bouzareah' },
-      { code_daira: '1606', nom_daira: 'Bir Mourad Raïs' }
+      { code_daira: '1601', nom_dairaFR: 'Sidi M\'Hamed',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '1602', nom_dairaFR: 'El Madania',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '1603', nom_dairaFR: 'El Harrach',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '1604', nom_dairaFR: 'Bab El Oued',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '1605', nom_dairaFR: 'Bouzareah',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '1606', nom_dairaFR: 'Bir Mourad Raïs',nom_dairaAR:'Sidi M\'Hamed' }
     ],
     // Oran (31)
     '31': [
-      { code_daira: '3101', nom_daira: 'Oran' },
-      { code_daira: '3102', nom_daira: 'Gdyel' },
-      { code_daira: '3103', nom_daira: 'Bir El Djir' },
-      { code_daira: '3104', nom_daira: 'Es Senia' }
+      { code_daira: '3101', nom_dairaFR: 'Oran',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '3102', nom_dairaFR: 'Gdyel',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '3103', nom_dairaFR: 'Bir El Djir',nom_dairaAR:'Sidi M\'Hamed' },
+      { code_daira: '3104', nom_dairaFR: 'Es Senia',nom_dairaAR:'Sidi M\'Hamed' }
     ]
     // Add data for all wilayas
   };
@@ -107,20 +111,20 @@ function getDairasForWilaya(wilayaCode: string) {
 }
 
 function getCommunesForDaira(dairaCode: string) {
-  const communesByDaira: Record<string, Array<{code_commune: string, nom_commune: string}>> = {
+  const communesByDaira: Record<string, Array<{code_commune: string,nom_communeFR:string,nom_communeAR:string}>> = {
     // Alger dairas
     '1601': [
-      { code_commune: '160101', nom_commune: 'Sidi M\'Hamed' },
-      { code_commune: '160102', nom_commune: 'El Annasser' }
+      { code_commune: '160101', nom_communeFR: 'Sidi M\'Hamed',nom_communeAR:'Oran Centre'  },
+      { code_commune: '160102', nom_communeFR: 'El Annasser',nom_communeAR:'Oran Centre'  }
     ],
     '1602': [
-      { code_commune: '160201', nom_commune: 'Bab El Oued' },
-      { code_commune: '160202', nom_commune: 'Bologhine' }
+      { code_commune: '160201', nom_communeFR: 'Bab El Oued',nom_communeAR:'Oran Centre'  },
+      { code_commune: '160202', nom_communeFR: 'Bologhine',nom_communeAR:'Oran Centre'  }
     ],
     // Oran dairas
     '3101': [
-      { code_commune: '310101', nom_commune: 'Oran Centre' },
-      { code_commune: '310102', nom_commune: 'Sidi El Houari' }
+      { code_commune: '310101', nom_communeFR: 'Oran Centre',nom_communeAR:'Oran Centre' },
+      { code_commune: '310102', nom_communeFR: 'Sidi El Houari',nom_communeAR:'Oran Centre'  }
     ]
     // Add data for all dairas
   };

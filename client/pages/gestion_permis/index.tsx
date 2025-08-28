@@ -51,7 +51,7 @@ interface Antenne {
 
 interface DetenteurMorale {
   id_detenteur: number;
-  nom_sociétéFR: string;
+  nom_societeFR: string;
   nom_sociétéAR: string;
   nationalité: string;
 }
@@ -175,7 +175,7 @@ const PermisManagementPanel: React.FC = () => {
       result = result.filter(permis => 
         permis.code_permis.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (permis.lieu_dit && permis.lieu_dit.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (permis.detenteur && permis.detenteur.nom_sociétéFR.toLowerCase().includes(searchTerm.toLowerCase()))
+        (permis.detenteur && permis.detenteur.nom_societeFR.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -271,7 +271,7 @@ const PermisManagementPanel: React.FC = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Code,Type,Detenteur,Status,Location\n"
       + filteredPermis.map(p => 
-          `${p.code_permis},${p.typePermis?.lib_type || ''},${p.detenteur?.nom_sociétéFR || ''},${p.statut?.lib_statut || ''},${p.lieu_dit || ''}`
+          `${p.code_permis},${p.typePermis?.lib_type || ''},${p.detenteur?.nom_societeFR || ''},${p.statut?.lib_statut || ''},${p.lieu_dit || ''}`
         ).join("\n");
     
     const encodedUri = encodeURI(csvContent);
@@ -353,7 +353,7 @@ const PermisManagementPanel: React.FC = () => {
         <div className={styles.statCard}>
           <h3>Active</h3>
           <span className={styles.statNumber}>
-            {permisList.filter(p => p.statut?.lib_statut === 'Actif').length}
+            {permisList.filter(p => p.statut?.lib_statut === 'En vigueur').length}
           </span>
         </div>
         <div className={styles.statCard}>
@@ -389,7 +389,7 @@ const PermisManagementPanel: React.FC = () => {
               <tr key={permis.id} className={styles.tableRow}>
                 <td>{permis.code_permis}</td>
                 <td>{permis.typePermis?.lib_type}</td>
-                <td>{permis.detenteur?.nom_sociétéFR}</td>
+                <td>{permis.detenteur?.nom_societeFR}</td>
                 <td>
                   <span className={`${styles.statusBadge} ${styles[permis.statut?.lib_statut || 'default']}`}>
                     {permis.statut?.lib_statut}
@@ -575,7 +575,7 @@ const PermisModal: React.FC<{
                 <option value="">Select a detenteur</option>
                 {detenteurOptions.map(detenteur => (
                   <option key={detenteur.id_detenteur} value={detenteur.id_detenteur}>
-                    {detenteur.nom_sociétéFR}
+                    {detenteur.nom_societeFR}
                   </option>
                 ))}
               </select>

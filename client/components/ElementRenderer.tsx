@@ -8,6 +8,7 @@ import { TextElement } from './TextElement';
 import { RectangleElement } from './RectangleElement';
 import { LineElement } from './LineElement';
 import { ImageElement } from './ImageElement';
+import { QRCodeElement } from './QRCodeElement'; // Add this import
 
 interface ElementRendererProps {
   element: PermisElement;
@@ -60,6 +61,18 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isSel
       <ImageElement
         element={element}
         isSelected={isSelected}
+        onClickElement={onClickElement}
+        onDragEnd={onDragEnd}
+        onTransformEnd={onTransformEnd}
+      />
+    );
+  }
+  if (element.type === 'qrcode') {
+    return (
+      <QRCodeElement
+        element={element}
+        isSelected={isSelected}
+        zoom={zoom}
         onClickElement={onClickElement}
         onDragEnd={onDragEnd}
         onTransformEnd={onTransformEnd}

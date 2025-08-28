@@ -19,46 +19,63 @@ export class SocieteService {
   }
 
   async createDetenteur(data: any) {
-    // First validate the statut exists
-    const statutExists = await this.prisma.statutJuridique.findUnique({
-      where: { id_statutJuridique: parseInt(data.statut_id, 10) }
-    });
-    
-    if (!statutExists) {
-      throw new HttpException('Statut juridique invalide', HttpStatus.BAD_REQUEST);
-    }
-
-    const existing = await this.prisma.detenteurMorale.findFirst({
-      where: {
-        nom_sociétéFR: data.nom_fr,
-        nom_sociétéAR: data.nom_ar,
-        id_statutJuridique: parseInt(data.statut_id, 10),
-      }
-    });
-
-    if (existing) {
-      throw new HttpException('Le Detenteur Morale existe déjà.', HttpStatus.CONFLICT);
-    }
-
-    return this.prisma.detenteurMorale.create({
-      data: {
-        nom_sociétéFR: data.nom_fr,
-        nom_sociétéAR: data.nom_ar,
-        id_statutJuridique: parseInt(data.statut_id, 10),
-        telephone: data.tel,
-        email: data.email,
-        fax: data.fax,
-        adresse_siège: data.adresse,
-        nationalité: data.nationalite ?? '',
-        pay: data.pay ?? '', 
-      },
-    });
+  // First validate the statut exists
+  const statutExists = await this.prisma.statutJuridique.findUnique({
+    where: { id_statutJuridique: parseInt(data.statut_id, 10) }
+  });
+  
+  if (!statutExists) {
+    throw new HttpException('Statut juridique invalide', HttpStatus.BAD_REQUEST);
   }
+
+  // Validate pays exists if id_pays is provided
+  if (data.id_pays) {
+    const paysExists = await this.prisma.pays.findUnique({
+      where: { id_pays: parseInt(data.id_pays, 10) }
+    });
+    if (!paysExists) {
+      throw new HttpException('Pays invalide', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  const existing = await this.prisma.detenteurMorale.findFirst({
+    where: {
+      nom_societeFR: data.nom_fr,
+      nom_societeAR: data.nom_ar,
+      id_statutJuridique: parseInt(data.statut_id, 10),
+    }
+  });
+
+  if (existing) {
+    throw new HttpException('Le Detenteur Morale existe déjà.', HttpStatus.CONFLICT);
+  }
+
+  return this.prisma.detenteurMorale.create({
+    data: {
+      nom_societeFR: data.nom_fr,
+      nom_societeAR: data.nom_ar,
+      telephone: data.tel,
+      email: data.email,
+      fax: data.fax,
+      adresse_siege: data.adresse,
+      nationalite: data.nationalite ?? '',
+      // Explicitly connect relations if needed
+      statutJuridique: {
+        connect: { id_statutJuridique: parseInt(data.statut_id, 10) }
+      },
+      ...(data.id_pays && {
+        pays: {
+          connect: { id_pays: parseInt(data.id_pays, 10) }
+        }
+      })
+    },
+  });
+}
 
 async updateRepresentant(nin: string, data: any) {
     // Find person by NIN
     const personne = await this.prisma.personnePhysique.findUnique({
-      where: { num_carte_identité: nin }
+      where: { num_carte_identite: nin }
     });
 
     if (!personne) {
@@ -77,7 +94,7 @@ async updateRepresentant(nin: string, data: any) {
         email: data.email,
         fax: data.fax,
         qualification: data.qualite,
-        nationalité: data.nationalite,
+        nationalite: data.nationalite,
         lieu_naissance: data.lieu_naissance,
       }
     });
@@ -187,104 +204,155 @@ async updateRepresentant(nin: string, data: any) {
     where: {
       nomFR: data.nom,
       prenomFR: data.prenom,
-      num_carte_identité: data.nin,
+      num_carte_identite: data.nin,
     }
   });
 
-if (existing) {
-    throw new HttpException('Cette Personne Physique existe déjà.', HttpStatus.CONFLICT); // <-- send proper error
+  if (existing) {
+    throw new HttpException('Cette Personne Physique existe déjà.', HttpStatus.CONFLICT);
   }
-  return this.prisma.personnePhysique.create({
-    data: {
-      nomFR: data.nom,
-      prenomFR: data.prenom,
-      nomAR: data.nom_ar ?? '',
-      prenomAR: data.prenom_ar ?? '',
-      telephone: data.tel ?? '',
-      email: data.email ?? '',
-      fax: data.fax ?? '',
-      qualification: data.qualite,
-      nationalité: data.nationalite,
-      num_carte_identité: data.nin,
-      pay: data.pay ?? '',
-      adresse_domicile: '',
-      date_naissance: new Date(),
-      lieu_naissance: data.lieu_naissance ?? '',
-      lieu_juridique_soc: '',
-      réf_professionnelles: '',
-    },
-  });
+
+  // Validate that pays exists if id_pays is provided
+  if (data.id_pays) {
+    const paysExists = await this.prisma.pays.findUnique({
+      where: { id_pays: parseInt(data.id_pays, 10) }
+    });
+    
+    if (!paysExists) {
+      throw new HttpException('Pays invalide', HttpStatus.BAD_REQUEST);
+    }
+  } else {
+    console.log('WARNING: No id_pays provided in data');
+    console.log('Available data fields:', Object.keys(data));
+  }
+
+  // Prepare the create data with detailed logging
+  const createData: any = {
+    nomFR: data.nom,
+    prenomFR: data.prenom,
+    nomAR: data.nom_ar ?? '',
+    prenomAR: data.prenom_ar ?? '',
+    telephone: data.tel ?? '',
+    email: data.email ?? '',
+    fax: data.fax ?? '',
+    qualification: data.qualite,
+    nationalite: data.nationalite,
+    num_carte_identite: data.nin,
+    adresse_domicile: data.adresse_domicile ?? '',
+    date_naissance: data.date_naissance ? new Date(data.date_naissance) : new Date(),
+    lieu_naissance: data.lieu_naissance ?? '',
+    lieu_juridique_soc: data.lieu_juridique_soc ?? '',
+    ref_professionnelles: data.ref_professionnelles ?? '',
+  };
+
+  // Add pays relation if id_pays is provided
+  if (data.id_pays) {
+    createData.pays = {
+      connect: { id_pays: parseInt(data.id_pays, 10) }
+    };
+    console.log('Added pays connection to create data');
+  } else {
+    console.log('WARNING: No id_pays available for pays connection');
+  }
+
+  try {
+    const result = await this.prisma.personnePhysique.create({
+      data: createData,
+    });
+    return result;
+  } catch (error) {
+    console.error('Error creating PersonnePhysique:', error);
+    console.log('=== CREATE PERSONNE ERROR ===');
+    throw error;
+  }
 }
 
 async updateActionnaires(
-    id_detenteur: number,
-    list: CreateActionnaireDto[]
-  ): Promise<ActionnaireResult[]> {
-    // First delete actionnaires not in the new list
-    const existingNins = list.map(a => a.numero_carte).filter(Boolean);
-    await this.prisma.fonctionPersonneMoral.deleteMany({
-      where: {
-        id_detenteur,
-        type_fonction: 'Actionnaire',
-        NOT: {
-          personne: {
-            num_carte_identité: {
-              in: existingNins
-            }
+  id_detenteur: number,
+  list: CreateActionnaireDto[]
+): Promise<ActionnaireResult[]> {
+
+  // First delete actionnaires not in the new list
+  const existingNins = list.map(a => a.numero_carte).filter(Boolean);
+  await this.prisma.fonctionPersonneMoral.deleteMany({
+    where: {
+      id_detenteur,
+      type_fonction: 'Actionnaire',
+      NOT: {
+        personne: {
+          num_carte_identite: {
+            in: existingNins
           }
         }
       }
+    }
+  });
+
+  const results: ActionnaireResult[] = [];
+  
+  for (const [index, a] of list.entries()) {    
+    let personne: PersonnePhysique;
+    const existingPersonne = await this.prisma.personnePhysique.findFirst({
+      where: { num_carte_identite: a.numero_carte }
     });
 
-    const results: ActionnaireResult[] = [];
-    for (const a of list) {
-      let personne: PersonnePhysique;
-      const existingPersonne = await this.prisma.personnePhysique.findFirst({
-        where: { num_carte_identité: a.numero_carte }
-      });
-
-      if (existingPersonne) {
-        // Update existing person
-        personne = await this.prisma.personnePhysique.update({
-          where: { id_personne: existingPersonne.id_personne },
-          data: {
-            nomFR: a.nom,
-            prenomFR: a.prenom,
-            qualification: a.qualification,
-            nationalité: a.nationalite,
-            lieu_naissance: a.lieu_naissance
-          }
-        });
-      } else {
-        // Create new person
-        personne = await this.createPersonne({
-          nom: a.nom,
-          prenom: a.prenom,
-          nom_ar: '',
-          prenom_ar: '',
-          tel: '',
-          email: '',
-          fax: '',
-          qualite: a.qualification,
+    if (existingPersonne) {      
+      // Update existing person
+      personne = await this.prisma.personnePhysique.update({
+        where: { id_personne: existingPersonne.id_personne },
+        data: {
+          nomFR: a.nom,
+          prenomFR: a.prenom,
+          qualification: a.qualification,
           nationalite: a.nationalite,
-          nin: a.numero_carte,
           lieu_naissance: a.lieu_naissance,
-        });
+          // Add pays connection if available
+          ...(a.id_pays && {
+            pays: {
+              connect: { id_pays: a.id_pays }
+            }
+          }),
+        }
+      });
+          } else {      
+      // Create new person with detailed logging
+      const personneData: any = {
+        nom: a.nom,
+        prenom: a.prenom,
+        nom_ar: '',
+        prenom_ar: '',
+        tel: '',
+        email: '',
+        fax: '',
+        qualite: a.qualification,
+        nationalite: a.nationalite,
+        nin: a.numero_carte,
+        lieu_naissance: a.lieu_naissance,
+      };
+
+      // Add id_pays if available
+      if (a.id_pays) {
+        personneData.id_pays = a.id_pays;
+      } else {
+        console.log('WARNING: No id_pays in actionnaire data');
       }
 
-      // Link/update as actionnaire
-      const lien = await this.linkFonction(
-        personne.id_personne,
-        id_detenteur,
-        'Actionnaire',
-        'Actif',
-        parseFloat(a.taux_participation)
-      );
-
-      results.push({ personne, lien });
+      personne = await this.createPersonne(personneData);
     }
-    return results;
+
+    // Link/update as actionnaire
+    const lien = await this.linkFonction(
+      personne.id_personne,
+      id_detenteur,
+      'Actionnaire',
+      'Actif',
+      parseFloat(a.taux_participation)
+    );
+
+    results.push({ personne, lien });
   }
+    return results;
+}
 
   async updateRegistre(id_detenteur: number, data: any): Promise<RegistreCommerce> {
   // First check if registre exists
@@ -324,8 +392,8 @@ async updateDetenteur(id: number, data: any): Promise<DetenteurMorale> {
     where: {
       NOT: { id_detenteur: id },
       OR: [
-        { nom_sociétéFR: data.nom_fr },
-        { nom_sociétéAR: data.nom_ar }
+        { nom_societeFR: data.nom_fr },
+        { nom_societeAR: data.nom_ar }
       ]
     }
   });
@@ -338,15 +406,15 @@ async updateDetenteur(id: number, data: any): Promise<DetenteurMorale> {
   return this.prisma.detenteurMorale.update({
     where: { id_detenteur: id },
     data: {
-      nom_sociétéFR: data.nom_fr,
-      nom_sociétéAR: data.nom_ar,
+      nom_societeFR: data.nom_fr,
+      nom_societeAR: data.nom_ar,
       id_statutJuridique: parseInt(data.statut_id, 10),
       telephone: data.tel,
       email: data.email,
       fax: data.fax,
-      adresse_siège: data.adresse,
-      nationalité: data.nationalite,
-      pay: data.pay
+      adresse_siege: data.adresse,
+      nationalite: data.nationalite,
+      pays: data.pays
     }
   });
 }
@@ -408,7 +476,7 @@ async deleteActionnaires(id_detenteur: number) {
       where: {
         nomFR: a.nom,
         prenomFR: a.prenom,
-        num_carte_identité: a.numero_carte,
+        num_carte_identite: a.numero_carte,
       },
     });
 
@@ -446,7 +514,12 @@ async deleteActionnaires(id_detenteur: number) {
         qualite: a.qualification,
         nationalite: a.nationalite,
         nin: a.numero_carte,
+         id_pays: a.id_pays,
         lieu_naissance: a.lieu_naissance,
+        pays: {
+      connect: { id_pays: a.id_pays }   // 👈 connect instead of create
+    }
+        
       });
     }
 

@@ -22,6 +22,19 @@ import ProgressStepper from '../../../components/ProgressStepper';
 import { STEP_LABELS } from '../../../src/constants/steps';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 
+type StatutJuridique = {
+  id_statutJuridique: number;
+  code_statut: string;
+  statut_fr: string;
+  statut_ar: string;
+};
+
+type Pays = {
+  id_pays: number;
+  nom_pays: string;
+  nationalite: string;
+};
+
 type AccordionItem = {
   id: string;
   title: string;
@@ -37,6 +50,7 @@ type Actionnaire = {
   qualification: string;
   numero_carte: string;
   taux_participation: string;
+  id_pays:number | null
 };
 
 type SocieteData = {
@@ -49,7 +63,7 @@ type SocieteData = {
     fax: string;
     adresse: string;
     nationalite: string;
-
+    id_pays: number | null;
   };
   repLegal: {
     nom: string;
@@ -63,6 +77,7 @@ type SocieteData = {
     nationalite: string;
     nin: string;
     taux_participation: string;
+    id_pays: number | null;
   };
   rcDetails: {
     numero_rc: string;
@@ -84,7 +99,8 @@ const initialData: SocieteData = {
     email: '',
     fax: '',
     adresse: '',
-    nationalite: ''
+    nationalite: '',
+    id_pays: 0
   },
   repLegal: {
     nom: '',
@@ -97,7 +113,8 @@ const initialData: SocieteData = {
     qualite: '',
     nationalite: '',
     nin: '',
-    taux_participation: ''
+    taux_participation: '',
+    id_pays:0
   },
   rcDetails: {
     numero_rc: '',
@@ -109,6 +126,7 @@ const initialData: SocieteData = {
   },
   actionnaires: []
 };
+
 
 export default function Step2() {
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
@@ -123,6 +141,8 @@ export default function Step2() {
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  const [paysOptions, setPaysOptions] = useState<Pays[]>([]);
+  const [statutsJuridiques, setStatutsJuridiques] = useState<StatutJuridique[]>([]);
 
   useActivateEtape({ idProc, etapeNum: 3, statutProc });
 
@@ -196,44 +216,46 @@ const handlePrevious = () => {
 
         setDetenteurId(demande.detenteur.id_detenteur);
         setFormData({
-    infos: {
-      nom_fr: demande.detenteur.nom_sociétéFR,
-      nom_ar: demande.detenteur.nom_sociétéAR,
-      statut_id: demande.detenteur.id_statutJuridique,
-      tel: demande.detenteur.telephone,
-      email: demande.detenteur.email,
-      fax: demande.detenteur.fax,
-      adresse: demande.detenteur.adresse_siège,
-      nationalite: demande.detenteur.nationalité,
-    },
-    repLegal: representant ? {
-      nom: representant.personne.nomFR,
-      prenom: representant.personne.prenomFR,
-      nom_ar: representant.personne.nomAR,
-      prenom_ar: representant.personne.prenomAR,
-      tel: representant.personne.telephone,
-      email: representant.personne.email,
-      fax: representant.personne.fax,
-      qualite: representant.personne.qualification,
-      nationalite: representant.personne.nationalité,
-      nin: representant.personne.num_carte_identité,
-      taux_participation: representant.taux_participation
-    } : initialData.repLegal,
-    rcDetails: {
-  ...demande.detenteur.registreCommerce,
-  date_enregistrement: formatDate(demande.detenteur.registreCommerce?.date_enregistrement)
-}
-,
-    actionnaires: actionnaires.map((a: { personne: { nomFR: any; prenomFR: any; lieu_naissance: any; nationalité: any; qualification: any; num_carte_identité: any; }; taux_participation: { toString: () => any; }; }) => ({
-      nom: a.personne.nomFR,
-      prenom: a.personne.prenomFR,
-      lieu_naissance: a.personne.lieu_naissance,
-      nationalite: a.personne.nationalité,
-      qualification: a.personne.qualification,
-      numero_carte: a.personne.num_carte_identité,
-      taux_participation: a.taux_participation.toString()
-    }))
-  });
+          infos: {
+            nom_fr: demande.detenteur.nom_societeFR,
+            nom_ar: demande.detenteur.nom_societeAR,
+            statut_id: demande.detenteur.id_statutJuridique || 0, // Changed from statutJuridique?.id_statutJuridique to id_statutJuridique
+            tel: demande.detenteur.telephone,
+            email: demande.detenteur.email,
+            fax: demande.detenteur.fax,
+            adresse: demande.detenteur.adresse_siege,
+            nationalite: demande.detenteur.nationalite,
+            id_pays:demande.detenteur.id_pays,
+          },
+          repLegal: representant ? {
+            nom: representant.personne.nomFR,
+            prenom: representant.personne.prenomFR,
+            nom_ar: representant.personne.nomAR,
+            prenom_ar: representant.personne.prenomAR,
+            tel: representant.personne.telephone,
+            email: representant.personne.email,
+            fax: representant.personne.fax,
+            qualite: representant.personne.qualification,
+            nationalite: representant.personne.nationalite,
+            nin: representant.personne.num_carte_identite,
+            taux_participation: representant.taux_participation.toString(),
+            id_pays: representant.personne.id_pays
+          } : initialData.repLegal,
+          rcDetails: {
+            ...demande.detenteur.registreCommerce,
+            date_enregistrement: formatDate(demande.detenteur.registreCommerce?.date_enregistrement)
+          },
+          actionnaires: actionnaires.map((a: any) => ({
+            nom: a.personne.nomFR,
+            prenom: a.personne.prenomFR,
+            lieu_naissance: a.personne.lieu_naissance,
+            nationalite: a.personne.nationalite,
+            qualification: a.personne.qualification,
+            numero_carte: a.personne.num_carte_identite,
+            taux_participation: a.taux_participation.toString(),
+            id_pays:a.personne.id_pays
+          }))
+        });
  setDisabledSections({
           infos: true,
           repLegal: !!representant,
@@ -521,8 +543,11 @@ const handleDeleteActionnaires = async () => {
         <InfosGenerales 
           data={formData.infos} 
           onChange={handleInfosChange}
+          statutsJuridiques={statutsJuridiques}
+          paysOptions={paysOptions}
           disabled={disabledSections.infos && !isModifying.infos}
         />
+                
         <div className={styles.sectionButtons}>
           {(!disabledSections.infos || isModifying.infos) ? (
             <button
@@ -554,11 +579,12 @@ const handleDeleteActionnaires = async () => {
 
     {id === 'repLegal' && (
       <>
-        <RepresentantLegal 
-          data={formData.repLegal} 
-          onChange={handleRepLegalChange}
-          disabled={disabledSections.repLegal && !isModifying.repLegal}
-        />
+        <RepresentantLegal
+                                    data={formData.repLegal}
+                                    onChange={handleRepLegalChange}
+                                    paysOptions={paysOptions}
+                                    disabled={disabledSections.repLegal && !isModifying.repLegal}
+                                  />
         <div className={styles.sectionButtons}>
           {(!disabledSections.repLegal || isModifying.repLegal) ? (
             <button
@@ -627,10 +653,11 @@ const handleDeleteActionnaires = async () => {
     {id === 'actionnaires' && (
       <>
         <Actionnaires
-          data={formData.actionnaires}
-          onChange={handleActionnairesChange}
-          disabled={disabledSections.actionnaires && !isModifying.actionnaires}
-        />
+                                    data={formData.actionnaires}
+                                    onChange={handleActionnairesChange}
+                                    paysOptions={paysOptions}
+                                    disabled={disabledSections.actionnaires && !isModifying.actionnaires}
+                                  />
         <div className={styles.sectionButtons}>
           {formData.actionnaires.length > 0 && (
   <>

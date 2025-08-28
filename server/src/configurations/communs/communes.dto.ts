@@ -15,7 +15,12 @@ export class CreateCommuneDto {
   @ApiProperty({ description: 'Commune name', example: 'Sidi M\'Hamed' })
   @IsString()
   @IsNotEmpty()
-  nom_commune: string;
+  nom_communeFR: string;
+
+  @ApiProperty({ description: 'اسم البلدية', example: 'سيدي محمد' })
+  @IsString()
+  @IsNotEmpty()
+  nom_communeAR: string;
 }
 
 export class UpdateCommuneDto {
@@ -29,8 +34,13 @@ export class UpdateCommuneDto {
   @IsNotEmpty()
   code_commune?: string;
 
-  @ApiProperty({ description: 'Commune name', example: 'Sidi M\'Hamed', required: false })
+  @ApiProperty({ description: 'Commune name', example: 'Sidi M\'Hamed' })
   @IsString()
   @IsNotEmpty()
-  nom_commune?: string;
+  nom_communeFR: string;
+
+  @ApiProperty({ description: 'اسم البلدية', example: 'سيدي محمد' })
+  @IsString()
+  @IsNotEmpty()
+  nom_communeAR: string;
 }

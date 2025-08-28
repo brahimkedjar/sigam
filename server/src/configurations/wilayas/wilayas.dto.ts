@@ -15,7 +15,17 @@ export class CreateWilayaDto {
   @ApiProperty({ description: 'Wilaya name', example: 'Alger' })
   @IsString()
   @IsNotEmpty()
-  nom_wilaya: string;
+  nom_wilayaFR: string;
+
+  @ApiProperty({ description: 'Wilaya name', example: 'Alger' })
+  @IsString()
+  @IsNotEmpty()
+  nom_wilayaAR: string;
+
+  @ApiProperty({ description: 'zone', example: 'ZONE A' })
+  @IsString()
+  @IsNotEmpty()
+  zone: string;
 }
 
 export class UpdateWilayaDto {
@@ -32,5 +42,15 @@ export class UpdateWilayaDto {
   @ApiProperty({ description: 'Wilaya name', example: 'Alger', required: false })
   @IsString()
   @IsNotEmpty()
-  nom_wilaya?: string;
+  nom_wilayaFR?: string;
+
+  @ApiProperty({ description: 'Wilaya name', example: 'Alger', required: false })
+  @IsString()
+  @IsNotEmpty()
+  nom_wilayaAR?: string;
+
+  @ApiProperty({ description: 'zone', example: 'zone A', required: false })
+  @IsString()
+  @IsNotEmpty()
+  zone?: string;
 }

@@ -24,10 +24,11 @@ async updateDemande(
   async attachExpertToDemande(
     @Param('id') id: string,
     @Body() body: {
-      nom_expert: string;
-      fonction: string;
-      num_registre?: string;
-      organisme: string;
+        nom_expert: string;
+    num_agrement: string;
+    etat_agrement: string;
+    specialisation:string;
+    date_agrement:Date;
     }
   ) {
     const id_demande = parseInt(id, 10);

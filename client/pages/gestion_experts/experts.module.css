@@ -223,7 +223,7 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.8fr;
   background: #f7fafc;
   border-bottom: 2px solid #e2e8f0;
   font-weight: 600;
@@ -257,7 +257,7 @@
 
 .tableRow {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.8fr;
   border-bottom: 1px solid #e2e8f0;
   transition: background 0.2s;
 }
@@ -606,4 +606,37 @@
     padding: 0;
     align-items: flex-end;
   }
+}
+
+.formGroup select,
+.formGroup textarea {
+  min-width: 530px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formGroup select:focus,
+.formGroup textarea:focus {
+  border-color: #2563eb; /* blue highlight */
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.errorInput {
+  border-color: #dc2626 !important; /* red */
+  background-color: #fef2f2;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+/* Optional: make textarea resizable only vertically */
+.formGroup textarea {
+  resize: vertical;
 }

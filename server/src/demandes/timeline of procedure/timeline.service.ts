@@ -74,13 +74,13 @@ export class TimelineService {
     demands: procedure.demandes?.map((demand) => ({
       id: demand.id_demande,
       code: demand.code_demande,
-      type: demand.typeProcedure?.libelle || 'Unknown', // 🔑 from demande
-      permitType: demand.typePermis?.lib_type || 'Unknown', // if you want both
+      type: demand.typeProcedure?.libelle || 'Unknown', 
+      permitType: demand.typePermis?.lib_type || 'Unknown',
       status: demand.statut_demande,
       submissionDate: demand.date_demande,
       processingTime: this.calculateDuration(
         demand.date_demande,
-        demand.date_fin,
+        demand.date_fin_instruction,
         true
       ),
     })) || [],

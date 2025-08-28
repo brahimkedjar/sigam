@@ -19,14 +19,22 @@ export class GeneratePermisService {
     }
   });
 
-  if (
-    !demande ||
-    !demande.typePermis ||
-    !demande.procedure ||
-    !demande.detenteur ||
-    !demande.wilaya
-  ) {
-    throw new Error("Missing data for permit generation");
+  // Debug logging
+  console.log('Demande data:', demande);
+  if (!demande) {
+    throw new Error("Demande not found");
+  }
+  if (!demande.typePermis) {
+    throw new Error("TypePermis missing");
+  }
+  if (!demande.procedure) {
+    throw new Error("Procedure missing");
+  }
+  if (!demande.detenteur) {
+    throw new Error("Detenteur missing");
+  }
+  if (!demande.wilaya) {
+    throw new Error("Wilaya missing");
   }
 
   // ✅ Récupérer l’antenne de la wilaya
@@ -48,8 +56,7 @@ export class GeneratePermisService {
       date_octroi: new Date(),
       date_expiration: expirationDate,
       duree_validite: demande.typePermis.duree_initiale,
-      lieu_dit: demande.lieu_dit || "",
-      mode_attribution: demande.objet_demande || "",
+      lieu_ditFR: demande.lieu_ditFR || "",
       superficie: demande.superficie || 0,
       utilisation: "",
       statut_juridique_terrain: demande.statut_juridique_terrain || "",

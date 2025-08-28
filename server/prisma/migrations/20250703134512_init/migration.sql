@@ -13,7 +13,7 @@ CREATE TABLE "Wilaya" (
     "id_wilaya" SERIAL NOT NULL,
     "id_antenne" INTEGER NOT NULL,
     "code_wilaya" TEXT NOT NULL,
-    "nom_wilaya" TEXT NOT NULL,
+    "nom_wilayaFR" TEXT NOT NULL,
 
     CONSTRAINT "Wilaya_pkey" PRIMARY KEY ("id_wilaya")
 );
@@ -23,7 +23,7 @@ CREATE TABLE "Daira" (
     "id_daira" SERIAL NOT NULL,
     "id_wilaya" INTEGER NOT NULL,
     "code_daira" TEXT NOT NULL,
-    "nom_daira" TEXT NOT NULL,
+    "nom_dairaFR" TEXT NOT NULL,
 
     CONSTRAINT "Daira_pkey" PRIMARY KEY ("id_daira")
 );
@@ -33,7 +33,7 @@ CREATE TABLE "Commune" (
     "id_commune" SERIAL NOT NULL,
     "id_daira" INTEGER NOT NULL,
     "code_commune" TEXT NOT NULL,
-    "nom_commune" TEXT NOT NULL,
+    "nom_communeFR" TEXT NOT NULL,
 
     CONSTRAINT "Commune_pkey" PRIMARY KEY ("id_commune")
 );

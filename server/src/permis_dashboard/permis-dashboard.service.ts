@@ -11,7 +11,7 @@ export class PermisDashboardService {
       this.prisma.permis.count({
         where: {
           statut: {
-            lib_statut: 'Actif'
+            lib_statut: 'En vigueur'
           }
         }
       }),
@@ -26,7 +26,7 @@ export class PermisDashboardService {
             lt: new Date()
           },
           statut: {
-            lib_statut: 'Actif'
+            lib_statut: 'En vigueur'
           }
         }
       })
@@ -136,7 +136,7 @@ export class PermisDashboardService {
 
     // Define colors for different statuses
     const statusColors: Record<string, string> = {
-      'Actif': '#10B981',      // Green
+      'En vigueur': '#10B981',      // Green
       'Expiré': '#EF4444',     // Red
       'En attente': '#F59E0B', // Amber
       'Suspendu': '#8B5CF6',   // Violet

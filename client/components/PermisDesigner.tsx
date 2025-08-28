@@ -1,6 +1,6 @@
 // File: components/PermisDesigner.tsx
 'use client';
-
+import QRCode from "qrcode";
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Stage, Layer, Transformer } from 'react-konva';
 import {
@@ -23,7 +23,7 @@ import { ArticlesPanel } from './ArticlesPanel';
 import { loadArticlesForPermit, toArticleElements } from './articleLoader';
 import { FONT_FAMILIES, ARABIC_FONTS, DEFAULT_CANVAS } from './constants';
 import { gridBackground, clamp } from './layout';
-
+import { AiOutlineQrcode } from "react-icons/ai";
 import styles from './PermisDesigner.module.css';
 import jsPDF from 'jspdf';
 
@@ -34,6 +34,18 @@ const PAGES = {
   ARTICLES: 2,
 } as const;
 
+interface QRCodeData {
+  typePermis: string;
+  codeDemande: string;
+  detenteur: string;
+  superficie: number;
+  duree: string;
+  localisation: string;
+  dateCreation: string;
+  coordinates?: any[];
+}
+
+
 type PagesTuple = [PermisElement[], PermisElement[], PermisElement[]];
 
 const PermisDesigner: React.FC<PermisDesignerProps> = ({ initialData, onSave, onGeneratePdf, onSavePermis }) => {
@@ -41,7 +53,7 @@ const PermisDesigner: React.FC<PermisDesignerProps> = ({ initialData, onSave, on
   const [pages, setPages] = useState<PagesTuple>([[], [], []]);
   const [currentPage, setCurrentPage] = useState<number>(PAGES.GENERAL);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [tool, setTool] = useState<'select' | 'text' | 'rectangle' | 'image' | 'line'>('select');
+  const [tool, setTool] = useState<'select' | 'text' | 'rectangle' | 'image' | 'line' | 'qrcode'>('select');
   const stageRef = useRef<any>(null);
   const transformerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -221,7 +233,7 @@ function createCornerDecorations(color: string): PermisElement[] {
       };
 
       const initialPages = buildPages(defaultTemplate);
-      
+      ""
       // Load articles and update articles page if needed
       const loadedArticles = await loadArticlesForPermit(initialData);
       setArticles(loadedArticles);
@@ -441,9 +453,10 @@ function createCornerDecorations(color: string): PermisElement[] {
   textAlign: 'left',   // push left
   direction: 'ltr',    // keep LTR for numbers
 },
+
       //{ id: uuidv4(), type: 'text', x: 80, y: 445, width: 640, text: `Type: ${data?.typePermis?.lib_type ?? ''}`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
-      //{ id: uuidv4(), type: 'text', x: 80, y: 470, width: 640, text: `Titulaire: ${data?.detenteur?.nom_sociétéFR ?? ''}`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
-      //{ id: uuidv4(), type: 'text', x: 80, y: 495, width: 640, text: `Localisation: ${data?.wilaya?.nom_wilaya ?? ''}, ${data?.daira?.nom_daira ?? ''}, ${data?.commune?.nom_commune ?? ''}`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
+      //{ id: uuidv4(), type: 'text', x: 80, y: 470, width: 640, text: `Titulaire: ${data?.detenteur?.nom_societeFR ?? ''}`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
+      //{ id: uuidv4(), type: 'text', x: 80, y: 495, width: 640, text: `Localisation: ${data?.wilaya?.nom_wilaya ?? ''}, ${data?.daira?.nom_daira ?? ''}, ${data?.commune?.nom_communeFR ?? ''}`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
       //{ id: uuidv4(), type: 'text', x: 80, y: 520, width: 640, text: `Superficie: ${data?.superficie ?? 0} ha`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
       //{ id: uuidv4(), type: 'text', x: 80, y: 545, width: 640, text: `Durée: ${data?.typePermis?.duree_initiale ?? ''} ans`, fontSize: 13, fontFamily: FONT_FAMILIES[0], color: '#000000', draggable: true, opacity: 1, rotation: 0, textAlign: 'left' },
 
@@ -457,6 +470,49 @@ function createCornerDecorations(color: string): PermisElement[] {
     ];
     return [...borderElements, ...contentElements];
   }
+// Use URL format - Google Lens will show the full URL with parameters
+const generateQRCodeData = (data: any): string => {
+  const permisData = {
+    type: data?.typePermis?.lib_type || 'N/A',
+    code: data?.code_demande || 'N/A',
+    detenteur: data?.detenteur?.nom_societeFR || data?.detenteur?.nom_sociétéFR || 'N/A',
+    superficie: data?.superficie || 0,
+    duree: data?.typePermis?.duree_initiale ? `${data.typePermis.duree_initiale} ans` : 'N/A',
+    localisation: `${data?.wilaya?.nom_wilaya || ''}, ${data?.daira?.nom_daira || ''}, ${data?.commune?.nom_commune || ''}`,
+    date: new Date().toLocaleDateString('fr-FR'),
+  };
+
+  // Create a URL with all data as parameters
+  const params = new URLSearchParams({
+    type: permisData.type,
+    code: permisData.code,
+    detenteur: permisData.detenteur,
+    superficie: permisData.superficie.toString(),
+    duree: permisData.duree,
+    localisation: permisData.localisation,
+    date: permisData.date,
+    source: 'PermisAlgerie'
+  });
+  
+  return `https://permis.algerie.dz/verify?${params.toString()}`;
+};
+
+const createQRCodeElement = (data: any, x: number, y: number): PermisElement => {
+  return {
+    id: uuidv4(),
+    type: 'qrcode',
+    x,
+    y,
+    width: 200, // Smaller default size
+    height: 200, // Smaller default size
+    qrData: generateQRCodeData(data),
+    draggable: true,
+    opacity: 1,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1
+  };
+};
 
   function createCoordsPage(data: any): PermisElement[] {
   const borderElements = createPageBorder();
@@ -746,28 +802,30 @@ function createArticlesPageHeader() {
   }, [zoom, setElementsForCurrent]);
 
   const handleTransformEnd = useCallback(() => {
-    const nodes = transformerRef.current?.nodes?.() || [];
-    setElementsForCurrent(prev => {
-      const updated = [...prev];
-      nodes.forEach((node: any) => {
-        const id = node.getAttr('id');
-        const i = updated.findIndex(el => el.id === id);
-        if (i >= 0) {
-          updated[i] = {
-            ...updated[i],
-            x: node.x() / zoom,
-            y: node.y() / zoom,
-            width: (node.width() * node.scaleX()) / zoom,
-            height: (node.height() * node.scaleY()) / zoom,
-            rotation: node.rotation(),
-          } as PermisElement;
-        }
-        node.scaleX(1);
-        node.scaleY(1);
-      });
-      return updated;
+  const nodes = transformerRef.current?.nodes?.() || [];
+  setElementsForCurrent(prev => {
+    const updated = [...prev];
+    nodes.forEach((node: any) => {
+      const id = node.getAttr('id');
+      const i = updated.findIndex(el => el.id === id);
+      if (i >= 0) {
+        updated[i] = {
+          ...updated[i],
+          x: node.x() / zoom,
+          y: node.y() / zoom,
+          width: (node.width() * node.scaleX()) / zoom,
+          height: (node.height() * node.scaleY()) / zoom,
+          scaleX: 1, 
+          scaleY: 1, 
+          rotation: node.rotation(),
+        } as PermisElement;
+      }
+      node.scaleX(1);
+      node.scaleY(1);
     });
-  }, [zoom, setElementsForCurrent]);
+    return updated;
+  });
+}, [zoom, setElementsForCurrent]);
 
   const handleTextChange = useCallback((id: string, newText: string) => {
     setElementsForCurrent(prev => prev.map(el => (el.id === id && el.type === 'text' ? { ...el, text: newText } : el)));
@@ -902,7 +960,7 @@ const handleDeleteTemplate = useCallback(async (templateId: string) => {
 }, [initialData.code_demande, activeTemplate]);
 
 
-  const handleGeneratePDF = useCallback(async () => {
+ const handleGeneratePDF = useCallback(async () => {
   if (!stageRef.current) return;
   setIsLoading(true);
 
@@ -918,37 +976,44 @@ const handleDeleteTemplate = useCallback(async (templateId: string) => {
       const stage = stageRef.current;
       const imgData = stage.toDataURL({ 
         pixelRatio: 2,
-        width: canvasSize.width,
-        height: canvasSize.height
+        width: DEFAULT_CANVAS.width,
+        height: DEFAULT_CANVAS.height
       });
 
-      // Calculate aspect ratio
-      const aspectRatio = canvasSize.width / canvasSize.height;
-      let imgWidth, imgHeight;
+      // Calculate aspect ratio and scaling
+      const canvasAspect = DEFAULT_CANVAS.width / DEFAULT_CANVAS.height;
+      const a4Aspect = a4Width / a4Height;
       
-      if (aspectRatio > 1) {
-        // Landscape
-        imgWidth = a4Width;
-        imgHeight = imgWidth / aspectRatio;
+      let imgWidth, imgHeight, x, y;
+      
+      if (canvasAspect > a4Aspect) {
+        // Canvas is wider than A4 - fit to width
+        imgWidth = a4Width - 40; // Add margins
+        imgHeight = imgWidth / canvasAspect;
+        x = 20; // Left margin
+        y = (a4Height - imgHeight) / 2; // Center vertically
       } else {
-        // Portrait
-        imgHeight = a4Height;
-        imgWidth = imgHeight * aspectRatio;
+        // Canvas is taller than A4 - fit to height
+        imgHeight = a4Height - 40; // Add margins
+        imgWidth = imgHeight * canvasAspect;
+        x = (a4Width - imgWidth) / 2; // Center horizontally
+        y = 20; // Top margin
       }
 
       if (pageIndex > 0) pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+     
     }
 
     pdf.save(`permis-${initialData.code_demande}.pdf`);
-    toast.success("PDF généré avec succès (client-side)");
+    toast.success("PDF généré avec succès");
   } catch (error) {
     console.error("Failed to generate PDF", error);
     toast.error("Échec de la génération du PDF");
   } finally {
     setIsLoading(false);
   }
-}, [pages, initialData, canvasSize]);
+}, [pages, initialData]);
 
 
 
@@ -1189,9 +1254,25 @@ const handleDeleteTemplate = useCallback(async (templateId: string) => {
   </button>
 )}
 
-            <button className={`${styles.actionBtn}`} onClick={handleSaveDesign} disabled={isLoading}><FiSave /> <span>Save Temp</span></button>
+            {/*<button className={`${styles.actionBtn}`} onClick={handleGeneratePDF} disabled={isLoading}><FiDownload /> <span>PDF</span></button>*/}
             <button className={`${styles.actionBtn}`} onClick={handleGeneratePDF} disabled={isLoading}><FiDownload /> <span>PDF</span></button>
-            <button className={`${styles.actionBtn}`} onClick={handleSavePermis} disabled={isLoading}><FiSave /> <span>Save Permis</span></button>
+            <button className={`${styles.actionBtn}`} onClick={handleSavePermis} disabled={isLoading}><FiSave /> <span>Save Permis and template</span></button>
+            <button 
+  className={`${styles.toolButton} ${tool === 'qrcode' ? styles.active : ''}`} 
+  onClick={() => {
+    setTool('qrcode');
+    const qrElement = createQRCodeElement(
+      initialData, 
+      DEFAULT_CANVAS.width / 2 - 100,
+      DEFAULT_CANVAS.height / 2 - 100
+    );
+    setElementsForCurrent(prev => [...prev, qrElement]);
+    setSelectedIds([qrElement.id]);
+  }}
+  title="Add QR Code"
+>
+  <AiOutlineQrcode size={16} />
+</button>
           </div>
         </div>
       </div>
@@ -1309,7 +1390,20 @@ const handleDeleteTemplate = useCallback(async (templateId: string) => {
                   <input type="number" value={firstSelected.height || 0} onChange={(e) => handlePropertyChange('height', parseFloat(e.target.value || '0'))} />
                 </div>
               </div>
-
+{firstSelected.type === 'qrcode' && (
+  <div className={styles.propRow}>
+    <label>QR Data</label>
+    <textarea 
+      value={firstSelected.qrData || ''} 
+      onChange={(e) => handlePropertyChange('qrData', e.target.value)} 
+      rows={4}
+      placeholder="Enter data for QR code"
+    />
+    <div className={styles.small}>
+      This data will be encoded in the QR code
+    </div>
+  </div>
+)}
               {firstSelected.type === 'text' && (
                 <>
                   <div className={styles.propRow}>

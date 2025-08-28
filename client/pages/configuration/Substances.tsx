@@ -7,7 +7,7 @@ interface Substance {
   id_sub: number;
   nom_subFR: string;
   nom_subAR: string;
-  catégorie_sub: string;
+  categorie_sub: string;
   redevance?: RedevanceBareme;
 }
 
@@ -37,7 +37,7 @@ const Substances = () => {
   const [substanceForm, setSubstanceForm] = useState({
     nom_subFR: '',
     nom_subAR: '',
-    catégorie_sub: '',
+    categorie_sub: '',
     id_redevance: '',
   });
 
@@ -75,34 +75,43 @@ const Substances = () => {
   };
 
   const handleSubstanceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const method = currentForm === 'create' ? 'POST' : 'PUT';
-      const url = currentForm === 'create' ? `${apiURL}/substances` : `${apiURL}/substances/${currentItem.id_sub}`;
+  e.preventDefault();
+  try {
+    const method = currentForm === 'create' ? 'POST' : 'PUT';
+    const url = currentForm === 'create' ? `${apiURL}/substances` : `${apiURL}/substances/${currentItem.id_sub}`;
 
-      const payload = {
-        ...substanceForm,
-        id_redevance: substanceForm.id_redevance ? parseInt(substanceForm.id_redevance) : null,
-      };
+    const payload = {
+      ...substanceForm,
+      id_redevance: substanceForm.id_redevance ? parseInt(substanceForm.id_redevance) : null,
+    };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    console.log('Sending payload:', payload); // Debug log
 
-      if (!response.ok) throw new Error('Operation failed');
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-      fetchData();
-      setIsModalOpen(false);
-    } catch (err) {
-      setError('Failed to save substance');
-      toast.error(`Failed to save substancee: ${(err as Error).message}`);
-      console.error(err);
+    const responseData = await response.json(); // Get the actual error message
+    
+    if (!response.ok) {
+      throw new Error(responseData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
-  };
+
+    toast.success('Substance saved successfully!');
+    fetchData();
+    setIsModalOpen(false);
+    
+  } catch (err) {
+    const errorMessage = (err as Error).message;
+    setError('Failed to save substance: ' + errorMessage);
+    toast.error(`Failed to save substance: ${errorMessage}`);
+    console.error('Submission error:', err);
+  }
+};
 
   const handleRedevanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,7 +167,7 @@ const Substances = () => {
       setSubstanceForm({
         nom_subFR: '',
         nom_subAR: '',
-        catégorie_sub: '',
+        categorie_sub: '',
         id_redevance: '',
       });
     } else {
@@ -182,7 +191,7 @@ const Substances = () => {
       setSubstanceForm({
         nom_subFR: item.nom_subFR,
         nom_subAR: item.nom_subAR,
-        catégorie_sub: item.catégorie_sub,
+        categorie_sub: item.categorie_sub,
         id_redevance: item.redevance?.id_redevance?.toString() || '',
       });
     } else {
@@ -203,7 +212,7 @@ const Substances = () => {
         item =>
           item.nom_subFR.toLowerCase().includes(term) ||
           item.nom_subAR.toLowerCase().includes(term) ||
-          item.catégorie_sub.toLowerCase().includes(term)
+          item.categorie_sub.toLowerCase().includes(term)
       );
     } else {
       return redevances.filter(item =>
@@ -298,7 +307,7 @@ const Substances = () => {
                       </div>
                       <div className={styles.detailRow}>
                         <span>Catégorie:</span>
-                        <span>{item.catégorie_sub}</span>
+                        <span>{item.categorie_sub}</span>
                       </div>
                       {item.redevance && (
                         <>
@@ -427,9 +436,9 @@ const Substances = () => {
                     <label>Catégorie</label>
                     <input
                       type="text"
-                      value={substanceForm.catégorie_sub}
+                      value={substanceForm.categorie_sub}
                       onChange={(e) =>
-                        setSubstanceForm({ ...substanceForm, catégorie_sub: e.target.value })
+                        setSubstanceForm({ ...substanceForm, categorie_sub: e.target.value })
                       }
                       required
                     />

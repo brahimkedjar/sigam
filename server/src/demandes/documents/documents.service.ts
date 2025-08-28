@@ -29,14 +29,14 @@ export class DocumentsService {
     },
   });
 
-  if (!demande?.id_typeproc || !demande?.id_typePermis) {
+  if (!demande?.id_typeProc || !demande?.id_typePermis) {
     throw new Error("Données de type procédure ou type de permis manquantes.");
   }
 
   // Get the specific dossier that matches BOTH procedure type AND permit type
   const dossier = await this.prisma.dossierAdministratif.findFirst({
     where: { 
-      id_typeproc: demande.id_typeproc,        // 🔑 from demande
+      id_typeproc: demande.id_typeProc,        // 🔑 from demande
       id_typePermis: demande.id_typePermis,    // from demande
     },
     include: {

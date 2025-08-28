@@ -74,10 +74,10 @@ export class PdfGeneratorService {
     return text
       .replace(/\{\{code_demande\}\}/g, data.code_demande || '')
       .replace(/\{\{typePermis\.lib_type\}\}/g, data.typePermis?.lib_type || '')
-      .replace(/\{\{detenteur\.nom_sociétéFR\}\}/g, data.detenteur?.nom_sociétéFR || '')
-      .replace(/\{\{wilaya\.nom_wilaya\}\}/g, data.wilaya?.nom_wilaya || '')
-      .replace(/\{\{daira\.nom_daira\}\}/g, data.daira?.nom_daira || '')
-      .replace(/\{\{commune\.nom_commune\}\}/g, data.commune?.nom_commune || '')
+      .replace(/\{\{detenteur\.nom_societeFR\}\}/g, data.detenteur?.nom_societeFR || '')
+      .replace(/\{\{wilaya\.nom_wilaya\}\}/g, data.wilaya?.nom_wilayaFR || '')
+      .replace(/\{\{daira\.nom_daira\}\}/g, data.daira?.nom_dairaFR || '')
+      .replace(/\{\{commune\.nom_commune\}\}/g, data.commune?.nom_communeFR || '')
       .replace(/\{\{superficie\}\}/g, data.superficie || '0')
       .replace(/\{\{duree\}\}/g, data.typePermis?.duree_initiale || '0')
       .replace(/\{\{date\}\}/g, new Date().toLocaleDateString('fr-FR'));

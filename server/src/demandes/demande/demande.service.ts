@@ -80,9 +80,8 @@ export class DemandeService {
   return this.prisma.demande.create({
     data: {
       id_proc: createdProc.id_proc,
-      id_typeproc: typeProcedure.id,  // ✅ link typeProcedure here
+      id_typeProc: typeProcedure.id,  // ✅ link typeProcedure here
       code_demande: finalCode,
-      objet_demande: data.objet_demande,
       id_detenteur: data.id_detenteur,
       id_typePermis: data.id_typepermis,
       date_demande: data.date_demande,
@@ -100,16 +99,18 @@ export class DemandeService {
 
   async createOrFindExpert(data: {
     nom_expert: string;
-    fonction: string;
-    num_registre?: string;
-    organisme: string;
+    num_agrement: string;
+    etat_agrement: string;
+    specialisation:string;
+    date_agrement:Date;
   }) {
     const existing = await this.prisma.expertMinier.findFirst({
       where: {
         nom_expert: data.nom_expert,
-        fonction: data.fonction,
-        num_registre: data.num_registre,
-        organisme: data.organisme,
+        specialisation: data.specialisation,
+        num_agrement: data.num_agrement,
+        etat_agrement: data.etat_agrement,
+        date_agrement:data.date_agrement
       },
     });
 
@@ -160,7 +161,7 @@ async update(id: number, updateDemandeDto: UpdateDemandeDto) {
       id_wilaya: updateDemandeDto.id_wilaya,
       id_daira: updateDemandeDto.id_daira,
       id_commune: updateDemandeDto.id_commune,
-      lieu_dit: updateDemandeDto.lieu_dit,
+      lieu_ditFR: updateDemandeDto.lieu_dit,
       statut_juridique_terrain: updateDemandeDto.statut_juridique_terrain,
       occupant_terrain_legal: updateDemandeDto.occupant_terrain_legal,
       superficie: updateDemandeDto.superficie,

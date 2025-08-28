@@ -3,7 +3,7 @@ CREATE TABLE "substances" (
     "id_sub" SERIAL NOT NULL,
     "nom_subFR" TEXT NOT NULL,
     "nom_subAR" TEXT NOT NULL,
-    "catégorie_sub" TEXT NOT NULL,
+    "categorie_sub" TEXT NOT NULL,
     "id_redevance" INTEGER,
 
     CONSTRAINT "substances_pkey" PRIMARY KEY ("id_sub")

@@ -7,11 +7,12 @@ export class SubstancesService {
 
   async findAll(famille?: string) {
   return this.prisma.substance.findMany({
-    where: famille ? { catégorie_sub: famille } : {},
+    where: famille ? { categorie_sub: famille } : {},
     orderBy: { nom_subFR: 'asc' } // Sort alphabetically
   });
 }
 
+// substances.service.ts
 async getSelectedByDemande(id_demande: number) {
   const demande = await this.prisma.demande.findUnique({
     where: { id_demande },
@@ -21,7 +22,8 @@ async getSelectedByDemande(id_demande: number) {
         select: {
           SubstanceAssocieeDemande: {
             select: {
-              substance: true
+              substance: true,
+              priorite: true  
             }
           }
         }
@@ -29,23 +31,49 @@ async getSelectedByDemande(id_demande: number) {
     }
   });
 
-  return demande?.procedure?.SubstanceAssocieeDemande.map(s => s.substance);
+  return demande?.procedure?.SubstanceAssocieeDemande.map(s => ({
+    ...s.substance,
+    priorite: s.priorite  
+  }));
 }
 
- async addToDemande(id_demande: number, id_substance: number) {
+async updatePriority(id_demande: number, id_substance: number, priorite: string) {
   const demande = await this.prisma.demande.findUnique({
     where: { id_demande },
     select: { id_proc: true }
   });
 
-  return this.prisma.substanceAssocieeDemande.create({
+  const validPriorite = priorite === 'principale' ? 'principale' : 'secondaire';
+
+  return this.prisma.substanceAssocieeDemande.update({
+    where: {
+      id_proc_id_substance: {
+        id_proc: demande?.id_proc,
+        id_substance
+      }
+    },
     data: {
-      id_proc: demande?.id_proc,
-      id_substance
+      priorite: validPriorite
     }
   });
 }
 
+async addToDemande(id_demande: number, id_substance: number, priorite: string = 'secondaire') {
+  const demande = await this.prisma.demande.findUnique({
+    where: { id_demande },
+    select: { id_proc: true }
+  });
+
+  const validPriorite = priorite === 'principale' ? 'principale' : 'secondaire';
+
+  return this.prisma.substanceAssocieeDemande.create({
+    data: {
+      id_proc: demande?.id_proc,
+      id_substance,
+      priorite: validPriorite 
+    }
+  });
+}
 
   async removeFromDemande(id_demande: number, id_substance: number) {
     const demande = await this.prisma.demande.findUnique({

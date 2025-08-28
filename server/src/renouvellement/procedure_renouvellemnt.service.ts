@@ -74,10 +74,11 @@ export class ProcedureRenouvellementService {
     data: {
       id_proc: newProcedure.id_proc,
       id_typePermis: permis.id_typePermis,
-      id_typeproc: typeProc.id, // moved here
+      id_typeProc: typeProc.id, // moved here
       code_demande: `DEM-R-${Date.now()}`,
       statut_demande: 'EN_COURS',
       date_demande: parsedDate,
+      date_instruction: `${Date.now()}`
     },
   });
 

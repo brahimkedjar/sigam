@@ -77,7 +77,7 @@ type Permis = {
     lib_type: string;
   };
   detenteur?: {
-    nom_sociétéFR: string;
+    nom_societeFR: string;
   };
   statut?: {
     lib_statut: string;
@@ -101,7 +101,7 @@ type Demande = {
     statut_proc: string;
   };
   detenteur?: {
-    nom_sociétéFR: string;
+    nom_societeFR: string;
   };
 };
 
@@ -148,7 +148,7 @@ export default function PermisDashboard() {
   const [expiredPermisData, setExpiredPermisData] = useState<Permis[]>([]);
   const [demandesData, setDemandesData] = useState<Demande[]>([]);
   const [expiringSoonPermis, setExpiringSoonPermis] = useState<Permis[]>([]);
-  const [currentDataType, setCurrentDataType] = useState<'total' | 'actifs' | 'enCours' | 'expires' | 'expiringSoon'>('total');
+  const [currentDataType, setCurrentDataType] = useState<'total' | 'En vigueur' | 'enCours' | 'expires' | 'expiringSoon'>('total');
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -182,11 +182,11 @@ export default function PermisDashboard() {
       const matchesSearch =
         permis.code_permis.toLowerCase().includes(query) ||
         (permis.typePermis?.lib_type?.toLowerCase().includes(query) || false) ||
-        (permis.detenteur?.nom_sociétéFR?.toLowerCase().includes(query) || false);
+        (permis.detenteur?.nom_societeFR?.toLowerCase().includes(query) || false);
       
       const now = new Date();
       const isExpired = !!permis.date_expiration && new Date(permis.date_expiration) < now;
-      const isActive = permis.statut?.lib_statut === 'Actif';
+      const isActive = permis.statut?.lib_statut === 'En vigueur';
       
       let matchesStatus: boolean = true;
       if (statusFilter === 'active') matchesStatus = !!isActive;
@@ -278,7 +278,7 @@ export default function PermisDashboard() {
   }, [apiURL, permisPerPage]);
 
   // Fetch detailed data for modal
-  const fetchDetailedData = useCallback(async (type: 'total' | 'actifs' | 'enCours' | 'expires') => {
+  const fetchDetailedData = useCallback(async (type: 'total' | 'En vigueur' | 'enCours' | 'expires') => {
     try {
       setLoading(true);
       
@@ -290,9 +290,9 @@ export default function PermisDashboard() {
           endpoint = `${apiURL}/Permisdashboard`;
           title = 'Tous les permis';
           break;
-        case 'actifs':
+        case 'En vigueur':
           endpoint = `${apiURL}/Permisdashboard/actifs`;
-          title = 'Permis actifs';
+          title = 'Permis En vigueur';
           break;
         case 'enCours':
           endpoint = `${apiURL}/Demandesdashboard/en-cours`;
@@ -308,7 +308,7 @@ export default function PermisDashboard() {
       
       if (type === 'total') {
         setPermisData(response.data);
-      } else if (type === 'actifs') {
+      } else if (type === 'En vigueur') {
         setActivePermisData(response.data);
       } else if (type === 'expires') {
         setExpiredPermisData(response.data);
@@ -347,7 +347,7 @@ export default function PermisDashboard() {
   }, [fetchPermisList]);
 
   // Handle card click
-  const handleCardClick = useCallback(async (type: 'total' | 'actifs' | 'enCours' | 'expires' | 'expiringSoon') => {
+  const handleCardClick = useCallback(async (type: 'total' | 'En vigueur' | 'enCours' | 'expires' | 'expiringSoon') => {
     setCurrentPage(1);
     setSearchTerm('');
     setStatusFilter('all');
@@ -450,9 +450,9 @@ export default function PermisDashboard() {
             dataToExport = permisData;
             filename = 'tous_les_permis';
             break;
-          case 'actifs':
+          case 'En vigueur':
             dataToExport = activePermisData;
-            filename = 'permis_actifs';
+            filename = 'permis_En_vigueur';
             break;
           case 'expires':
             dataToExport = expiredPermisData;
@@ -481,7 +481,7 @@ export default function PermisDashboard() {
           return {
             'Code Permis': permis.code_permis,
             'Type': permis.typePermis?.lib_type || 'N/A',
-            'Titulaire': permis.detenteur?.nom_sociétéFR || 'N/A',
+            'Titulaire': permis.detenteur?.nom_societeFR || 'N/A',
             'Statut': permis.statut?.lib_statut || 'N/A',
 'Date Octroi': permis.date_octroi
   ? formatDate(new Date(permis.date_octroi), 'dd/MM/yyyy', { locale: fr })
@@ -498,7 +498,7 @@ export default function PermisDashboard() {
           const demande = item as Demande;
           return {
             'Code Demande': demande.code_demande,
-            'Titulaire': demande.detenteur?.nom_sociétéFR || 'N/A',
+            'Titulaire': demande.detenteur?.nom_societeFR || 'N/A',
             'Date Demande': formatDate(new Date(demande.date_demande), 'dd/MM/yyyy', { locale: fr }),
             'Statut Terrain': demande.statut_juridique_terrain || 'N/A',
             'Statut Procédure': demande.procedure.statut_proc
@@ -531,12 +531,12 @@ export default function PermisDashboard() {
       const searchTermLower = searchTerm.toLowerCase();
       const matchesSearch = 
         (permis.code_permis?.toLowerCase().includes(searchTermLower) || false) ||
-        (permis.detenteur?.nom_sociétéFR?.toLowerCase().includes(searchTermLower) || false) ||
+        (permis.detenteur?.nom_societeFR?.toLowerCase().includes(searchTermLower) || false) ||
         (permis.typePermis?.lib_type?.toLowerCase().includes(searchTermLower) || false);
       
       let matchesStatus = true;
       if (statusFilter === 'active') {
-        matchesStatus = permis.statut?.lib_statut === 'Actif';
+        matchesStatus = permis.statut?.lib_statut === 'En vigueur';
       } else if (statusFilter === 'expired') {
         matchesStatus = !!permis.date_expiration && new Date(permis.date_expiration) < new Date();
       }
@@ -591,7 +591,7 @@ export default function PermisDashboard() {
               }}
             >
               <option value="all">Tous les statuts</option>
-              <option value="active">Actifs</option>
+              <option value="active">En vigueur</option>
               <option value="expired">Expirés</option>
             </select>
             
@@ -653,12 +653,12 @@ export default function PermisDashboard() {
                 <tr key={permis.id}>
                   <td>{permis.code_permis}</td>
                   <td>{permis.typePermis?.lib_type || 'N/A'}</td>
-                  <td>{permis.detenteur?.nom_sociétéFR || 'N/A'}</td>
+                  <td>{permis.detenteur?.nom_societeFR || 'N/A'}</td>
                   <td>{permis.date_octroi ? format(new Date(permis.date_octroi), 'dd/MM/yyyy', { locale: fr }) : 'N/A'}</td>
                   <td>{permis.date_expiration ? format(new Date(permis.date_expiration), 'dd/MM/yyyy', { locale: fr }) : 'N/A'}</td>
                   <td>
                     <span className={`${styles.statusBadge} ${
-                      permis.statut?.lib_statut === 'Actif' ? styles.statusActive : 
+                      permis.statut?.lib_statut === 'En vigueur' ? styles.statusActive : 
                       permis.date_expiration && new Date(permis.date_expiration) < new Date() ? styles.statusExpired : ''
                     }`}>
                       {permis.statut?.lib_statut || 'N/A'}
@@ -749,7 +749,7 @@ export default function PermisDashboard() {
   const renderDemandesModal = useCallback((title: string, data: Demande[]) => {
     const filteredData = data.filter(demande => {
       return demande.code_demande.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (demande.detenteur?.nom_sociétéFR?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+        (demande.detenteur?.nom_societeFR?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     });
     
     const paginatedData = filteredData.slice(
@@ -790,7 +790,7 @@ export default function PermisDashboard() {
               {paginatedData.map((demande) => (
                 <tr key={demande.id_demande}>
                   <td>{demande.code_demande}</td>
-                  <td>{demande.detenteur?.nom_sociétéFR || 'N/A'}</td>
+                  <td>{demande.detenteur?.nom_societeFR || 'N/A'}</td>
                   <td>{format(new Date(demande.date_demande), 'dd/MM/yyyy', { locale: fr })}</td>
                   <td>{demande.statut_juridique_terrain || 'N/A'}</td>
                   <td>
@@ -884,7 +884,7 @@ export default function PermisDashboard() {
       } else {
         const data = 
           currentDataType === 'total' ? permisData :
-          currentDataType === 'actifs' ? activePermisData :
+          currentDataType === 'En vigueur' ? activePermisData :
           currentDataType === 'expires' ? expiredPermisData : [];
         renderPermisModal(modalTitle, data);
       }
@@ -971,11 +971,11 @@ export default function PermisDashboard() {
 
                   <div 
                     className={`${styles.card} ${styles.yellow}`}
-                    onClick={() => handleCardClick('actifs')}
+                    onClick={() => handleCardClick('En vigueur')}
                   >
                     <FiActivity className={styles.cardIcon} />
                     <div className={styles.cardContent}>
-                      <h4>Permis actifs</h4>
+                      <h4>Permis En vigueur</h4>
                       <p>{stats.actifs.toLocaleString()}</p>
                       <div className={styles.cardPercentage}>
                         {stats.total > 0 ? `${Math.round((stats.actifs / stats.total) * 100)}% du total` : 'N/A'}
@@ -1003,7 +1003,7 @@ export default function PermisDashboard() {
                       <h4>Permis expirés</h4>
                       <p>{stats.expires.toLocaleString()}</p>
                       <div className={styles.cardPercentage}>
-                        {stats.actifs > 0 ? `${Math.round((stats.expires / stats.actifs) * 100)}% des actifs` : 'N/A'}
+                        {stats.actifs > 0 ? `${Math.round((stats.expires / stats.actifs) * 100)}% des En vigueur` : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -1180,7 +1180,7 @@ export default function PermisDashboard() {
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="all">Tous les statuts</option>
-          <option value="active">Actifs</option>
+          <option value="active">En vigueur</option>
           <option value="expired">Expirés</option>
         </select>
 
@@ -1240,10 +1240,10 @@ export default function PermisDashboard() {
                   <tr key={permis.id} className={isExpiringSoon ? styles.expiringRow : ''}>
                     <td>{permis.code_permis}</td>
                     <td>{permis.typePermis?.lib_type || 'N/A'}</td>
-                    <td>{permis.detenteur?.nom_sociétéFR || 'N/A'}</td>
+                    <td>{permis.detenteur?.nom_societeFR || 'N/A'}</td>
                     <td>
                       <span className={`${styles.statusBadge} ${
-                        permis.statut?.lib_statut === 'Actif' ? styles.statusActive : 
+                        permis.statut?.lib_statut === 'En vigueur' ? styles.statusActive : 
                         expDate && expDate < new Date() ? styles.statusExpired : styles.statusOther
                       }`}>
                         {permis.statut?.lib_statut || 'N/A'}

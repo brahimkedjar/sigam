@@ -112,7 +112,7 @@ export async function getProcedures(search = '', page = 1): Promise<Procedure[]>
       id_proc: proc.id_proc,
       num_proc: proc.num_proc,
       type: proc.typeProcedure?.libelle || 'N/A',
-      detenteur: proc.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A'
+      detenteur: proc.demandes?.[0]?.detenteur?.nom_societeFR || 'N/A'
     }));
   } catch (error) {
     console.error('Error in getProcedures:', error);

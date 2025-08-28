@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 interface CahierDesCharges {
   id: number;
   id_demande: number;
-  dateCreation: string;
+  num_cdc: string;
   dateExercice: string;
   fuseau?: string;
   typeCoordonnees?: string;
@@ -33,7 +33,7 @@ interface CahierDesCharges {
 const defaultForm: CahierDesCharges = {
   id: 0,
   id_demande: 0,
-  dateCreation: '',
+  num_cdc: '',
   dateExercice: '',
   fuseau: '',
   typeCoordonnees: '',
@@ -120,7 +120,7 @@ export default function CahierChargesDemande() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
   ...formData,
-  dateExercice: formData.dateExercice || formData.dateCreation.substring(0, 4),
+  num_cdc: formData.dateExercice || formData.num_cdc.substring(0, 4),
 }),
 
       });
@@ -262,7 +262,7 @@ export default function CahierChargesDemande() {
         <PaginationControl />
       </div>
       <div className={styles.formGrid}>
-        {currentStep === 0 && (<div className={styles.formSection}><h3>Informations Générales</h3><div className={styles.formGroup}><label>Date de création</label><input type="date" name="dateCreation" value={formData.dateCreation} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Année d'exercice</label><input type="number" name="dateExercice" value={formData.dateExercice} onChange={handleInputChange} min="1900" max="2100" /></div><div className={styles.formGroup}><label>Fuseau</label><input type="text" name="fuseau" value={formData.fuseau} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Type coordonnées</label><input type="text" name="typeCoordonnees" value={formData.typeCoordonnees} onChange={handleInputChange} /></div></div>)}
+        {currentStep === 0 && (<div className={styles.formSection}><h3>Informations Générales</h3><div className={styles.formGroup}><label>Date de création</label><input type="date" name="dateCreation" value={formData.num_cdc} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Année d'exercice</label><input type="number" name="dateExercice" value={formData.dateExercice} onChange={handleInputChange} min="1900" max="2100" /></div><div className={styles.formGroup}><label>Fuseau</label><input type="text" name="fuseau" value={formData.fuseau} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Type coordonnées</label><input type="text" name="typeCoordonnees" value={formData.typeCoordonnees} onChange={handleInputChange} /></div></div>)}
         {currentStep === 1 && (<div className={styles.formSection}><h3>Terrain</h3><div className={styles.formGroup}><label>Nature juridique</label><input type="text" name="natureJuridique" value={formData.natureJuridique} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Vocation terrain</label><input type="text" name="vocationTerrain" value={formData.vocationTerrain} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Nom Gérant</label><input type="text" name="nomGerant" value={formData.nomGerant} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Personne en charge des travaux</label><input type="text" name="personneChargeTrxx" value={formData.personneChargeTrxx} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Qualification</label><input type="text" name="qualification" value={formData.qualification} onChange={handleInputChange} /></div></div>)}
         {currentStep === 2 && (<div className={styles.formSection}><h3>Réserves</h3><div className={styles.formGroup}><label>Réserves Géologiques</label><input type="number" name="reservesGeologiques" value={formData.reservesGeologiques ?? ''} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Réserves Exploitables</label><input type="number" name="reservesExploitables" value={formData.reservesExploitables ?? ''} onChange={handleInputChange} /></div></div>)}
         {currentStep === 3 && (<div className={styles.formSection}><h3>Exploitation</h3><div className={styles.formGroup}><label>Volume Extraction</label><input type="number" name="volumeExtraction" value={formData.volumeExtraction} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Durée Exploitation</label><input type="number" name="dureeExploitation" value={formData.dureeExploitation} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Méthode Exploitation</label><input type="text" name="methodeExploitation" value={formData.methodeExploitation} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Durée Travaux</label><input type="number" name="dureeTravaux" value={formData.dureeTravaux} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Date Début Travaux</label><input type="date" name="dateDebutTravaux" value={formData.dateDebutTravaux} onChange={handleInputChange} /></div><div className={styles.formGroup}><label>Date Début Production</label><input type="date" name="dateDebutProduction" value={formData.dateDebutProduction} onChange={handleInputChange} /></div></div>)}

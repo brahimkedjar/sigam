@@ -72,7 +72,7 @@ async createOrUpdateByPermis(permisId: number, data: any, isUpdate = false) {
 
   const payload: any = {
     permisId,
-    dateCreation: new Date(rest.dateCreation),
+    num_cdc: rest.num_cdc,
     dateExercice: new Date(`${rest.dateExercice}-01-01`),
     fuseau: rest.fuseau || null,
     typeCoordonnees: rest.typeCoordonnees || null,
@@ -98,7 +98,7 @@ async createOrUpdateByPermis(permisId: number, data: any, isUpdate = false) {
   const existing = await this.prisma.cahierCharge.findFirst({
     where: {
       permisId,
-      dateCreation: new Date(rest.dateCreation),
+      num_cdc:rest.num_cdc,
     },
   });
 
@@ -132,7 +132,7 @@ async findManyByPermis(permisId: number) {
       permisId: permisId,
     },
     orderBy: {
-      dateCreation: 'desc',
+      createdAt: 'desc',
     },
   });
 }

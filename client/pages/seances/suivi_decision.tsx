@@ -8,6 +8,15 @@ import styles from './DecisionTracking.module.css';
 
 // API URL from environment variables
 const apiURL = process.env.NEXT_PUBLIC_API_URL;
+
+interface DecisionCD {
+  id_decision?: number;
+  numero_decision?: string;
+  decision_cd: 'favorable' | 'defavorable' | null;
+  duree_decision: number | null;
+  commentaires: string | null;
+}
+
 interface Procedure {
   id_proc: number;
   num_proc: string;
@@ -15,23 +24,19 @@ interface Procedure {
   date_fin_proc: string | null;
   statut_proc: string;
   demandes: {
-    typeProcedure: { // 🔑 Moved typeProcedure to demande level
+    typeProcedure: {
       libelle: string;
     };
     detenteur: {
-      nom_sociétéFR: string;
+      nom_societeFR: string;
     };
   }[];
   seance: {
     num_seance: string;
     comites: {
-      numero_decision?: string;
+      id_comite?: number;
       date_comite: string;
-      decisionCDs: {
-        decision_cd: 'favorable' | 'defavorable' | null;
-        duree_decision: number | null;
-        commentaires: string | null;
-      }[];
+      decisionCDs: DecisionCD[];
     }[];
   } | null;
 }
@@ -51,9 +56,10 @@ export default function DecisionTracking() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDecision, setSelectedDecision] = useState<Procedure | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
   const getProcedureType = (procedure: Procedure): string => {
-  return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
-};
+    return procedure.demandes[0]?.typeProcedure?.libelle || 'N/A';
+  };
 
   const getDecisionTracking = async () => {
     const response = await fetch(`${apiURL}/api/decision-tracking`);
@@ -82,7 +88,6 @@ export default function DecisionTracking() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -172,18 +177,18 @@ export default function DecisionTracking() {
               </thead>
               <tbody>
                 {data.decisions.map((decision) => {
-  // Find the comité that matches this procedure
-  const matchingComite = decision.seance?.comites?.find(comite => 
-    comite.numero_decision?.endsWith(`-${decision.id_proc}`)
-  );
-  const decisionData = matchingComite?.decisionCDs?.[0];
-  
-  const companyName = decision.demandes?.[0]?.detenteur?.nom_sociétéFR;
-  const initials = companyName?.match(/\b(\w)/g)?.join('').substring(0, 2).toUpperCase();
-                  
-                  // Get the first decision for this procedure
-                  const comiteDecision = decision.seance?.comites?.[0]?.decisionCDs?.[0];
-                  
+                  const flatDecisions =
+                    decision.seance?.comites.flatMap(c => c.decisionCDs) || [];
+                  const matchedDecision = flatDecisions.find(d =>
+                    d.numero_decision?.endsWith(`-${decision.id_proc}`)
+                  );
+                  const matchingComite = decision.seance?.comites.find(c =>
+                    c.decisionCDs.some(d => d.numero_decision?.endsWith(`-${decision.id_proc}`))
+                  );
+
+                  const companyName = decision.demandes?.[0]?.detenteur?.nom_societeFR;
+                  const initials = companyName?.match(/\b(\w)/g)?.join('').substring(0, 2).toUpperCase();
+
                   return (
                     <tr key={decision.id_proc} className={styles.tableRow}>
                       <td className={`${styles.tableCell} ${styles.permisCell}`}>
@@ -198,29 +203,29 @@ export default function DecisionTracking() {
                         </div>
                       </td>
                       <td className={styles.tableCell}>
-  {getProcedureType(decision)}
-</td>
+                        {getProcedureType(decision)}
+                      </td>
                       <td className={styles.tableCell}>
                         {decision.seance?.num_seance || 'N/A'}
                       </td>
                       <td className={styles.tableCell}>
-        {decisionData ? (
-          <span className={`${styles.decisionBadge} ${
-            decisionData.decision_cd === 'favorable' 
-              ? styles.badgeApproved 
-              : styles.badgeRejected
-          }`}>
-            {decisionData.decision_cd === 'favorable' ? 'Approuvée' : 'Rejetée'}
-          </span>
-        ) : (
-          <span className={styles.decisionBadge}>En attente</span>
-        )}
-      </td>
-      <td className={`${styles.tableCell} ${styles.dateCell}`}>
-        {matchingComite?.date_comite 
-          ? format(new Date(matchingComite.date_comite), 'dd/MM/yyyy') 
-          : 'N/A'}
-      </td>
+                        {matchedDecision ? (
+                          <span className={`${styles.decisionBadge} ${
+                            matchedDecision.decision_cd === 'favorable' 
+                              ? styles.badgeApproved 
+                              : styles.badgeRejected
+                          }`}>
+                            {matchedDecision.decision_cd === 'favorable' ? 'Approuvée' : 'Rejetée'}
+                          </span>
+                        ) : (
+                          <span className={styles.decisionBadge}>En attente</span>
+                        )}
+                      </td>
+                      <td className={`${styles.tableCell} ${styles.dateCell}`}>
+                        {matchingComite?.date_comite
+                          ? format(new Date(matchingComite.date_comite), 'dd/MM/yyyy')
+                          : 'N/A'}
+                      </td>
                       <td className={`${styles.tableCell} ${styles.actionCell}`}>
                         <button 
                           onClick={() => openDecisionModal(decision.id_proc)}
@@ -243,130 +248,123 @@ export default function DecisionTracking() {
         </>
       )}
 
-      {selectedDecision && (
-  <div className={styles.modalOverlay} onClick={() => setSelectedDecision(null)}>
-    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-      <div className={styles.modalHeader}>
-        <h2 className={styles.modalTitle}>
-          Détails de la décision - {selectedDecision.num_proc}
-        </h2>
-        <button className={styles.closeButton} onClick={() => setSelectedDecision(null)}>
-          &times;
-        </button>
-      </div>
-      <div className={styles.modalBody}>
-              <h3 className={styles.sectionTitle}>Informations de la Procédure</h3>
-              <div className={styles.infoGrid}>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoLabel}>Permis</div>
-                  <div className={styles.infoValue}>{selectedDecision.num_proc}</div>
-                </div>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoLabel}>Société</div>
-                  <div className={styles.infoValue}>
-                    {selectedDecision.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A'}
-                  </div>
-                </div>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoLabel}>Type</div>
-                  <div className={styles.infoValue}>
-  {selectedDecision ? getProcedureType(selectedDecision) : 'N/A'}
-</div>
-                </div>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoLabel}>Date début</div>
-                  <div className={styles.infoValue}>
-                    {format(new Date(selectedDecision.date_debut_proc), 'dd/MM/yyyy')}
-                  </div>
-                </div>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoLabel}>Date fin</div>
-                  <div className={styles.infoValue}>
-                    {selectedDecision.date_fin_proc 
-                      ? format(new Date(selectedDecision.date_fin_proc), 'dd/MM/yyyy') 
-                      : 'N/A'}
-                  </div>
-                </div>
-                <div className={styles.infoCard}>
-                  <div className={styles.infoLabel}>Statut</div>
-                  <div className={styles.infoValue}>
-                    {selectedDecision.statut_proc}
-                  </div>
-                </div>
-              </div>
+      {selectedDecision && (() => {
+        const flatDecisions =
+          selectedDecision.seance?.comites.flatMap(c => c.decisionCDs) || [];
+        const matchedDecision = flatDecisions.find(d =>
+          d.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
+        );
+        const matchingComite = selectedDecision.seance?.comites.find(c =>
+          c.decisionCDs.some(d => d.numero_decision?.endsWith(`-${selectedDecision.id_proc}`))
+        );
 
-              <h3 className={styles.sectionTitle}>Décision du Comité</h3>
-        <div className={styles.decisionDetails}>
-          <div className={styles.infoGrid}>
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Séance</div>
-              <div className={styles.infoValue}>
-                {selectedDecision.seance?.num_seance || 'N/A'}
+        return (
+          <div className={styles.modalOverlay} onClick={() => setSelectedDecision(null)}>
+            <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>
+                  Détails de la décision - {selectedDecision.num_proc}
+                </h2>
+                <button className={styles.closeButton} onClick={() => setSelectedDecision(null)}>
+                  &times;
+                </button>
               </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Numéro décision</div>
-              <div className={styles.infoValue}>
-                {selectedDecision.seance?.comites?.find(c => 
-                  c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-                )?.numero_decision || 'N/A'}
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Date décision</div>
-              <div className={styles.infoValue}>
-                {selectedDecision.seance?.comites?.find(c => 
-                  c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-                )?.date_comite 
-                  ? format(new Date(
-  selectedDecision.seance.comites.find(c =>
-    c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-  )!.date_comite
-), 'dd/MM/yyyy')
-                  : 'N/A'}
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Décision</div>
-              <div className={styles.infoValue}>
-                {selectedDecision.seance?.comites?.find(c => 
-                  c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-                )?.decisionCDs?.[0]?.decision_cd 
-                  ? selectedDecision.seance.comites.find(c => 
-                      c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-                    )?.decisionCDs?.[0]?.decision_cd === 'favorable' 
-                    ? 'Favorable' 
-                    : 'Défavorable'
-                  : 'N/A'}
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoLabel}>Durée (années)</div>
-              <div className={styles.infoValue}>
-                {selectedDecision.seance?.comites?.find(c => 
-                  c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-                )?.decisionCDs?.[0]?.duree_decision || 'N/A'}
+              <div className={styles.modalBody}>
+                <h3 className={styles.sectionTitle}>Informations de la Procédure</h3>
+                <div className={styles.infoGrid}>
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoLabel}>Permis</div>
+                    <div className={styles.infoValue}>{selectedDecision.num_proc}</div>
+                  </div>
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoLabel}>Société</div>
+                    <div className={styles.infoValue}>
+                      {selectedDecision.demandes?.[0]?.detenteur?.nom_societeFR || 'N/A'}
+                    </div>
+                  </div>
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoLabel}>Type</div>
+                    <div className={styles.infoValue}>
+                      {getProcedureType(selectedDecision)}
+                    </div>
+                  </div>
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoLabel}>Date début</div>
+                    <div className={styles.infoValue}>
+                      {format(new Date(selectedDecision.date_debut_proc), 'dd/MM/yyyy')}
+                    </div>
+                  </div>
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoLabel}>Date fin</div>
+                    <div className={styles.infoValue}>
+                      {selectedDecision.date_fin_proc 
+                        ? format(new Date(selectedDecision.date_fin_proc), 'dd/MM/yyyy') 
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoLabel}>Statut</div>
+                    <div className={styles.infoValue}>
+                      {selectedDecision.statut_proc}
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className={styles.sectionTitle}>Décision du Comité</h3>
+                <div className={styles.decisionDetails}>
+                  <div className={styles.infoGrid}>
+                    <div className={styles.infoCard}>
+                      <div className={styles.infoLabel}>Séance</div>
+                      <div className={styles.infoValue}>
+                        {selectedDecision.seance?.num_seance || 'N/A'}
+                      </div>
+                    </div>
+                    <div className={styles.infoCard}>
+                      <div className={styles.infoLabel}>Numéro décision</div>
+                      <div className={styles.infoValue}>
+                        {matchedDecision?.numero_decision || 'N/A'}
+                      </div>
+                    </div>
+                    <div className={styles.infoCard}>
+                      <div className={styles.infoLabel}>Date décision</div>
+                      <div className={styles.infoValue}>
+                        {matchingComite?.date_comite
+                          ? format(new Date(matchingComite.date_comite), 'dd/MM/yyyy')
+                          : 'N/A'}
+                      </div>
+                    </div>
+                    <div className={styles.infoCard}>
+                      <div className={styles.infoLabel}>Décision</div>
+                      <div className={styles.infoValue}>
+                        {matchedDecision?.decision_cd === 'favorable'
+                          ? 'Favorable'
+                          : matchedDecision?.decision_cd === 'defavorable'
+                          ? 'Défavorable'
+                          : 'N/A'}
+                      </div>
+                    </div>
+                    <div className={styles.infoCard}>
+                      <div className={styles.infoLabel}>Durée (années)</div>
+                      <div className={styles.infoValue}>
+                        {matchedDecision?.duree_decision || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {matchedDecision?.commentaires && (
+                  <div className={styles.commentSection}>
+                    <div className={styles.commentLabel}>Commentaires</div>
+                    <div className={styles.commentText}>
+                      {matchedDecision.commentaires}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-
-        {selectedDecision.seance?.comites?.find(c => 
-          c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-        )?.decisionCDs?.[0]?.commentaires && (
-          <div className={styles.commentSection}>
-            <div className={styles.commentLabel}>Commentaires</div>
-            <div className={styles.commentText}>
-              {selectedDecision.seance.comites.find(c => 
-                c.numero_decision?.endsWith(`-${selectedDecision.id_proc}`)
-              )?.decisionCDs?.[0]?.commentaires}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+        );
+      })()}
     </div>
   );
 }

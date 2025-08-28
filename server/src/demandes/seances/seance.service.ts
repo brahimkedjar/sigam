@@ -100,7 +100,7 @@ async getAllProcedures(search?: string, page = 1, pageSize = 100) {
             OR: [
               {
                 detenteur: {
-                  nom_sociétéFR: { contains: search, mode: 'insensitive' }
+                  nom_societeFR: { contains: search, mode: 'insensitive' }
                 }
               },
               {
@@ -122,7 +122,7 @@ async getAllProcedures(search?: string, page = 1, pageSize = 100) {
         demandes: {
           include: {
             detenteur: {
-              select: { nom_sociétéFR: true }
+              select: { nom_societeFR: true }
             },
             typeProcedure: {
               select: { libelle: true, id: true }
@@ -221,7 +221,7 @@ async getSeancesForMember(memberId: number) {
             select: {
               detenteur: {
                 select: {
-                  nom_sociétéFR: true,
+                  nom_societeFR: true,
                 },
               },
               typeProcedure: {
@@ -269,7 +269,7 @@ async getSeancesWithDecisions() {
                       take: 1,
                       include: {
                         detenteur: {
-                          select: { nom_sociétéFR: true },
+                          select: { nom_societeFR: true },
                         },
                         typeProcedure: { // 🔑 now included here
                           select: { libelle: true },
@@ -284,7 +284,7 @@ async getSeancesWithDecisions() {
               take: 1,
               include: {
                 detenteur: {
-                  select: { nom_sociétéFR: true },
+                  select: { nom_societeFR: true },
                 },
                 typeProcedure: { // 🔑 here too
                   select: { libelle: true },

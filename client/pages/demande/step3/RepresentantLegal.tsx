@@ -1,24 +1,33 @@
 import styles from './formcomponent.module.css'
 // RepresentantLegal.tsx
-type RepresentantLegalProps = {
-  data: {
-    nom: string;
-    prenom: string;
-    nom_ar: string;
-    prenom_ar: string;
-    tel: string;
-    email: string;
-    fax: string;
-    qualite: string;
-    nationalite: string;
-    nin: string;
-    taux_participation: string;
-  };
-  onChange: (data: RepresentantLegalProps['data']) => void;
-  disabled?: boolean;
+type RepresentantLegalData = {
+  nom: string;
+  prenom: string;
+  nom_ar: string;
+  prenom_ar: string;
+  tel: string;
+  email: string;
+  fax: string;
+  qualite: string;
+  nationalite: string;
+  nin: string;
+  taux_participation: string;
+  id_pays: number | null; // Add this
+};
+type Pays = {
+  id_pays: number;
+  nom_pays: string;
+  nationalite: string;
 };
 
-export default function RepresentantLegal({ data, onChange, disabled = false }: RepresentantLegalProps) {
+type RepresentantLegalProps = {
+  data: RepresentantLegalData;
+  onChange: (data: RepresentantLegalData) => void;
+  disabled?: boolean;
+  paysOptions?: Pays[]; // Add this
+};
+
+export default function RepresentantLegal({ data, onChange, disabled = false,paysOptions = []  }: RepresentantLegalProps) {
   if (!data) return <p>Aucune donnée disponible pour le représentant légal.</p>; // Or simply return null
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -40,6 +49,22 @@ export default function RepresentantLegal({ data, onChange, disabled = false }: 
     <option value="PDG">PDG</option>
     <option value="Président">Président</option>
   </select>
+        <select
+          name="id_pays"
+          className={`${styles.inputField} ${styles.selectField}`}
+          value={data.id_pays || ''}
+          onChange={handleChange}
+          required
+          disabled={disabled}
+        >
+          <option value="">Sélectionnez un pays</option>
+          {paysOptions.map(pays => (
+            <option key={pays.id_pays} value={pays.id_pays}>
+              {pays.nom_pays}
+            </option>
+          ))}
+        </select>
+  
   <input name="nationalite" className={styles.inputField} value={data.nationalite} onChange={handleChange} placeholder="Nationalité" required disabled={disabled}/>
   <input name="nin" className={styles.inputField} value={data.nin} onChange={handleChange} placeholder="Numéro NIN" required disabled={disabled}/>
   <input name="taux_participation" type="number" className={styles.inputField} value={data.taux_participation} onChange={handleChange} placeholder="Taux de participation (%)" min="0" max="100"

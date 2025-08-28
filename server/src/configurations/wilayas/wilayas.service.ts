@@ -24,7 +24,7 @@ export class WilayasService {
     const where = antenneId ? { id_antenne: antenneId } : {};
     return this.prisma.wilaya.findMany({
       where,
-      orderBy: { nom_wilaya: 'asc' },
+      orderBy: { nom_wilayaFR: 'asc' },
       include: {
         antenne: true,
       },

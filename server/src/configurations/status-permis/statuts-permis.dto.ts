@@ -4,7 +4,7 @@ import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateStatutPermisDto {
   @ApiProperty({ 
     description: 'Status label', 
-    example: 'Actif' 
+    example: 'En vigueur' 
   })
   @IsString()
   @IsNotEmpty()
@@ -22,7 +22,7 @@ export class CreateStatutPermisDto {
 export class UpdateStatutPermisDto {
   @ApiProperty({ 
     description: 'Status label', 
-    example: 'Actif',
+    example: 'En vigueur',
     required: false
   })
   @IsString()

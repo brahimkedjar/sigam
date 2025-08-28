@@ -24,7 +24,7 @@ export class CommunesService {
     const where = dairaId ? { id_daira: dairaId } : {};
     return this.prisma.commune.findMany({
       where,
-      orderBy: { nom_commune: 'asc' },
+      orderBy: { nom_communeFR: 'asc' },
       include: {
         daira: {
           include: {

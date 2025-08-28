@@ -23,7 +23,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Interfaces
 interface Detenteur {
   id_detenteur?: number;
-  nom_sociétéFR: string;
+  nom_societeFR: string;
   adresse?: string;
   email?: string;
   telephone?: string;
@@ -104,7 +104,7 @@ interface PaginationState {
 }
 
 interface SortConfig {
-  key: keyof Demande | 'procedure.num_proc' | 'detenteur.nom_sociétéFR' | 'procedure.ProcedureEtape';
+  key: keyof Demande | 'procedure.num_proc' | 'detenteur.nom_societeFR' | 'procedure.ProcedureEtape';
   direction: 'asc' | 'desc';
 }
 
@@ -369,8 +369,8 @@ export default function SuiviDemandes() {
 
   const getSocieteName = useCallback((demande: Demande): string => {
     // Try current demande first
-    if (demande.detenteur?.nom_sociétéFR) {
-      return demande.detenteur.nom_sociétéFR;
+    if (demande.detenteur?.nom_societeFR) {
+      return demande.detenteur.nom_societeFR;
     }
     
     // For procedures linked to permis, get the original demande's detenteur
@@ -379,14 +379,14 @@ export default function SuiviDemandes() {
       const permis = demande.procedure.permis[0];
       
       // Try the permis's direct detenteur
-      if (permis.detenteur?.nom_sociétéFR) {
-        return permis.detenteur.nom_sociétéFR;
+      if (permis.detenteur?.nom_societeFR) {
+        return permis.detenteur.nom_societeFR;
       }
       
       // Try the original demande from the permis's procedures
       const originalProcedure = permis.procedures[0];
-      if (originalProcedure?.demandes[0]?.detenteur?.nom_sociétéFR) {
-        return originalProcedure.demandes[0].detenteur.nom_sociétéFR;
+      if (originalProcedure?.demandes[0]?.detenteur?.nom_societeFR) {
+        return originalProcedure.demandes[0].detenteur.nom_societeFR;
       }
     }
     
@@ -458,7 +458,7 @@ export default function SuiviDemandes() {
         if (sortConfig.key === 'procedure.num_proc') {
           aValue = a.procedure.num_proc;
           bValue = b.procedure.num_proc;
-        } else if (sortConfig.key === 'detenteur.nom_sociétéFR') {
+        } else if (sortConfig.key === 'detenteur.nom_societeFR') {
           aValue = getSocieteName(a);
           bValue = getSocieteName(b);
         } else if (sortConfig.key === 'procedure.ProcedureEtape') {
@@ -967,10 +967,10 @@ export default function SuiviDemandes() {
                           </th>
                           <th 
                             className={styles.sortableHeader}
-                            onClick={() => handleSort('detenteur.nom_sociétéFR')}
+                            onClick={() => handleSort('detenteur.nom_societeFR')}
                           >
                             TITULAIRE
-                            {renderSortIndicator('detenteur.nom_sociétéFR')}
+                            {renderSortIndicator('detenteur.nom_societeFR')}
                           </th>
                           <th>TYPE DE PROCÉDURE</th>
                           <th 

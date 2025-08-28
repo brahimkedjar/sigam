@@ -10,11 +10,20 @@ import {
 import { StatutsJuridiquesService } from './statuts-juridiques.service';
 import { CreateStatutJuridiqueDto, UpdateStatutJuridiqueDto } from './statuts-juridiques.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('statuts-juridiques')
 @Controller('statuts-juridiques')
 export class StatutsJuridiquesController {
-  constructor(private readonly statutsJuridiquesService: StatutsJuridiquesService) {}
+  constructor(private readonly statutsJuridiquesService: StatutsJuridiquesService ,private prisma: PrismaService) {}
+
+  // In your backend controller
+@Get('pays')
+async getPays() {
+  return this.prisma.pays.findMany({
+    orderBy: { nom_pays: 'asc' }
+  });
+}
 
   @Post()
   @ApiOperation({ summary: 'Create a new legal status' })

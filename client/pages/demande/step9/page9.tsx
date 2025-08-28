@@ -97,9 +97,8 @@ const Step10GeneratePermis = () => {
 const handleSavePermis = async (permisData: any): Promise<PermisSaveResponse> => {
   try {
     const response = await axios.post(`${apiURL}/api/permis/save-permis`, {
-      elements: permisData.elements, // Make sure this is included
-      data: permisData,
-      id_demande: parseInt(idDemande!)
+      id_demande: parseInt(idDemande!),
+      elements: permisData.elements // Make sure this contains all necessary data
     });
     
     return response.data;

@@ -1,5 +1,6 @@
 export class CreateInteractionDto {
-  id_procedure: number;
+  id_procedure: number | undefined;
+  id_wilaya?: number ;
   type_interaction: "envoi" | "reponse";
   date_interaction: string;
   avis_wali?: "favorable" | "defavorable";

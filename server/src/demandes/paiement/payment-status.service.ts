@@ -24,7 +24,7 @@ export class PaymentStatusService implements OnModuleInit {
     for (const obligation of overdueObligations) {
       await this.prisma.obligationFiscale.update({
         where: { id: obligation.id },
-        data: { statut: 'En retard' }
+        data: { statut: 'En_retard' }
       });
     }
   }

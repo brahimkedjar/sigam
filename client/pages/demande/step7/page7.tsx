@@ -51,6 +51,7 @@ export default function AvisWaliStep() {
   const [rejectionReason, setRejectionReason] = useState("");
   const { currentView, navigateTo } = useViewNavigator();
   const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
+  const [id_wilaya, setid_wilaya] = useState<number | null>(null);
   const currentStep = 6;
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -93,6 +94,7 @@ export default function AvisWaliStep() {
   };
 
    useEffect(() => {
+    
     if (!idProc) return;
 
     axios.get(`${apiURL}/api/procedures/${idProc}/demande`)
@@ -131,6 +133,7 @@ export default function AvisWaliStep() {
   setIsGeneratingPdf(true);
   try {
     const response = await axios.get(`${apiURL}/api/demande/${idDemande}/summary`);
+    console.log("wwwwwwwwwwwwwwwww",response)
     const demande = response.data;
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -181,7 +184,7 @@ export default function AvisWaliStep() {
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const paragraph = `Monsieur le Wali,
-Par la présente, nous avons l'honneur de vous soumettre la demande de permis minier déposée par la société ${demande.detenteur?.nom_sociétéFR || ''}, conformément aux dispositions réglementaires en vigueur.`;
+Par la présente, nous avons l'honneur de vous soumettre la demande de permis minier déposée par la société ${demande.detenteur?.nom_societeFR || ''}, conformément aux dispositions réglementaires en vigueur.`;
     const lines = doc.splitTextToSize(paragraph, 165);
     doc.text(lines, marginLeft, y);
     y += lines.length * lineHeight + 5;
@@ -195,7 +198,7 @@ const labelX = 25;
 const valueX = 75;
 
 const companyFields = [
-  { label: "Raison sociale", value: demande.detenteur?.nom_sociétéFR },
+  { label: "Raison sociale", value: demande.detenteur?.nom_societeFR },
   { label: "Registre de Commerce", value: demande.detenteur?.RegistreCommerce?.[0]?.numero_rc },
   { label: "NIF", value: demande.detenteur?.RegistreCommerce?.[0]?.nif },
   { label: "Adresse", value: demande.detenteur?.RegistreCommerce?.[0]?.adresse_legale },
@@ -312,6 +315,7 @@ projectFields.forEach(({ label, value }) => {
     setIsLoading(true);
     try {
       const res = await axios.get(`${apiURL}/interactions-wali/${procId}`);
+      console.log("yyyyyyyyyyyyyyyyyy",res.data)
       setInteractions(res.data);
     } catch (error) {
       console.error("Erreur chargement interactions :", error);
@@ -344,12 +348,15 @@ projectFields.forEach(({ label, value }) => {
       await axios.post(`${apiURL}/interactions-wali`, {
         ...form,
         id_procedure: idProcedure,
+        id_wilaya:id_wilaya
+
       });
       await fetchInteractions(idProcedure);
       setForm((prev) => ({
         ...prev,
         contenu: "",
         date_interaction: new Date().toISOString(),
+        id_wilaya:id_wilaya
       }));
       setSuccess("Réponse enregistrée avec succès");
       setTimeout(() => setSuccess(null), 3000);
@@ -372,6 +379,7 @@ projectFields.forEach(({ label, value }) => {
         type_interaction: "envoi",
         date_interaction: new Date().toISOString(),
         remarques: "Envoi initial au wali",
+        id_wilaya:id_wilaya
       });
       await fetchInteractions(idProcedure);
       setSuccess("Demande envoyée au Wali");
@@ -405,6 +413,8 @@ projectFields.forEach(({ label, value }) => {
 
   // In your fetchIdProcedure function, add this to get the demande data
   const fetchIdProcedure = async (idDemande: number | string | string[] | undefined) => {
+    const response = await axios.get(`${apiURL}/api/demande/${idDemande}/summary`);
+    setid_wilaya(response.data.daira.id_wilaya)
   if (!idDemande) return;
 
   let parsedId: number | null = null;

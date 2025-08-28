@@ -21,6 +21,7 @@ export class CreateActionnaireDto {
   @IsNotEmpty()
   taux_participation: string;
   lieu_naissance: any;
+  id_pays:number
 }
 import { PersonnePhysique, FonctionPersonneMoral } from '@prisma/client';
 

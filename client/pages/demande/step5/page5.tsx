@@ -22,10 +22,11 @@ import { toast } from 'react-toastify';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
-type Substance = {
+type SubstanceWithPriority = {
   id_sub: number;
   nom_subFR: string;
-  catégorie_sub: string;
+  categorie_sub: string;
+  priorite: 'principale' | 'secondaire';
 };
 
 type Point = {
@@ -40,21 +41,21 @@ type Wilaya = {
   id_wilaya: number;
   id_antenne: number;
   code_wilaya: string;
-  nom_wilaya: string;
+  nom_wilayaFR: string;
 };
 
 type Daira = {
   id_daira: number;
   id_wilaya: number;
   code_daira: string;
-  nom_daira: string;
+  nom_dairaFR: string;
 };
 
 type Commune = {
   id_commune: number;
   id_daira: number;
   code_commune: string;
-  nom_commune: string;
+  nom_communeFR: string;
 };
 
 export default function Step4_Substances() {
@@ -84,7 +85,7 @@ export default function Step4_Substances() {
   const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Substances State
-  const [allSubstances, setAllSubstances] = useState<Substance[]>([]);
+  const [allSubstances, setAllSubstances] = useState<SubstanceWithPriority[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [famille, setFamille] = useState('');
@@ -100,8 +101,8 @@ export default function Step4_Substances() {
   const [selectedWilaya, setSelectedWilaya] = useState<string>('');
   const [selectedDaira, setSelectedDaira] = useState<string>('');
   const [selectedCommune, setSelectedCommune] = useState<string>('');
-
-  
+  const [selectedPriority, setSelectedPriority] = useState<'principale' | 'secondaire'>('secondaire');
+  const [selectedSubstances, setSelectedSubstances] = useState<SubstanceWithPriority[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [existingCoords, setExistingCoords] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -134,9 +135,9 @@ export default function Step4_Substances() {
         const communeId = demande.id_commune?.toString() || '';
 
         // Set display values first
-        setWilaya(demande.wilaya?.nom_wilaya || '');
-        setDaira(demande.daira?.nom_daira || '');
-        setCommune(demande.commune?.nom_commune || '');
+        setWilaya(demande.wilaya?.nom_wilayaFR || '');
+        setDaira(demande.daira?.nom_dairaFR || '');
+        setCommune(demande.commune?.nom_communeFR || '');
         if (wilayaId) {
           setSelectedWilaya(wilayaId);
           const dairasRes = await axios.get(`${apiURL}/api/wilayas/${wilayaId}/dairas`);
@@ -380,46 +381,93 @@ const saveCoordinatesToBackend = async () => {
   };
 
   useEffect(() => {
-    if (!idDemande) return;
+  if (!idDemande) return;
 
-    axios.get(`${apiURL}/api/substances/demande/${idDemande}`)
-      .then(res => {
-        setSelectedIds(res.data.map((item: any) => item.id_sub));
-      })
-      .catch(err => {
-        console.warn('Error loading selected substances', err);
-      });
-  }, [idDemande]);
+  axios.get(`${apiURL}/api/substances/demande/${idDemande}`)
+    .then(res => {
+      const substancesWithPriority = res.data.map((item: any) => ({
+        id_sub: item.id_sub,
+        nom_subFR: item.nom_subFR,
+        categorie_sub: item.categorie_sub,
+        priorite: item.priorite || 'secondaire' // Default to secondaire if not provided
+      }));
+      setSelectedSubstances(substancesWithPriority);
+      setSelectedIds(substancesWithPriority.map((item: any) => item.id_sub));
+    })
+    .catch(err => {
+      console.warn('Error loading selected substances', err);
+    });
+}, [idDemande]);
 
   useEffect(() => {
     if (idDemande) fetchSubstances();
   }, [idDemande, famille]);
 
-  const handleSelect = async (sub: Substance) => {
-    if (!idDemande) return;
+  const handleSelect = async (sub: SubstanceWithPriority) => {
+  if (!idDemande) return;
 
-    setIsLoading(true);
-    const isSelected = selectedIds.includes(sub.id_sub);
+  setIsLoading(true);
+  const isSelected = selectedIds.includes(sub.id_sub);
 
-    try {
-      if (isSelected) {
-        await axios.delete(
-          `${apiURL}/api/substances/demande/${idDemande}/${sub.id_sub}`
-        );
-        setSelectedIds((prev) => prev.filter((id) => id !== sub.id_sub));
-      } else {
-        await axios.post(`${apiURL}/api/substances/demande/${idDemande}`, {
-          id_substance: sub.id_sub,
-        });
-        setSelectedIds((prev) => [...prev, sub.id_sub]);
-      }
-    } catch (err) {
-      console.error("Error updating selection", err);
-      setError("Error updating selection");
-    } finally {
-      setIsLoading(false);
+  try {
+    if (isSelected) {
+      await axios.delete(
+        `${apiURL}/api/substances/demande/${idDemande}/${sub.id_sub}`
+      );
+      setSelectedSubstances(prev => prev.filter(s => s.id_sub !== sub.id_sub));
+      setSelectedIds(prev => prev.filter(id => id !== sub.id_sub));
+    } else {
+      const response = await axios.post(`${apiURL}/api/substances/demande/${idDemande}`, {
+        id_substance: sub.id_sub,
+        priorite: selectedPriority
+      });
+      
+      // Add the new substance with its priority
+      const newSubstance: SubstanceWithPriority = {
+        id_sub: sub.id_sub,
+        nom_subFR: sub.nom_subFR,
+        categorie_sub: sub.categorie_sub,
+        priorite: selectedPriority
+      };
+      
+      setSelectedSubstances(prev => [...prev, newSubstance]);
+      setSelectedIds(prev => [...prev, sub.id_sub]);
     }
-  };
+  } catch (err) {
+    console.error("Error updating selection", err);
+    setError("Error updating selection");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const changePriority = async (id_sub: number, newPriority: 'principale' | 'secondaire') => {
+  if (!idDemande) return;
+
+  try {
+    // First remove the substance
+    await axios.delete(`${apiURL}/api/substances/demande/${idDemande}/${id_sub}`);
+    
+    // Then add it back with the new priority
+    await axios.post(`${apiURL}/api/substances/demande/${idDemande}`, {
+      id_substance: id_sub,
+      priorite: newPriority
+    });
+
+    // Update local state
+    setSelectedSubstances(prev => 
+      prev.map(sub => 
+        sub.id_sub === id_sub 
+          ? { ...sub, priorite: newPriority }
+          : sub
+      )
+    );
+
+  } catch (err) {
+    console.error("Error changing priority", err);
+    setError("Error changing priority");
+  }
+};
 
   useEffect(() => {
     if (points.length >= 3 && points.every(coord => coord.x && coord.y)) {
@@ -769,7 +817,7 @@ const saveCoordinatesToBackend = async () => {
                       <option value="">Sélectionner une wilaya</option>
                       {wilayas.map((w) => (
                         <option key={w.id_wilaya} value={w.id_wilaya}>
-                          {w.code_wilaya} - {w.nom_wilaya}
+                          {w.code_wilaya} - {w.nom_wilayaFR}
                         </option>
                       ))}
                     </select>
@@ -789,7 +837,7 @@ const saveCoordinatesToBackend = async () => {
                       <option value="">Sélectionner une daïra</option>
                       {dairas.map((d) => (
                         <option key={d.id_daira} value={d.id_daira}>
-                          {d.code_daira} - {d.nom_daira}
+                          {d.code_daira} - {d.nom_dairaFR}
                         </option>
                       ))}
                     </select>
@@ -809,7 +857,7 @@ const saveCoordinatesToBackend = async () => {
                       <option value="">Sélectionner une commune</option>
                       {communes.map((c) => (
                         <option key={c.id_commune} value={c.id_commune}>
-                          {c.code_commune} - {c.nom_commune}
+                          {c.code_commune} - {c.nom_communeFR}
                         </option>
                       ))}
                     </select>
@@ -910,6 +958,7 @@ const saveCoordinatesToBackend = async () => {
                         <option value="non-métalliques">Non métalliques</option>
                         <option value="radioactives">Radioactives</option>
                       </select>
+                      
                     </div>
 
                     <div className={styles['form-group']}>
@@ -947,7 +996,7 @@ const saveCoordinatesToBackend = async () => {
                               />
                               <span className={styles['custom-checkbox']}></span>
                               <span className={styles['substance-name']}>{sub.nom_subFR}</span>
-                              <span className={styles['substance-category']}>{sub.catégorie_sub}</span>
+                              <span className={styles['substance-category']}>{sub.categorie_sub}</span>
                             </label>
                           </li>
                         ))}
@@ -969,24 +1018,37 @@ const saveCoordinatesToBackend = async () => {
                   </h4>
 
                   <ul className={styles['selected-substances-list']}>
-                    {allSubstances
-                      .filter((s) => selectedIds.includes(s.id_sub))
-                      .map((sub) => (
-                        <li key={sub.id_sub} className={styles['selected-substance']}>
-                          <div className={styles['substance-info']}>
-                            <span className={styles['substance-name']}>{sub.nom_subFR}</span>
-                            <span className={styles['substance-category']}>{sub.catégorie_sub}</span>
-                          </div>
-                          <button
-                          disabled={statutProc === 'TERMINEE' || !statutProc}
-                            className={styles['remove-btn']}
-                            onClick={() => handleSelect(sub)}
-                          >
-                            <FiX />
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
+  {selectedSubstances.map((sub) => (
+    <li key={sub.id_sub} className={styles['selected-substance']}>
+      <div className={styles['substance-info']}>
+        <span className={styles['substance-name']}>{sub.nom_subFR}</span>
+        <span className={styles['substance-category']}>{sub.categorie_sub}</span>
+        
+        {/* Priority selector */}
+        <select
+          disabled={statutProc === 'TERMINEE' || !statutProc}
+          className={styles['priority-select']}
+          value={sub.priorite}
+          onChange={(e) => changePriority(sub.id_sub, e.target.value as 'principale' | 'secondaire')}
+        >
+          <option value="secondaire">Secondaire</option>
+          <option value="principale">Principale</option>
+        </select>
+        
+        <span className={`${styles['priority-badge']} ${styles[sub.priorite]}`}>
+          {sub.priorite === 'principale' ? 'Principale' : 'Secondaire'}
+        </span>
+      </div>
+      <button
+        disabled={statutProc === 'TERMINEE' || !statutProc}
+        className={styles['remove-btn']}
+        onClick={() => handleSelect(sub)}
+      >
+        <FiX />
+      </button>
+    </li>
+  ))}
+</ul>
                 </div>
               </div>
 </div>

@@ -1,5 +1,5 @@
 export class CreateDossierDto {
-  id_typeproc: number;
+  id_typeProc: number;
   id_typePermis: number;
   nombre_doc: number;
   remarques?: string;
@@ -12,7 +12,7 @@ export class CreateDossierDto {
 }
 
 export class UpdateDossierDto {
-  id_typeproc?: number;
+  id_typeProc?: number;
   id_typePermis?: number;
   nombre_doc?: number;
   remarques?: string;

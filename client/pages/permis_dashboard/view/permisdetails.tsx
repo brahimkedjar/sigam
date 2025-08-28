@@ -72,7 +72,7 @@ interface PermisDetails {
     nbr_renouv_max: number;
   };
   detenteur: {
-    nom_sociétéFR: string;
+    nom_societeFR: string;
     id_detenteur: number;
   } | null;
   procedures: Procedure[];
@@ -123,11 +123,12 @@ interface Procedure {
     };
   }[];
   SubstanceAssocieeDemande: {
+    priorite:string;
     substance: {
       id_sub: number;
       nom_subFR: string;
       nom_subAR: string;
-      catégorie_sub: string;
+      categorie_sub: string;
     };
   }[];
   ProcedureEtape: {
@@ -295,6 +296,7 @@ const SubstanceTable: React.FC<{ substances: any[] }> = ({ substances }) => {
             <th>Nom (FR)</th>
             <th>Nom (AR)</th>
             <th>Catégorie</th>
+            <th>Priorité</th> 
           </tr>
         </thead>
         <tbody>
@@ -303,7 +305,16 @@ const SubstanceTable: React.FC<{ substances: any[] }> = ({ substances }) => {
               <td>{substance.nom_subFR}</td>
               <td>{substance.nom_subAR}</td>
               <td>
-                <span className={styles.categoryBadge}>{substance.catégorie_sub}</span>
+                <span className={styles.categoryBadge}>{substance.categorie_sub}</span>
+              </td>
+              <td>
+                <span className={`${styles.priorityBadge} ${
+                  substance.priorite === 'principale' 
+                    ? styles.primaryPriority 
+                    : styles.secondaryPriority
+                }`}>
+                  {substance.priorite === 'principale' ? 'principale' : 'secondaire'}
+                </span>
               </td>
             </tr>
           ))}
@@ -700,24 +711,30 @@ if (permis.date_expiration) {
   };
 
   // Function to get all unique substances from all procedures
-  const getAllSubstances = () => {
-    const allSubstances: {
-      id_sub: number;
-      nom_subFR: string;
-      nom_subAR: string;
-      catégorie_sub: string;
-    }[] = [];
+const getAllSubstances = () => {
+  const allSubstances: {
+    id_sub: number;
+    nom_subFR: string;
+    nom_subAR: string;
+    categorie_sub: string;
+    priorite: string;
+  }[] = [];
 
-    permis.procedures.forEach(procedure => {
-      procedure.SubstanceAssocieeDemande.forEach(sub => {
-        if (!allSubstances.some(s => s.id_sub === sub.substance.id_sub)) {
-          allSubstances.push(sub.substance);
-        }
-      });
+  permis.procedures.forEach(procedure => {
+    procedure.SubstanceAssocieeDemande.forEach(sub => {
+      if (!allSubstances.some(s => s.id_sub === sub.substance.id_sub)) {
+        allSubstances.push({
+          ...sub.substance,
+          priorite: sub.priorite   // ✅ garder la priorité
+        });
+        console.log("xxxxxxxxxxx", procedure.SubstanceAssocieeDemande);
+      }
     });
+  });
 
-    return allSubstances;
-  };
+  return allSubstances;
+};
+
 
   const handleViewProcedure = (procedure: Procedure) => {
     const procedureType = getProcedureType(procedure);
@@ -1105,7 +1122,7 @@ if (permis.date_expiration) {
                     <div className={styles.infoItem}>
                       <span className={styles.infoLabel}>Titulaire</span>
                       <span className={styles.infoValue}>
-                        {permis.detenteur?.nom_sociétéFR || 'Non défini'}
+                        {permis.detenteur?.nom_societeFR || 'Non défini'}
                       </span>
                     </div>
                     <div className={styles.infoItem}>
@@ -1737,7 +1754,7 @@ if (permis.date_expiration) {
           permisDetails={{
             code: permis.code_permis,
             type: permis.typePermis.lib_type,
-            titulaire: permis.detenteur?.nom_sociétéFR || 'Inconnu'
+            titulaire: permis.detenteur?.nom_societeFR || 'Inconnu'
           }}
         />
       )}

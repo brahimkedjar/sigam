@@ -1,4 +1,5 @@
 import styles from './formcomponent.module.css';
+import { useState, useEffect } from 'react';
 
 // Define types for better type safety
 type StatutJuridique = {
@@ -6,6 +7,12 @@ type StatutJuridique = {
   code_statut: string;
   statut_fr: string;
   statut_ar: string;
+};
+
+type Pays = {
+  id_pays: number;
+  nom_pays: string;
+  nationalite: string;
 };
 
 type InfosGeneralesData = {
@@ -17,6 +24,7 @@ type InfosGeneralesData = {
   fax: string;
   adresse: string;
   nationalite: string;
+  id_pays: number | null;
 };
 
 type InfosGeneralesProps = {
@@ -24,7 +32,8 @@ type InfosGeneralesProps = {
   onChange: (data: InfosGeneralesData) => void;
   disabled?: boolean;
   statutsJuridiques?: StatutJuridique[];
-  loading?: boolean; // Added loading state
+  paysOptions?: Pays[];
+  loading?: boolean;
 };
 
 export default function InfosGenerales({ 
@@ -32,18 +41,37 @@ export default function InfosGenerales({
   onChange, 
   disabled = false,
   statutsJuridiques = [],
+  paysOptions = [],
   loading = false 
 }: InfosGeneralesProps) {
+  const [showManualCountryInput, setShowManualCountryInput] = useState(false);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     onChange({ ...data, [name]: value });
+  };
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    
+    if (value === "manual") {
+      setShowManualCountryInput(true);
+      onChange({ ...data, id_pays: null });
+    } else {
+      setShowManualCountryInput(false);
+      const selectedPays = paysOptions.find(p => p.id_pays.toString() === value);
+      onChange({ 
+        ...data, 
+        id_pays: value ? parseInt(value, 10) : null,
+      });
+    }
   };
 
   // Show skeleton loading if data is loading
   if (loading) {
     return (
       <div className={styles.formGrid}>
-        {[...Array(8)].map((_, index) => (
+        {[...Array(9)].map((_, index) => (
           <div key={index} className={styles.inputSkeleton}></div>
         ))}
       </div>
@@ -98,6 +126,29 @@ export default function InfosGenerales({
           ))}
         </select>
       </div>
+
+      {/* Country Dropdown */}
+      <div className={styles.formGroup}>
+        <label className={styles.inputLabel}>Pays</label>
+        <select
+          name="id_pays"
+          className={`${styles.inputField} ${styles.selectField}`}
+          value={data.id_pays || ''}
+          onChange={handleCountryChange}
+          required
+          disabled={disabled}
+        >
+          <option value="">Sélectionnez un pays</option>
+          {paysOptions.map(pays => (
+            <option key={pays.id_pays} value={pays.id_pays}>
+              {pays.nom_pays}
+            </option>
+          ))}
+          <option value="manual">Autre (saisir manuellement)</option>
+        </select>
+      </div>
+
+      
 
       {/* Phone */}
       <div className={styles.formGroup}>

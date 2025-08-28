@@ -10,7 +10,7 @@ export type StatutPermisWhereUniqueInput = {
   lib_statut?: string;
 };
 export enum StatutPermis {
-  ACTIF = 'ACTIF',
+  En_vigueur = 'En vigueur',
   INACTIF = 'INACTIF',
   EN_ATTENTE = 'EN_ATTENTE',
   EXPIRE = 'EXPIRE',

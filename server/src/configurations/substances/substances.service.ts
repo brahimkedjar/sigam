@@ -10,23 +10,36 @@ import { CreateSubstanceDto, UpdateSubstanceDto } from './substances.dto';
 export class SubstancesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createSubstanceDto: CreateSubstanceDto) {
-    try {
-      return await this.prisma.substance.create({
-        data: {
-          nom_subFR: createSubstanceDto.nom_subFR,
-          nom_subAR: createSubstanceDto.nom_subAR,
-          catégorie_sub: createSubstanceDto.catégorie_sub,
-          id_redevance: createSubstanceDto.id_redevance || null,
-        },
-        include: {
-          redevance: true,
-        },
-      });
-    } catch (error) {
-      throw new BadRequestException('Failed to create substance');
-    }
+  // In your service, add detailed error logging
+async create(createSubstanceDto: CreateSubstanceDto) {
+  try {
+    console.log('Creating substance with data:', createSubstanceDto);
+    
+    const result = await this.prisma.substance.create({
+      data: {
+        nom_subFR: createSubstanceDto.nom_subFR,
+        nom_subAR: createSubstanceDto.nom_subAR,
+        categorie_sub: createSubstanceDto.categorie_sub,
+        id_redevance: createSubstanceDto.id_redevance || null,
+      },
+      include: {
+        redevance: true,
+      },
+    });
+    
+    console.log('Substance created successfully:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('Detailed create error:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    });
+    throw new BadRequestException('Failed to create substance: ' + error.message);
   }
+}
 
   async findAll(include?: string) {
     const includeRedevance = include === 'redevance';
@@ -60,7 +73,7 @@ export class SubstancesService {
         data: {
           nom_subFR: updateSubstanceDto.nom_subFR,
           nom_subAR: updateSubstanceDto.nom_subAR,
-          catégorie_sub: updateSubstanceDto.catégorie_sub,
+          categorie_sub: updateSubstanceDto.categorie_sub,
           id_redevance: updateSubstanceDto.id_redevance || null,
         },
         include: {

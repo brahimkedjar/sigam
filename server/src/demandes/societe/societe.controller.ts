@@ -98,6 +98,25 @@ updateRegistre(
   return this.societeService.updateRegistre(id_detenteur, data);
 }
 
+  @Put('actionnaires/:id')
+updateActionnaires(
+  @Param('id', ParseIntPipe) id_detenteur: number,
+  @Body('actionnaires') actionnaires: CreateActionnaireDto[]
+) {
+  // Validate that each actionnaire has required fields
+  for (const [index, actionnaire] of actionnaires.entries()) {    
+    if (!actionnaire.id_pays) {
+      console.error(`Actionnaire ${index + 1} missing id_pays`);
+      throw new HttpException(
+        `L'actionnaire ${index + 1} doit avoir un pays sélectionné`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+  
+  return this.societeService.updateActionnaires(id_detenteur, actionnaires);
+}
+
   // Actionnaires Endpoints
   @Post('actionnaires')
   createActionnaires(
@@ -107,13 +126,6 @@ updateRegistre(
     return this.societeService.createActionnaires(id_detenteur, actionnaires);
   }
 
-  @Put('actionnaires/:id')
-  updateActionnaires(
-    @Param('id', ParseIntPipe) id_detenteur: number,
-    @Body('actionnaires') actionnaires: CreateActionnaireDto[]
-  ) {
-    return this.societeService.updateActionnaires(id_detenteur, actionnaires);
-  }
 
 
 @Delete('actionnaires/:id_detenteur')

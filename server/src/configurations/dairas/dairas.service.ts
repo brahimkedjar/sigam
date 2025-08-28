@@ -24,7 +24,7 @@ export class DairasService {
     const where = wilayaId ? { id_wilaya: wilayaId } : {};
     return this.prisma.daira.findMany({
       where,
-      orderBy: { nom_daira: 'asc' },
+      orderBy: { nom_dairaFR: 'asc' },
       include: {
         wilaya: {
           include: {

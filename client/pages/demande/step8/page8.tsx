@@ -24,7 +24,7 @@ interface Procedure {
       libelle: string;
     };
     detenteur: {
-      nom_sociétéFR: string;
+      nom_societeFR: string;
     };
   }>;
 }
@@ -48,7 +48,6 @@ interface Seance {
 interface Comite {
   id_comite: number;
   date_comite: string;
-  numero_decision: string;
   objet_deliberation: string;
   resume_reunion: string;
   fiche_technique?: string;
@@ -58,6 +57,7 @@ interface Comite {
 }
 
 interface Decision {
+  numero_decision: string;
   id_decision: number;
   decision_cd: 'favorable' | 'defavorable';
   duree_decision?: number;
@@ -140,7 +140,7 @@ const generatePDFReport = async () => {
 
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Numéro décision: ${comite.numero_decision}`, 15, 90);
+    doc.text(`Numéro décision: ${decision.numero_decision}`, 15, 90);
     doc.text(`Date du comité: ${formatDate(comite.date_comite)}`, 15, 95);
     
     // Add summary table using autoTable
@@ -227,7 +227,7 @@ const pageCount = (doc.internal as any).getNumberOfPages();
 console.log('Procedure fetched:', detenteur?.data);
 
       setProcedure(procRes.data);
-      setDetenteur(detenteur.data.detenteur?.nom_sociétéFR || '');
+      setDetenteur(detenteur.data.detenteur?.nom_societeFR || '');
       setStatutProc(detenteur.data.procedure.statut_proc);
       const idSeance = procRes.data.id_seance;
       if (!idSeance) {
@@ -252,8 +252,8 @@ console.log('Procedure fetched:', detenteur?.data);
       setSeance(fullSeance);
 
       const foundComite = foundSeanceWithDec.comites.find((c: Comite) =>
-        c.numero_decision.endsWith(`-${idProc}`)
-      );
+  c.decisionCDs[0]?.numero_decision?.endsWith(`-${idProc}`)
+);
 
       if (foundComite) {
         setComite(foundComite);
@@ -445,7 +445,7 @@ console.log('Procedure fetched:', detenteur?.data);
                   <div className={styles.infoGrid}>
                     <div className={styles.infoItem}>
                       <span className={styles.infoLabel}>Numéro décision:</span>
-                      <span className={styles.infoValue}>{comite.numero_decision}</span>
+                      <span className={styles.infoValue}>{decision?.numero_decision}</span>
                     </div>
                     <div className={styles.infoItem}>
                       <span className={styles.infoLabel}>Date du comité:</span>

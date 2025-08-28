@@ -21,6 +21,7 @@ export class CreateComiteDto {
   carte_projettee?: string;
   rapport_police?: string;
   decisions?: CreateDecisionDto[];
+  numero_decision: string;
 }
 
 export class UpdateComiteDto {
@@ -32,6 +33,7 @@ export class UpdateComiteDto {
   carte_projettee?: string;
   rapport_police?: string;
   decisions?: CreateDecisionDto[];
+
 }
 
 export class CreateDecisionDto {
@@ -39,6 +41,7 @@ export class CreateDecisionDto {
   decision_cd: 'favorable' | 'defavorable';
   duree_decision?: number;
   commentaires?: string;
+  numero_decision: string;
 }
 
 export class CreateMembreDto {

@@ -13,11 +13,14 @@ import Navbar from '@/pages/navbar/Navbar';
 type ExpertMinier = {
   id_expert: number;
   nom_expert: string;
-  fonction: string;
-  num_registre: string | null;
-  organisme: string;
-  date_creation: string;
-  date_modification: string;
+  num_agrement: string;
+  date_agrement: string;
+  etat_agrement: string;
+  adresse: string | null;
+  email: string | null;
+  tel_expert: string | null;
+  fax_expert: string | null;
+  specialisation: string | null;
 };
 
 type SortConfig = {
@@ -44,11 +47,16 @@ export default function ExpertsAdminPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const { currentView, navigateTo } = useViewNavigator('gestion_experts');
   const [currentExpert, setCurrentExpert] = useState<ExpertMinier | null>(null);
-  const [formData, setFormData] = useState<Omit<ExpertMinier, 'id_expert' | 'date_creation' | 'date_modification'>>({
+  const [formData, setFormData] = useState({
     nom_expert: '',
-    fonction: '',
-    num_registre: '',
-    organisme: '',
+    num_agrement: '',
+    date_agrement: '',
+    etat_agrement: '',
+    adresse: '',
+    email: '',
+    tel_expert: '',
+    fax_expert: '',
+    specialisation: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -82,11 +90,10 @@ export default function ExpertsAdminPage() {
     }
   }, [apiUrl]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when field is edited
     if (formErrors[name]) {
       setFormErrors(prev => {
         const newErrors = { ...prev };
@@ -103,15 +110,22 @@ export default function ExpertsAdminPage() {
       errors.nom_expert = 'Le nom est requis';
     }
     
-    if (!formData.fonction.trim()) {
-      errors.fonction = 'La fonction est requise';
+    if (!formData.num_agrement.trim()) {
+      errors.num_agrement = 'Le numero d\'agrement est requis';
     }
     
-    if (!formData.organisme.trim()) {
-      errors.organisme = "L'organisme est requis";
+    if (!formData.date_agrement.trim()) {
+      errors.date_agrement = 'La date d\'agrement est requise';
     }
     
-   
+    if (!formData.etat_agrement.trim()) {
+      errors.etat_agrement = 'L\'etat d\'agrement est requis';
+    }
+    
+    if (!formData.specialisation.trim()) {
+      errors.specialisation = 'La specialisation est requise';
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -126,15 +140,21 @@ export default function ExpertsAdminPage() {
     
     try {
       setIsSubmitting(true);
+      const formattedData = {
+        ...formData,
+        adresse: formData.adresse || null,
+        email: formData.email || null,
+        tel_expert: formData.tel_expert || null,
+        fax_expert: formData.fax_expert || null,
+        specialisation: formData.specialisation || null
+      };
+
       if (currentExpert) {
-        await axios.put(`${apiUrl}/api/experts/${currentExpert.id_expert}`, {
-          ...formData,
-          id_expert: currentExpert.id_expert
-        });
+        await axios.put(`${apiUrl}/api/experts/${currentExpert.id_expert}`, formattedData);
         toast.success('Expert mis à jour avec succès');
       } else {
-        await axios.post(`${apiUrl}/api/experts`, formData);
-        toast.success('Expert créé avec succès');
+        await axios.post(`${apiUrl}/api/experts`, formattedData);
+        toast.success('Expert cree avec succès');
       }
       fetchExperts();
       closeModal();
@@ -146,31 +166,41 @@ export default function ExpertsAdminPage() {
     }
   };
 
+  
+  const handleEditClick = (expert: ExpertMinier) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    openEditModal(expert);
+  };
+  
   const openCreateModal = () => {
     setCurrentExpert(null);
     setFormData({
       nom_expert: '',
-      fonction: '',
-      num_registre: '',
-      organisme: '',
+      num_agrement: '',
+      date_agrement: '',
+      etat_agrement: '',
+      adresse: '',
+      email: '',
+      tel_expert: '',
+      fax_expert: '',
+      specialisation: '',
     });
     setFormErrors({});
     setIsModalOpen(true);
-  };
-
-  const handleEditClick = (expert: ExpertMinier) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    openEditModal(expert);
   };
 
   const openEditModal = (expert: ExpertMinier) => {
     setCurrentExpert(expert);
     setFormData({
       nom_expert: expert.nom_expert,
-      fonction: expert.fonction,
-      num_registre: expert.num_registre || '',
-      organisme: expert.organisme,
-   
+      num_agrement: expert.num_agrement,
+      date_agrement: expert.date_agrement.split('T')[0],
+      etat_agrement: expert.etat_agrement,
+      adresse: expert.adresse || '',
+      email: expert.email || '',
+      tel_expert: expert.tel_expert || '',
+      fax_expert: expert.fax_expert || '',
+      specialisation: expert.specialisation || '',
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -189,7 +219,7 @@ export default function ExpertsAdminPage() {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet expert ?')) {
       try {
         await axios.delete(`${apiUrl}/api/experts/${id}`);
-        toast.success('Expert supprimé avec succès');
+        toast.success('Expert supprime avec succès');
         fetchExperts();
       } catch (error) {
         toast.error('Erreur lors de la suppression');
@@ -233,7 +263,7 @@ export default function ExpertsAdminPage() {
       link.click();
       link.remove();
       
-      toast.success('Export réussi');
+      toast.success('Export reussi');
     } catch (error) {
       toast.error('Erreur lors de l\'export');
       console.error(error);
@@ -244,7 +274,7 @@ export default function ExpertsAdminPage() {
     e.preventDefault();
     
     if (!importFile) {
-      toast.error('Veuillez sélectionner un fichier');
+      toast.error('Veuillez selectionner un fichier');
       return;
     }
     
@@ -259,7 +289,7 @@ export default function ExpertsAdminPage() {
         }
       });
       
-      toast.success('Import réussi');
+      toast.success('Import reussi');
       setIsImportOpen(false);
       setImportFile(null);
       fetchExperts();
@@ -272,14 +302,12 @@ export default function ExpertsAdminPage() {
   };
 
   const filteredExperts = experts.filter(expert => {
-    // Apply search term filter
     const matchesSearch = 
       expert.nom_expert.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expert.fonction.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expert.organisme.toLowerCase().includes(searchTerm.toLowerCase())
-  
-    
-    // Apply additional filters
+      expert.num_agrement.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expert.etat_agrement.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (expert.specialisation && expert.specialisation.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const matchesAllFilters = filters.every(filter => {
       const expertValue = String(expert[filter.key] || '').toLowerCase();
       return expertValue.includes(filter.value.toLowerCase());
@@ -292,10 +320,13 @@ export default function ExpertsAdminPage() {
     if (a[sortConfig.key] === null) return 1;
     if (b[sortConfig.key] === null) return -1;
     
-    if (a[sortConfig.key]! < b[sortConfig.key]!) {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    if (aValue! < bValue!) {
       return sortConfig.direction === 'ascending' ? -1 : 1;
     }
-    if (a[sortConfig.key]! > b[sortConfig.key]!) {
+    if (aValue! > bValue!) {
       return sortConfig.direction === 'ascending' ? 1 : -1;
     }
     return 0;
@@ -364,20 +395,29 @@ export default function ExpertsAdminPage() {
             {isFilterOpen && (
               <div className={styles.filterPanel}>
                 <div className={styles.filterGroup}>
-                  <label>Organisme</label>
+                  <label>Nom</label>
                   <input
                     type="text"
-                    placeholder="Filtrer par organisme..."
-                    onChange={(e) => handleFilter('organisme', e.target.value)}
+                    placeholder="Filtrer par nom..."
+                    onChange={(e) => handleFilter('nom_expert', e.target.value)}
                     className={styles.filterInput}
                   />
                 </div>
                 <div className={styles.filterGroup}>
-                  <label>Fonction</label>
+                  <label>Numero d'agrement</label>
                   <input
                     type="text"
-                    placeholder="Filtrer par fonction..."
-                    onChange={(e) => handleFilter('fonction', e.target.value)}
+                    placeholder="Filtrer par numero d'agrement..."
+                    onChange={(e) => handleFilter('num_agrement', e.target.value)}
+                    className={styles.filterInput}
+                  />
+                </div>
+                <div className={styles.filterGroup}>
+                  <label>etat d'agrement</label>
+                  <input
+                    type="text"
+                    placeholder="Filtrer par etat d'agrement..."
+                    onChange={(e) => handleFilter('etat_agrement', e.target.value)}
                     className={styles.filterInput}
                   />
                 </div>
@@ -409,64 +449,71 @@ export default function ExpertsAdminPage() {
                         )}
                       </div>
                       <div 
-                        className={`${styles.headerCell} ${sortConfig.key === 'fonction' ? styles.sorted : ''}`}
-                        onClick={() => handleSort('fonction')}
+                        className={`${styles.headerCell} ${sortConfig.key === 'num_agrement' ? styles.sorted : ''}`}
+                        onClick={() => handleSort('num_agrement')}
                       >
-                        Fonction
-                        {sortConfig.key === 'fonction' && (
+                        Numero agrement
+                        {sortConfig.key === 'num_agrement' && (
                           <FiChevronDown className={`${styles.sortIcon} ${sortConfig.direction === 'descending' ? styles.descending : ''}`} />
                         )}
                       </div>
-                      <div className={styles.headerCell}>Numéro de registre</div>
                       <div 
-                        className={`${styles.headerCell} ${sortConfig.key === 'organisme' ? styles.sorted : ''}`}
-                        onClick={() => handleSort('organisme')}
+                        className={`${styles.headerCell} ${sortConfig.key === 'date_agrement' ? styles.sorted : ''}`}
+                        onClick={() => handleSort('date_agrement')}
                       >
-                        Organisme
-                        {sortConfig.key === 'organisme' && (
+                        Date agrement
+                        {sortConfig.key === 'date_agrement' && (
+                          <FiChevronDown className={`${styles.sortIcon} ${sortConfig.direction === 'descending' ? styles.descending : ''}`} />
+                        )}
+                      </div>
+                      <div 
+                        className={`${styles.headerCell} ${sortConfig.key === 'etat_agrement' ? styles.sorted : ''}`}
+                        onClick={() => handleSort('etat_agrement')}
+                      >
+                        etat agrement
+                        {sortConfig.key === 'etat_agrement' && (
+                          <FiChevronDown className={`${styles.sortIcon} ${sortConfig.direction === 'descending' ? styles.descending : ''}`} />
+                        )}
+                      </div>
+                      <div 
+                        className={`${styles.headerCell} ${sortConfig.key === 'specialisation' ? styles.sorted : ''}`}
+                        onClick={() => handleSort('specialisation')}
+                      >
+                        Specialisation
+                        {sortConfig.key === 'specialisation' && (
                           <FiChevronDown className={`${styles.sortIcon} ${sortConfig.direction === 'descending' ? styles.descending : ''}`} />
                         )}
                       </div>
                       <div className={styles.headerCell}>Actions</div>
                     </div>
 
-                    {paginatedExperts.length > 0 ? (
-                      paginatedExperts.map(expert => (
-                        <div key={expert.id_expert} className={styles.tableRow}>
-                          <div className={styles.tableCell}>{expert.nom_expert}</div>
-                          <div className={styles.tableCell}>{expert.fonction}</div>
-                          <div className={styles.tableCell}>{expert.num_registre || '-'}</div>
-                          <div className={styles.tableCell}>{expert.organisme}</div>
-                        
-                          <div className={styles.actionsCell}>
-                            <button
-                              onClick={handleEditClick(expert)}
-                              className={styles.editButton}
-                              title="Modifier"
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              onClick={handleDeleteClick(expert.id_expert)}
-                              className={styles.deleteButton}
-                              title="Supprimer"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </div>
+                    {paginatedExperts.map(expert => (
+                      <div key={expert.id_expert} className={styles.tableRow}>
+                        <div className={styles.tableCell}>{expert.nom_expert}</div>
+                        <div className={styles.tableCell}>{expert.num_agrement}</div>
+                        <div className={styles.tableCell}>
+                          {new Date(expert.date_agrement).toLocaleDateString()}
                         </div>
-                      ))
-                    ) : (
-                      <div className={styles.noResults}>
-                        <FiUser className={styles.noResultsIcon} />
-                        <p>Aucun expert trouvé</p>
-                        {filters.length > 0 || searchTerm ? (
-                          <button onClick={() => { setSearchTerm(''); clearFilters(); }} className={styles.clearSearchButton}>
-                            Effacer les filtres
+                        <div className={styles.tableCell}>{expert.etat_agrement}</div>
+                        <div className={styles.tableCell}>{expert.specialisation || '-'}</div>
+                        <div className={styles.actionsCell}>
+                          <button
+                            onClick={handleEditClick(expert)}
+                            className={styles.editButton}
+                            title="Modifier"
+                          >
+                            <FiEdit2 />
                           </button>
-                        ) : null}
+                          <button
+                            onClick={handleDeleteClick(expert.id_expert)}
+                            className={styles.deleteButton}
+                            title="Supprimer"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
 
@@ -477,7 +524,7 @@ export default function ExpertsAdminPage() {
                       disabled={pagination.currentPage === 1}
                       className={styles.paginationButton}
                     >
-                      Précédent
+                      Precedent
                     </button>
                     
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -538,43 +585,106 @@ export default function ExpertsAdminPage() {
                       />
                       {formErrors.nom_expert && <span className={styles.errorText}>{formErrors.nom_expert}</span>}
                     </div>
+                    
                     <div className={styles.formGroup}>
-                      <label>Fonction *</label>
+                      <label>Numero d'agrement *</label>
                       <input
                         type="text"
-                        name="fonction"
-                        value={formData.fonction}
+                        name="num_agrement"
+                        value={formData.num_agrement}
                         onChange={handleInputChange}
-                        className={formErrors.fonction ? styles.errorInput : ''}
+                        className={formErrors.num_agrement ? styles.errorInput : ''}
                       />
-                      {formErrors.fonction && <span className={styles.errorText}>{formErrors.fonction}</span>}
+                      {formErrors.num_agrement && <span className={styles.errorText}>{formErrors.num_agrement}</span>}
                     </div>
+                    
                     <div className={styles.formGroup}>
-                      <label>Numéro de registre</label>
+                      <label>Date d'agrement *</label>
+                      <input
+                        type="date"
+                        name="date_agrement"
+                        value={formData.date_agrement}
+                        onChange={handleInputChange}
+                        className={formErrors.date_agrement ? styles.errorInput : ''}
+                      />
+                      {formErrors.date_agrement && <span className={styles.errorText}>{formErrors.date_agrement}</span>}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label>etat d'agrement *</label>
+                      <select
+                        name="etat_agrement"
+                        value={formData.etat_agrement}
+                        onChange={handleInputChange}
+                        className={formErrors.etat_agrement ? styles.errorInput : ''}
+                      >
+                        <option value="">Selectionner un etat</option>
+                        <option value="Actif">Actif</option>
+                        <option value="Inactif">Inactif</option>
+                        <option value="Suspendu">Suspendu</option>
+                        <option value="Expire">Expire</option>
+                      </select>
+                      {formErrors.etat_agrement && <span className={styles.errorText}>{formErrors.etat_agrement}</span>}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label>Specialisation *</label>
                       <input
                         type="text"
-                        name="num_registre"
-                        value={formData.num_registre!}
+                        name="specialisation"
+                        value={formData.specialisation}
+                        onChange={handleInputChange}
+                        className={formErrors.specialisation ? styles.errorInput : ''}
+                      />
+                      {formErrors.specialisation && <span className={styles.errorText}>{formErrors.specialisation}</span>}
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label>Adresse</label>
+                      <textarea
+                        name="adresse"
+                        value={formData.adresse}
+                        onChange={handleInputChange}
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleInputChange}
                       />
                     </div>
+                    
                     <div className={styles.formGroup}>
-                      <label>Organisme *</label>
+                      <label>Telephone</label>
+                      <input
+                        type="tel"
+                        name="tel_expert"
+                        value={formData.tel_expert}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    
+                    <div className={styles.formGroup}>
+                      <label>Fax</label>
                       <input
                         type="text"
-                        name="organisme"
-                        value={formData.organisme}
+                        name="fax_expert"
+                        value={formData.fax_expert}
                         onChange={handleInputChange}
-                        className={formErrors.organisme ? styles.errorInput : ''}
                       />
-                      {formErrors.organisme && <span className={styles.errorText}>{formErrors.organisme}</span>}
                     </div>
+                    
                     <div className={styles.modalActions}>
                       <button type="button" onClick={closeModal} className={styles.cancelButton}>
                         Annuler
                       </button>
                       <button type="submit" className={styles.saveButton} disabled={isSubmitting}>
-                        {isSubmitting ? 'Traitement...' : currentExpert ? 'Mettre à jour' : 'Créer'}
+                        {isSubmitting ? 'Traitement...' : currentExpert ? 'Mettre à jour' : 'Creer'}
                       </button>
                     </div>
                   </form>
@@ -593,7 +703,7 @@ export default function ExpertsAdminPage() {
                   </div>
                   <form onSubmit={handleImport} className={styles.modalForm}>
                     <div className={styles.formGroup}>
-                      <label>Sélectionner un fichier CSV</label>
+                      <label>Selectionner un fichier CSV</label>
                       <input
                         type="file"
                         accept=".csv"
@@ -601,7 +711,7 @@ export default function ExpertsAdminPage() {
                         className={styles.fileInput}
                       />
                       <div className={styles.helpText}>
-                        Le fichier CSV doit contenir les colonnes: nom_expert, fonction, num_registre, organisme, email, telephone
+                        Le fichier CSV doit contenir les colonnes: nom_expert, num_agrement, date_agrement, etat_agrement, specialisation, adresse, email, tel_expert, fax_expert
                       </div>
                     </div>
                     <div className={styles.modalActions}>

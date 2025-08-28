@@ -125,10 +125,10 @@ export default function CadastrePage() {
       setPermitData({
         code: demandeSummary.code_demande || '',
         type: demandeSummary.typePermis?.lib_type || '',
-        holder: demandeSummary.detenteur?.nom_sociétéFR || '',
-        wilaya: demandeSummary.wilaya?.nom_wilaya || '',
-        daira: demandeSummary.daira?.nom_daira || '',
-        commune: demandeSummary.commune?.nom_commune || ''
+        holder: demandeSummary.detenteur?.nom_societeFR || '',
+        wilaya: demandeSummary.wilaya?.nom_wilayaFR || '',
+        daira: demandeSummary.daira?.nom_dairaFR || '',
+        commune: demandeSummary.commune?.nom_communeFR || ''
       });
     }
   }, [demandeSummary]);

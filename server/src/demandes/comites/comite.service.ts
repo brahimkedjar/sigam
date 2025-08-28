@@ -12,8 +12,6 @@ export class ComiteService {
       data: {
         id_seance: createComiteDto.id_seance,
         date_comite: createComiteDto.date_comite,
-        numero_decision: `${createComiteDto.numero_decision}-${createComiteDto.id_proc}`,
-        objet_deliberation: `${createComiteDto.objet_deliberation} (Procédure ${createComiteDto.id_proc})`,
         resume_reunion: createComiteDto.resume_reunion,
         fiche_technique: createComiteDto.fiche_technique,
         carte_projettee: createComiteDto.carte_projettee,
@@ -22,7 +20,9 @@ export class ComiteService {
           create: {
             decision_cd: 'favorable', // Default value
             duree_decision: null,
-            commentaires: null
+            commentaires: null,
+            numero_decision: `${createComiteDto.numero_decision}-${createComiteDto.id_proc}`,
+
           }
         }
       },
@@ -37,8 +37,6 @@ export class ComiteService {
       where: { id_comite: id },
       data: {
         date_comite: updateComiteDto.date_comite,
-        numero_decision: updateComiteDto.numero_decision,
-        objet_deliberation: updateComiteDto.objet_deliberation,
         resume_reunion: updateComiteDto.resume_reunion,
         fiche_technique: updateComiteDto.fiche_technique,
         carte_projettee: updateComiteDto.carte_projettee,
@@ -51,9 +49,6 @@ export class ComiteService {
     return this.prisma.comiteDirection.findFirst({
       where: {
         id_seance: seanceId,
-        numero_decision: {
-          endsWith: `-${procedureId}`
-        }
       },
       include: {
         decisionCDs: true

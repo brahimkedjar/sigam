@@ -52,7 +52,7 @@ export class TypeProceduresService {
   try {
     // ✅ Check if there are associated demandes before deleting
     const associatedDemandes = await this.prisma.demande.count({
-      where: { id_typeproc: id },
+      where: { id_typeProc: id },
     });
 
     if (associatedDemandes > 0) {

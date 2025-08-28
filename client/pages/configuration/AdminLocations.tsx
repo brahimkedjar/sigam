@@ -38,7 +38,7 @@ interface Commune {
   id_commune: number;
   id_daira: number;
   code_commune: string;
-  nom_commune: string;
+  nom_communeFR: string;
   daira: Daira;
 }
 
@@ -80,7 +80,7 @@ const AdminLocations = () => {
   const [communeForm, setCommuneForm] = useState({
     id_daira: 0,
     code_commune: '',
-    nom_commune: '',
+    nom_communeFR: '',
   });
 
   
@@ -296,7 +296,7 @@ const AdminLocations = () => {
     setCommuneForm({
       id_daira: dairas[0]?.id_daira || 0,
       code_commune: '',
-      nom_commune: '',
+      nom_communeFR: '',
     });
   };
 
@@ -327,7 +327,7 @@ const AdminLocations = () => {
       setCommuneForm({
         id_daira: item.id_daira,
         code_commune: item.code_commune,
-        nom_commune: item.nom_commune,
+        nom_communeFR: item.nom_communeFR,
       });
     }
   };
@@ -348,7 +348,7 @@ const AdminLocations = () => {
         item.code_daira.toLowerCase().includes(term))
     } else {
       return communes.filter(item =>
-        item.nom_commune.toLowerCase().includes(term) ||
+        item.nom_communeFR.toLowerCase().includes(term) ||
         item.code_commune.toLowerCase().includes(term))
     }
   };
@@ -612,7 +612,7 @@ const AdminLocations = () => {
               (filteredItems() as Commune[]).map((item: Commune) => (
                 <div key={item.id_commune} className={styles.card}>
                   <div className={styles.cardHeader}>
-                    <h3>{item.nom_commune} ({item.code_commune})</h3>
+                    <h3>{item.nom_communeFR} ({item.code_commune})</h3>
                     <div className={styles.actions}>
                       <button
                         className={styles.editButton}
@@ -844,9 +844,9 @@ const AdminLocations = () => {
                     <label>Nom Commune</label>
                     <input
                       type="text"
-                      value={communeForm.nom_commune}
+                      value={communeForm.nom_communeFR}
                       onChange={(e) =>
-                        setCommuneForm({ ...communeForm, nom_commune: e.target.value })
+                        setCommuneForm({ ...communeForm, nom_communeFR: e.target.value })
                       }
                       required
                     />

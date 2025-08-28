@@ -19,7 +19,7 @@ export interface ObligationResponseDto {
     code_permis: string;
     detenteur?: {
       id?: number;
-      nom_sociétéFR: string;
+      nom_societeFR: string;
       registreCommerce?: {
         nif: string;
       };

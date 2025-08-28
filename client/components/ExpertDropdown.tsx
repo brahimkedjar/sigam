@@ -3,13 +3,17 @@
 import { useState, useEffect } from 'react';
 import { FiUser, FiChevronDown, FiX } from 'react-icons/fi';
 import styles from './ExpertDropdown.module.css';
-
 type ExpertMinier = {
   id_expert: number;
   nom_expert: string;
-  fonction: string;
-  num_registre: string | null;
-  organisme: string;
+  num_agrement: string;
+  date_agrement: string;
+  etat_agrement: string;
+  adresse: string | null;
+  email: string | null;
+  tel_expert: string | null;
+  fax_expert: string | null;
+  specialisation: string | null;
 };
 
 type ExpertDropdownProps = {
@@ -49,7 +53,7 @@ export default function ExpertDropdown({ onSelect, disabled, initialExpert }: Ex
 
   const filteredExperts = experts.filter(expert =>
     expert.nom_expert.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expert.organisme.toLowerCase().includes(searchTerm.toLowerCase())
+    expert.etat_agrement.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSelect = (expert: ExpertMinier) => {
@@ -110,8 +114,8 @@ export default function ExpertDropdown({ onSelect, disabled, initialExpert }: Ex
                 >
                   <div className={styles.expertName}>{expert.nom_expert}</div>
                   <div className={styles.expertDetails}>
-                    <span>{expert.fonction}</span>
-                    <span>{expert.organisme}</span>
+                    <span>{expert.specialisation}</span>
+                    <span>{expert.etat_agrement}</span>
                   </div>
                 </div>
               ))

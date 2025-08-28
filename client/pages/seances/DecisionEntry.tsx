@@ -9,7 +9,7 @@ import styles from './DecisionEntry.module.css';
 // Updated Types
 
 interface Detenteur {
-  nom_sociétéFR: string;
+  nom_societeFR: string;
 }
 
 interface TypeProcedure {
@@ -36,6 +36,7 @@ interface Procedure {
 }
 
 interface Decision {
+  numero_decision: string;
   id_decision: number;
   decision_cd: 'favorable' | 'defavorable' | null;
   duree_decision: number | null;
@@ -46,7 +47,6 @@ interface Decision {
 interface ComiteDirection {
   id_comite: number;
   date_comite: string;
-  numero_decision: string;
   objet_deliberation: string;
   resume_reunion: string;
   fiche_technique: string | null;
@@ -101,13 +101,13 @@ export default function DecisionEntry() {
   // Get the company name - tries current demande first, then original demande from permis
   const getSocieteName = (proc: Procedure): string => {
     // Try current demande first
-    const currentDetenteur = proc.demandes[0]?.detenteur?.nom_sociétéFR;
+    const currentDetenteur = proc.demandes[0]?.detenteur?.nom_societeFR;
     if (currentDetenteur) return currentDetenteur;
     
     // For procedures linked to permis, get the original demande
     if (proc.permis.length > 0) {
       const originalProcedure = proc.permis[0].procedures[0];
-      return originalProcedure?.demandes[0]?.detenteur?.nom_sociétéFR || 'N/A';
+      return originalProcedure?.demandes[0]?.detenteur?.nom_societeFR || 'N/A';
     }
     
     return 'N/A';
@@ -164,7 +164,7 @@ export default function DecisionEntry() {
         comites: Array.isArray(seance.comites) ? seance.comites : [],
         procedures: Array.isArray(seance.procedures) ? seance.procedures : []
       }));
-
+     console.log("uuuuuuuuuuuuuuu",transformedData)
       setSeances(transformedData);
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
@@ -195,7 +195,7 @@ export default function DecisionEntry() {
         seance.procedures.some(
           (proc) =>
             proc.num_proc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (proc.demandes?.[0]?.detenteur?.nom_sociétéFR?.toLowerCase() || '').includes(
+            (proc.demandes?.[0]?.detenteur?.nom_societeFR?.toLowerCase() || '').includes(
               searchTerm.toLowerCase()
             ) ||
             (proc.demandes?.[0]?.typeProcedure?.libelle?.toLowerCase() || '').includes(
@@ -239,10 +239,15 @@ export default function DecisionEntry() {
     setCurrentProcedure(procedure);
     
     // Find comité for this procedure
-    const procedureComite = seance.comites.find(comite => 
-      comite.numero_decision.endsWith(`-${procedure.id_proc}`)
-    );
-    const decision = procedureComite?.decisionCDs[0];
+  
+const decision = seance.comites
+  .flatMap(comite => comite.decisionCDs)
+  .find(dec => dec.numero_decision?.endsWith(`-${procedure.id_proc}`)) || null;
+
+    const procedureComite = decision
+  ? seance.comites.find(c => c.id_comite === decision.id_comite) || null
+  : null;
+  
 
     setCurrentComite(procedureComite || null);
     setCurrentDecision(decision || null);
@@ -251,7 +256,7 @@ export default function DecisionEntry() {
       date_comite: procedureComite?.date_comite
         ? format(new Date(procedureComite.date_comite), "yyyy-MM-dd'T'HH:mm")
         : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      numero_decision: procedureComite?.numero_decision || `DEC-${format(new Date(), 'yyyyMMdd-HHmm')}-${procedure.id_proc}`,
+    numero_decision: decision?.numero_decision || `DEC-${format(new Date(), 'yyyyMMdd-HHmm')}-${procedure.id_proc}`,
       objet_deliberation: procedureComite?.objet_deliberation || `Décision pour ${procedure.num_proc}`,
       resume_reunion: procedureComite?.resume_reunion || '',
       fiche_technique: procedureComite?.fiche_technique || '',
@@ -492,39 +497,44 @@ export default function DecisionEntry() {
                             </tr>
                           </thead>
                           <tbody>
-                            {seance.procedures.map((procedure) => {
-                              const procedureComite = seance.comites.find(comite => 
-                                comite.numero_decision.endsWith(`-${procedure.id_proc}`)
-                              );
-                              const decision = procedureComite?.decisionCDs[0];
-                              return (
-                                <tr key={`${seance.id_seance}-${procedure.id_proc}`}>
-                                  <td>{procedure.num_proc}</td>
-                                  <td>{getSocieteName(procedure)}</td>
-                                  <td>{getProcedureType(procedure)}</td> {/* 🔑 Updated to use new function */}
-                                  <td>
-                                    {decision?.decision_cd ? (
-                                      <span className={`${styles.decisionBadge} ${
-                                        decision.decision_cd === 'favorable' ? styles.approved : styles.rejected
-                                      }`}>
-                                        {decision.decision_cd === 'favorable' ? 'Approuvée' : 'Rejetée'}
-                                      </span>
-                                    ) : (
-                                      <span className={styles.pendingBadge}>En attente</span>
-                                    )}
-                                  </td>
-                                  <td>
-                                    <button 
-                                      onClick={() => openDecisionModal(seance, procedure)}
-                                      className={decision ? styles.editButton : styles.primaryButton}
-                                    >
-                                      {decision ? 'Modifier' : 'Saisir'}
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
+  {seance.procedures.map((procedure) => {
+    const decision = seance.comites
+      .flatMap(comite => comite.decisionCDs) // all decisions
+      .find(dec => dec.numero_decision?.endsWith(`-${procedure.id_proc}`));
+
+    return (
+      <tr key={`${seance.id_seance}-${procedure.id_proc}`}>
+        <td>{procedure.num_proc}</td>
+        <td>{getSocieteName(procedure)}</td>
+        <td>{getProcedureType(procedure)}</td>
+        <td>
+          {decision?.decision_cd ? (
+            <span
+              className={`${styles.decisionBadge} ${
+                decision.decision_cd === 'favorable'
+                  ? styles.approved
+                  : styles.rejected
+              }`}
+            >
+              {decision.decision_cd === 'favorable' ? 'Approuvée' : 'Rejetée'}
+            </span>
+          ) : (
+            <span className={styles.pendingBadge}>En attente</span>
+          )}
+        </td>
+        <td>
+          <button
+            onClick={() => openDecisionModal(seance, procedure)}
+            className={decision ? styles.editButton : styles.primaryButton}
+          >
+            {decision ? 'Modifier' : 'Saisir'}
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
                         </table>
                       )}
                     </div>

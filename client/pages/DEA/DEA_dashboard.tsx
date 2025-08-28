@@ -155,7 +155,7 @@ const DEADashboard: React.FC = () => {
     
     const worksheetData = filteredObligations.map((ob) => ({
       Référence: ob.permis?.code_permis || '',
-      Détenteur: ob.permis?.detenteur?.nom_sociétéFR || '',
+      Détenteur: ob.permis?.detenteur?.nom_societeFR || '',
       'Type de droit': ob.typePaiement?.libelle || '',
       Montant: ob.amount || 0,
       Échéance: ob.dueDate ? new Date(ob.dueDate).toLocaleDateString() : '',
@@ -229,7 +229,7 @@ const DEADashboard: React.FC = () => {
     } else {
       const filtered = obligations.filter(obligation => {
         const permisCode = obligation.permis?.code_permis?.toLowerCase() || '';
-        const detenteurName = obligation.permis?.detenteur?.nom_sociétéFR?.toLowerCase() || '';
+        const detenteurName = obligation.permis?.detenteur?.nom_societeFR?.toLowerCase() || '';
         const typeLibelle = obligation.typePaiement?.libelle?.toLowerCase() || '';
         
         return permisCode.includes(term) ||
@@ -263,7 +263,7 @@ const DEADashboard: React.FC = () => {
           <Text strong>{code || 'N/A'}</Text>
           <br />
           <Text type="secondary">
-            {record.permis?.detenteur?.nom_sociétéFR || 'Détenteur non spécifié'}
+            {record.permis?.detenteur?.nom_societeFR || 'Détenteur non spécifié'}
           </Text>
         </div>
       ),

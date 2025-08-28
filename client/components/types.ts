@@ -7,7 +7,7 @@ export type LanguageCode = 'ar' | 'fr' | 'en';
 
 export interface PermisElement {
   id: string;
-  type: 'text' | 'rectangle' | 'image' | 'line';
+  type: 'text' | 'rectangle' | 'image' | 'line' | 'qrcode';
   x: number;
   y: number;
   width?: number;
@@ -32,11 +32,12 @@ export interface PermisElement {
   lineHeight?: number;
   wrap?: 'word' | 'char' | 'none';
   ellipsis?: boolean;
-
+  qrData?: string;
   // RTL / language support
   language?: LanguageCode;
   direction?: 'rtl' | 'ltr';
-
+scaleX?:any;
+scaleY?:any;
   // Articles linkage
   isArticle?: boolean;
   articleId?: string;
@@ -99,4 +100,15 @@ export interface ArticleItem {
   title: string;       // e.g., "المادة 1"
   content: string;     // Arabic text
   preselected?: boolean;
+}
+
+export interface QRCodeData {
+  typePermis: string;
+  codeDemande: string;
+  detenteur: string;
+  superficie: number;
+  duree: string;
+  localisation: string;
+  dateCreation: string;
+  coordinates?: any[];
 }

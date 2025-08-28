@@ -13,7 +13,8 @@ export class DecisionService {
         id_comite: createDecisionDto.id_comite,
         decision_cd: createDecisionDto.decision_cd,
         duree_decision: createDecisionDto.duree_decision,
-        commentaires: createDecisionDto.commentaires
+        commentaires: createDecisionDto.commentaires,
+        numero_decision: createDecisionDto.numero_decision     
       }
     });
   }

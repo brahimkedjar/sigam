@@ -31,7 +31,7 @@ export class PermisService {
       where.OR = [
         { code_permis: { contains: search, mode: 'insensitive' } },
         { lieu_dit: { contains: search, mode: 'insensitive' } },
-        { detenteur: { nom_sociétéFR: { contains: search, mode: 'insensitive' } } },
+        { detenteur: { nom_societeFR: { contains: search, mode: 'insensitive' } } },
       ];
     }
     
@@ -147,7 +147,7 @@ export class PermisService {
   async getStats() {
     const total = await this.prisma.permis.count();
     const active = await this.prisma.permis.count({
-      where: { statut: { lib_statut: 'Actif' } },
+      where: { statut: { lib_statut: 'En vigueur' } },
     });
     
     // Count expiring soon (within 30 days)

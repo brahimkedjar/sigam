@@ -28,7 +28,7 @@ export class PermisObligationDto {
   permis: {
     code_permis: string;
     detenteur: {
-      nom_sociétéFR: string;
+      nom_societeFR: string;
       registreCommerce: {
         nif: string;
       };

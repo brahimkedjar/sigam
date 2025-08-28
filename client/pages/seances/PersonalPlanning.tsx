@@ -17,7 +17,7 @@ interface Procedure {
   id_proc: number;
   num_proc: string;
   demandes: Array<{
-    detenteur: { nom_sociétéFR: string };
+    detenteur: { nom_societeFR: string };
     typeProcedure: { // 🔑 Moved typeProcedure inside demande
       libelle: string;
     };
@@ -242,7 +242,7 @@ const getProcedureType = (procedure: Procedure): string => {
 
 // Helper function to get company name
 const getSocieteName = (procedure: Procedure): string => {
-  return procedure.demandes[0]?.detenteur?.nom_sociétéFR || 'N/A';
+  return procedure.demandes[0]?.detenteur?.nom_societeFR || 'N/A';
 };
   const startTime = format(date, "HH:mm");
   const formattedDate = format(date, "EEEE d MMMM yyyy", { locale: fr });
@@ -278,7 +278,7 @@ const getSocieteName = (procedure: Procedure): string => {
               <span className={styles.procedureCount}>{seance.procedures.length} procédures</span>
               <div className={styles.procedureTooltip}>
                 {seance.procedures.map(proc => {
-                  const societe = proc.demandes?.[0]?.detenteur?.nom_sociétéFR || 'N/A';
+                  const societe = proc.demandes?.[0]?.detenteur?.nom_societeFR || 'N/A';
                   return (
                    <div key={proc.id_proc} className={styles.procedureItem}>
   <strong>{proc.num_proc}</strong> - {getSocieteName(proc)} ({getProcedureType(proc)})

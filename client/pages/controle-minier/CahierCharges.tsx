@@ -14,7 +14,7 @@ interface Permis {
   id: number;
   code_permis: string;
   typePermis?: { lib_type: string };
-  detenteur?: { nom_sociétéFR: string };
+  detenteur?: { nom_societeFR: string };
   statut?: { lib_statut: string };
   date_octroi?: string;
   date_expiration?: string;
@@ -77,7 +77,7 @@ export default function CahierChargesDashboard() {
 
   const permisOptions: PermisOption[] = filteredPermis.map((permis: Permis) => ({
     value: permis.id,
-    label: `${permis.code_permis} | ${permis.detenteur?.nom_sociétéFR || 'N/A'} (${permis.typePermis?.lib_type || 'N/A'})`,
+    label: `${permis.code_permis} | ${permis.detenteur?.nom_societeFR || 'N/A'} (${permis.typePermis?.lib_type || 'N/A'})`,
     data: permis
   }));
 
@@ -106,7 +106,7 @@ export default function CahierChargesDashboard() {
     setFilteredPermis(
       permisList.filter((permis: Permis) =>
         permis.code_permis.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (permis.detenteur?.nom_sociétéFR?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (permis.detenteur?.nom_societeFR?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
         (permis.typePermis?.lib_type?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
     ));
   }, [searchQuery, permisList]);

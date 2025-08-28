@@ -24,7 +24,7 @@ interface Procedure {
       libelle: string;
     };
     detenteur: {
-      nom_sociétéFR: string;
+      nom_societeFR: string;
     };
   }>;
 }
@@ -243,7 +243,7 @@ const pageCount = (doc.internal as any).getNumberOfPages();
 console.log('Procedure fetched:', detenteur?.data);
 
       setProcedure(procRes.data);
-      setDetenteur(detenteur.data.detenteur?.nom_sociétéFR || '');
+      setDetenteur(detenteur.data.detenteur?.nom_societeFR || '');
       const idSeance = procRes.data.id_seance;
       if (!idSeance) {
         setError('Aucune séance associée à cette procédure');

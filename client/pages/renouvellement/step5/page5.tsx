@@ -8,7 +8,7 @@ import {
   FiMap, FiGlobe, FiHash, FiEdit2, FiSearch,
   FiSave
 } from 'react-icons/fi';
-import styles from '@/pages/demande/step5/substances.module.css';
+import styles from './substances.module.css';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import * as turf from '@turf/turf';
@@ -22,10 +22,11 @@ import { toast } from 'react-toastify';
 import { useActivateEtape } from '@/src/hooks/useActivateEtape';
 import { useRouterWithLoading } from '@/src/hooks/useRouterWithLoading';
 
-type Substance = {
+type SubstanceWithPriority = {
   id_sub: number;
   nom_subFR: string;
-  catégorie_sub: string;
+  categorie_sub: string;
+  priorite: 'principale' | 'secondaire';
 };
 
 type Point = {
@@ -40,32 +41,31 @@ type Wilaya = {
   id_wilaya: number;
   id_antenne: number;
   code_wilaya: string;
-  nom_wilaya: string;
+  nom_wilayaFR: string;
 };
 
 type Daira = {
   id_daira: number;
   id_wilaya: number;
   code_daira: string;
-  nom_daira: string;
+  nom_dairaFR: string;
 };
 
 type Commune = {
   id_commune: number;
   id_daira: number;
   code_commune: string;
-  nom_commune: string;
+  nom_communeFR: string;
 };
 
 export default function Step4_Substances() {
   const searchParams = useSearchParams();
   const router = useRouterWithLoading();
-  const originalId  = searchParams?.get("originalDemandeId");
-  const originalprocid  = searchParams?.get("original_proc_id");
   const idProcStr = searchParams?.get('id');
   const idProc = idProcStr ? parseInt(idProcStr, 10) : undefined;
   const [idDemande, setIdDemande] = useState<number | null>(null);
   const [codeDemande, setCodeDemande] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentView, navigateTo } = useViewNavigator();
@@ -84,16 +84,15 @@ export default function Step4_Substances() {
   const [dureeTravaux, setDureeTravaux] = useState('');
   const [dateDebutPrevue, setDateDebutPrevue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
   // Substances State
-  const [allSubstances, setAllSubstances] = useState<Substance[]>([]);
+  const [allSubstances, setAllSubstances] = useState<SubstanceWithPriority[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [famille, setFamille] = useState('');
   const [savingEtape, setSavingEtape] = useState(false);
   const [etapeMessage, setEtapeMessage] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<any>(null);
+  const [superficiermax, setsuperficier] = useState(0);
 
   // Administrative divisions state
   const [wilayas, setWilayas] = useState<Wilaya[]>([]);
@@ -102,16 +101,15 @@ export default function Step4_Substances() {
   const [selectedWilaya, setSelectedWilaya] = useState<string>('');
   const [selectedDaira, setSelectedDaira] = useState<string>('');
   const [selectedCommune, setSelectedCommune] = useState<string>('');
-  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
-
-  
+  const [selectedPriority, setSelectedPriority] = useState<'principale' | 'secondaire'>('secondaire');
+  const [selectedSubstances, setSelectedSubstances] = useState<SubstanceWithPriority[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [existingCoords, setExistingCoords] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [statutProc, setStatutProc] = useState<string | undefined>(undefined);
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   useActivateEtape({ idProc, etapeNum: 5, statutProc });
-
 
   useEffect(() => {
     if (!idProc) return;
@@ -123,23 +121,23 @@ export default function Step4_Substances() {
         setWilayas(wilayasRes.data);
 
         // Then load the demande data
-        const res = await axios.get(`${apiURL}/api/procedures/${originalprocid}/demande`);
-        const res2 = await axios.get(`${apiURL}/api/procedures/${idProc}/demande`);
+        const res = await axios.get(`${apiURL}/api/procedures/${idProc}/demande`);
         const demande = res.data;
         setIdDemande(demande.id_demande);
         setCodeDemande(demande.code_demande);
-       setStatutProc(res2.data.procedure.statut_proc);
+        setStatutProc(res.data.procedure.statut_proc);
+        setsuperficier(demande.typePermis.superficie_max)
         if (demande.coordonnees) setPoints(demande.coordonnees);
-
+        console.log("sssssssssssssssssss",demande)
         // Set initial values
         const wilayaId = demande.id_wilaya?.toString() || '';
         const dairaId = demande.id_daira?.toString() || '';
         const communeId = demande.id_commune?.toString() || '';
 
         // Set display values first
-        setWilaya(demande.wilaya?.nom_wilaya || '');
-        setDaira(demande.daira?.nom_daira || '');
-        setCommune(demande.commune?.nom_commune || '');
+        setWilaya(demande.wilaya?.nom_wilayaFR || '');
+        setDaira(demande.daira?.nom_dairaFR || '');
+        setCommune(demande.commune?.nom_communeFR || '');
         if (wilayaId) {
           setSelectedWilaya(wilayaId);
           const dairasRes = await axios.get(`${apiURL}/api/wilayas/${wilayaId}/dairas`);
@@ -176,7 +174,7 @@ export default function Step4_Substances() {
 
   const fetchCoordinates = async () => {
   try {
-    const res = await axios.get(`${apiURL}/coordinates/procedure/${originalprocid}`);
+    const res = await axios.get(`${apiURL}/coordinates/procedure/${idProc}`);
     const coords = res.data;
 
     const safeCoords = (coords ?? []).filter((c: any, i: number) => {
@@ -262,7 +260,7 @@ export default function Step4_Substances() {
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
-  const submitCoordinates = async (statutCoord: 'DEMANDE_INITIALE'= 'DEMANDE_INITIALE') => {
+  const submitCoordinates = async (statutCoord: 'DEMANDE_INITIALE' = 'DEMANDE_INITIALE') => {
   setIsSaving(true);
 
   const payload = {
@@ -303,6 +301,16 @@ const saveCoordinatesToBackend = async () => {
     return;
   }
 
+  // 🔥 Check superficie max before saving
+  if (polygonArea !== null && polygonArea / 10000 > superficiermax) {
+    toast.warning(
+      `⚠️ La superficie calculée (${(polygonArea / 10000).toFixed(
+        2
+      )} Ha) dépasse la limite autorisée (${superficiermax} Ha)`
+    );
+    return;
+  }
+
   const newPoints = points.map((p) => ({
     x: parseFloat(p.x),
     y: parseFloat(p.y),
@@ -310,8 +318,9 @@ const saveCoordinatesToBackend = async () => {
   }));
 
   try {
-    const existingRes = await fetch(`${apiURL}/coordinates/procedure/${originalprocid}`);
-    if (!existingRes.ok) throw new Error('Erreur lors de la récupération des coordonnées existantes');
+    const existingRes = await fetch(`${apiURL}/coordinates/procedure/${idProc}`);
+    if (!existingRes.ok)
+      throw new Error('Erreur lors de la récupération des coordonnées existantes');
 
     const existing = await existingRes.json();
 
@@ -321,7 +330,6 @@ const saveCoordinatesToBackend = async () => {
       z: parseFloat(pc.coordonnee.z),
     }));
 
-    // Save to state to pass into modal if needed
     setExistingCoords(existingPoints);
 
     const areEqual =
@@ -340,7 +348,6 @@ const saveCoordinatesToBackend = async () => {
       return;
     }
 
-    // Ask confirmation before replacing existing coordinates
     if (existingPoints.length > 0) {
       setShowModal(true);
     } else {
@@ -351,6 +358,7 @@ const saveCoordinatesToBackend = async () => {
     toast.error('Erreur de vérification des coordonnées existantes');
   }
 };
+
 
 
 
@@ -373,46 +381,93 @@ const saveCoordinatesToBackend = async () => {
   };
 
   useEffect(() => {
-    if (!originalId) return;
+  if (!idDemande) return;
 
-    axios.get(`${apiURL}/api/substances/demande/${originalId}`)
-      .then(res => {
-        setSelectedIds(res.data.map((item: any) => item.id_sub));
-      })
-      .catch(err => {
-        console.warn('Error loading selected substances', err);
-      });
-  }, [originalId]);
+  axios.get(`${apiURL}/api/substances/demande/${idDemande}`)
+    .then(res => {
+      const substancesWithPriority = res.data.map((item: any) => ({
+        id_sub: item.id_sub,
+        nom_subFR: item.nom_subFR,
+        categorie_sub: item.categorie_sub,
+        priorite: item.priorite || 'secondaire' // Default to secondaire if not provided
+      }));
+      setSelectedSubstances(substancesWithPriority);
+      setSelectedIds(substancesWithPriority.map((item: any) => item.id_sub));
+    })
+    .catch(err => {
+      console.warn('Error loading selected substances', err);
+    });
+}, [idDemande]);
 
   useEffect(() => {
-    if (originalId) fetchSubstances();
-  }, [originalId, famille]);
+    if (idDemande) fetchSubstances();
+  }, [idDemande, famille]);
 
-  const handleSelect = async (sub: Substance) => {
-    if (!originalId) return;
+  const handleSelect = async (sub: SubstanceWithPriority) => {
+  if (!idDemande) return;
 
-    setIsLoading(true);
-    const isSelected = selectedIds.includes(sub.id_sub);
+  setIsLoading(true);
+  const isSelected = selectedIds.includes(sub.id_sub);
 
-    try {
-      if (isSelected) {
-        await axios.delete(
-          `${apiURL}/api/substances/demande/${originalId}/${sub.id_sub}`
-        );
-        setSelectedIds((prev) => prev.filter((id) => id !== sub.id_sub));
-      } else {
-        await axios.post(`${apiURL}/api/substances/demande/${originalId}`, {
-          id_substance: sub.id_sub,
-        });
-        setSelectedIds((prev) => [...prev, sub.id_sub]);
-      }
-    } catch (err) {
-      console.error("Error updating selection", err);
-      setError("Error updating selection");
-    } finally {
-      setIsLoading(false);
+  try {
+    if (isSelected) {
+      await axios.delete(
+        `${apiURL}/api/substances/demande/${idDemande}/${sub.id_sub}`
+      );
+      setSelectedSubstances(prev => prev.filter(s => s.id_sub !== sub.id_sub));
+      setSelectedIds(prev => prev.filter(id => id !== sub.id_sub));
+    } else {
+      const response = await axios.post(`${apiURL}/api/substances/demande/${idDemande}`, {
+        id_substance: sub.id_sub,
+        priorite: selectedPriority
+      });
+      
+      // Add the new substance with its priority
+      const newSubstance: SubstanceWithPriority = {
+        id_sub: sub.id_sub,
+        nom_subFR: sub.nom_subFR,
+        categorie_sub: sub.categorie_sub,
+        priorite: selectedPriority
+      };
+      
+      setSelectedSubstances(prev => [...prev, newSubstance]);
+      setSelectedIds(prev => [...prev, sub.id_sub]);
     }
-  };
+  } catch (err) {
+    console.error("Error updating selection", err);
+    setError("Error updating selection");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const changePriority = async (id_sub: number, newPriority: 'principale' | 'secondaire') => {
+  if (!idDemande) return;
+
+  try {
+    // First remove the substance
+    await axios.delete(`${apiURL}/api/substances/demande/${idDemande}/${id_sub}`);
+    
+    // Then add it back with the new priority
+    await axios.post(`${apiURL}/api/substances/demande/${idDemande}`, {
+      id_substance: id_sub,
+      priorite: newPriority
+    });
+
+    // Update local state
+    setSelectedSubstances(prev => 
+      prev.map(sub => 
+        sub.id_sub === id_sub 
+          ? { ...sub, priorite: newPriority }
+          : sub
+      )
+    );
+
+  } catch (err) {
+    console.error("Error changing priority", err);
+    setError("Error changing priority");
+  }
+};
 
   useEffect(() => {
     if (points.length >= 3 && points.every(coord => coord.x && coord.y)) {
@@ -520,13 +575,15 @@ const saveCoordinatesToBackend = async () => {
       };
 
       // Save the demande information
-      await axios.put(`${apiURL}/demandes/${originalId}`, demandeData);
+      await axios.put(`${apiURL}/demandes/${idDemande}`, demandeData);
 
       // Then mark the step as completed
       await axios.post(`${apiURL}/api/procedure-etape/set/${idProc}/5`);
-      const res = await axios.get(`${apiURL}/api/demande/${originalId}/summary`);
-      router.push(`/renouvellement/step6/page6?id=${idProc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
+      const res = await axios.get(`${apiURL}/api/demande/${idDemande}/summary`);
+      setSummaryData(res.data);
+      setShowModal(true);
       setSuccess("Data saved successfully!");
+      setTimeout(() => setSuccess(null), 3000);
 
     } catch (err) {
       console.error("Erreur lors de la récupération du résumé", err);
@@ -543,7 +600,7 @@ const saveCoordinatesToBackend = async () => {
     setError("ID procédure manquant");
     return;
   }
-       router.push(`/renouvellement/step4/page4?id=${idProc}&originalDemandeId=${originalId}&original_proc_id=${originalprocid}`);
+       router.push(`/demande/step4/page4?id=${idProc}`);
 
 };
 
@@ -573,14 +630,7 @@ const saveCoordinatesToBackend = async () => {
 
           <div className={styles['informations-container']}>
             {/* Progress UI */}
-                       <ProgressStepper
-  steps={
-    originalprocid
-      ? STEP_LABELS.filter((step) => step !== "Avis Wali")
-      : STEP_LABELS
-  }
-  currentStep={currentStep}
-/>
+                        <ProgressStepper steps={STEP_LABELS} currentStep={currentStep} />
 
 
             {/* Header Section */}
@@ -638,6 +688,7 @@ const saveCoordinatesToBackend = async () => {
                               </td>
                               <td>
                                 <input
+                                disabled={statutProc === 'TERMINEE'}
                                   type="text"
                                   className={styles['form-input']}
                                   placeholder="500"
@@ -648,6 +699,7 @@ const saveCoordinatesToBackend = async () => {
                               <td>
                                 {points.length > 1 && (
                                   <button
+                                  disabled={statutProc === 'TERMINEE' || !statutProc}
                                     className={styles['btn-remove-row']}
                                     onClick={() => removeCoordinateRow(index)}
                                   >
@@ -663,6 +715,7 @@ const saveCoordinatesToBackend = async () => {
                       {/* Add/Save Buttons */}
                       <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'space-between', marginBottom: '6px' }}>
                         <button
+                        disabled={ !statutProc}
                           className={styles['btn-add-row']}
                           onClick={() => addPoint()}
                         >
@@ -671,32 +724,76 @@ const saveCoordinatesToBackend = async () => {
                         </button>
 
                         <>
-      <button  className={styles['btn-save']} onClick={saveCoordinatesToBackend} disabled={isSaving}>
-        Enregistrer les coordonnées  <FiSave className={styles['btn-icon']} />
-      </button>
+     <button
+  className={`${styles['btn-save']} ${
+    isSaving ||
+    !statutProc ||
+    (polygonArea !== null && polygonArea / 10000 > superficiermax)
+      ? styles['btn-disabled']
+      : ''
+  }`}
+  onClick={saveCoordinatesToBackend}
+  disabled={
+    isSaving ||
+    !statutProc ||
+    (polygonArea !== null && polygonArea / 10000 > superficiermax)
+  }
+>
+  {isSaving ? (
+    <>
+      <span className={styles['spinner']} /> Enregistrement...
+    </>
+  ) : (
+    <>
+      Enregistrer les coordonnées <FiSave className={styles['btn-icon']} />
+    </>
+  )}
+</button>
+
 
       {showModal && (
-        <ConfirmReplaceModal
-          coordinates={existingCoords}
-          onCancel={() => setShowModal(false)}
-          onConfirm={submitCoordinates}
-        />
-      )}
+  <ConfirmReplaceModal
+    coordinates={existingCoords}
+    onCancel={() => setShowModal(false)}
+    onConfirm={() => submitCoordinates()} // <-- wrap it!
+  />
+)}
+
     </>
                       </div>
                     </div>
 
                     {/* Polygon Area Display */}
-                    {polygonArea && (
-                      <div className={styles['polygon-info']}>
-                        <div className={styles['info-row']}>
-                          <span className={styles['info-label']}>Superficie calculée :&nbsp;</span>
-                          <span className={styles['info-value']}>
-                            {(polygonArea / 10000).toFixed(2)} Ha
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {polygonArea && superficiermax && (
+  <div className={styles['polygon-info']}>
+    <div className={styles['info-row']}>
+      <span className={styles['info-label']}>Superficie calculée :&nbsp;</span>
+      <span
+        className={`${styles['info-value']} ${
+          polygonArea / 10000 > superficiermax
+            ? styles['error-text']
+            : styles['success-text']
+        }`}
+      >
+        {(polygonArea / 10000).toFixed(2)} Ha
+      </span>
+    </div>
+
+    <div className={styles['info-row']}>
+      <span className={styles['info-label']}>Superficie maximale autorisée :&nbsp;</span>
+      <span className={styles['info-value']}>
+        {superficiermax} Ha
+      </span>
+    </div>
+
+    {polygonArea / 10000 > superficiermax && (
+      <div className={styles['warning-box']}>
+        ⚠️ La superficie calculée dépasse la limite maximale autorisée pour ce type de permis.
+      </div>
+    )}
+  </div>
+)}
+
                   </div>
                 </div>
               {/* Location Information Card */}
@@ -712,6 +809,7 @@ const saveCoordinatesToBackend = async () => {
                       Wilaya
                     </label>
                     <select
+                    disabled={statutProc === 'TERMINEE'}
                       className={styles['form-select']}
                       value={selectedWilaya}
                       onChange={(e) => setSelectedWilaya(e.target.value)}
@@ -719,7 +817,7 @@ const saveCoordinatesToBackend = async () => {
                       <option value="">Sélectionner une wilaya</option>
                       {wilayas.map((w) => (
                         <option key={w.id_wilaya} value={w.id_wilaya}>
-                          {w.code_wilaya} - {w.nom_wilaya}
+                          {w.code_wilaya} - {w.nom_wilayaFR}
                         </option>
                       ))}
                     </select>
@@ -734,12 +832,12 @@ const saveCoordinatesToBackend = async () => {
                       className={styles['form-select']}
                       value={selectedDaira}
                       onChange={(e) => setSelectedDaira(e.target.value)}
-                      disabled={!selectedWilaya}
+                      disabled={!selectedWilaya || statutProc === 'TERMINEE'}
                     >
                       <option value="">Sélectionner une daïra</option>
                       {dairas.map((d) => (
                         <option key={d.id_daira} value={d.id_daira}>
-                          {d.code_daira} - {d.nom_daira}
+                          {d.code_daira} - {d.nom_dairaFR}
                         </option>
                       ))}
                     </select>
@@ -754,12 +852,12 @@ const saveCoordinatesToBackend = async () => {
                       className={styles['form-select']}
                       value={selectedCommune}
                       onChange={(e) => setSelectedCommune(e.target.value)}
-                      disabled={!selectedDaira}
+                      disabled={!selectedDaira || statutProc === 'TERMINEE'}
                     >
                       <option value="">Sélectionner une commune</option>
                       {communes.map((c) => (
                         <option key={c.id_commune} value={c.id_commune}>
-                          {c.code_commune} - {c.nom_commune}
+                          {c.code_commune} - {c.nom_communeFR}
                         </option>
                       ))}
                     </select>
@@ -780,6 +878,7 @@ const saveCoordinatesToBackend = async () => {
                       Statut Juridique
                     </label>
                     <select
+                    disabled={statutProc === 'TERMINEE'}
                       className={styles['form-select']}
                       value={statutJuridique}
                       onChange={(e) => setStatutJuridique(e.target.value)}
@@ -797,6 +896,7 @@ const saveCoordinatesToBackend = async () => {
                       Occupant Légal
                     </label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       className={styles['form-input']}
                       value={occupantLegal}
@@ -810,6 +910,7 @@ const saveCoordinatesToBackend = async () => {
                       Lieu Dit
                     </label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="text"
                       className={styles['form-input']}
                       value={lieuDitFr}
@@ -823,6 +924,7 @@ const saveCoordinatesToBackend = async () => {
                       Superficie (Ha)
                     </label>
                     <input
+                    disabled={statutProc === 'TERMINEE'}
                       type="number"
                       className={styles['form-input']}
                       value={superficie}
@@ -846,6 +948,7 @@ const saveCoordinatesToBackend = async () => {
                     <div className={styles['form-group']}>
                       <label className={styles['form-label']}>Filtrer par famille</label>
                       <select
+                      disabled={statutProc === 'TERMINEE'}
                         className={styles['form-select']}
                         onChange={(e) => setFamille(e.target.value)}
                         value={famille}
@@ -855,6 +958,7 @@ const saveCoordinatesToBackend = async () => {
                         <option value="non-métalliques">Non métalliques</option>
                         <option value="radioactives">Radioactives</option>
                       </select>
+                      
                     </div>
 
                     <div className={styles['form-group']}>
@@ -862,6 +966,7 @@ const saveCoordinatesToBackend = async () => {
                       <div className={styles['search-container']}>
                         <FiSearch className={styles['search-icon']} />
                         <input
+                        disabled={statutProc === 'TERMINEE'}
                           type="text"
                           placeholder="Rechercher..."
                           className={styles['search-input']}
@@ -883,6 +988,7 @@ const saveCoordinatesToBackend = async () => {
                           <li key={sub.id_sub} className={styles['substance-item']}>
                             <label className={styles['substance-label']}>
                               <input
+                              disabled={statutProc === 'TERMINEE'}
                                 type="checkbox"
                                 className={styles['substance-checkbox']}
                                 checked={isChecked(sub.id_sub)}
@@ -890,7 +996,7 @@ const saveCoordinatesToBackend = async () => {
                               />
                               <span className={styles['custom-checkbox']}></span>
                               <span className={styles['substance-name']}>{sub.nom_subFR}</span>
-                              <span className={styles['substance-category']}>{sub.catégorie_sub}</span>
+                              <span className={styles['substance-category']}>{sub.categorie_sub}</span>
                             </label>
                           </li>
                         ))}
@@ -912,23 +1018,37 @@ const saveCoordinatesToBackend = async () => {
                   </h4>
 
                   <ul className={styles['selected-substances-list']}>
-                    {allSubstances
-                      .filter((s) => selectedIds.includes(s.id_sub))
-                      .map((sub) => (
-                        <li key={sub.id_sub} className={styles['selected-substance']}>
-                          <div className={styles['substance-info']}>
-                            <span className={styles['substance-name']}>{sub.nom_subFR}</span>
-                            <span className={styles['substance-category']}>{sub.catégorie_sub}</span>
-                          </div>
-                          <button
-                            className={styles['remove-btn']}
-                            onClick={() => handleSelect(sub)}
-                          >
-                            <FiX />
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
+  {selectedSubstances.map((sub) => (
+    <li key={sub.id_sub} className={styles['selected-substance']}>
+      <div className={styles['substance-info']}>
+        <span className={styles['substance-name']}>{sub.nom_subFR}</span>
+        <span className={styles['substance-category']}>{sub.categorie_sub}</span>
+        
+        {/* Priority selector */}
+        <select
+          disabled={statutProc === 'TERMINEE' || !statutProc}
+          className={styles['priority-select']}
+          value={sub.priorite}
+          onChange={(e) => changePriority(sub.id_sub, e.target.value as 'principale' | 'secondaire')}
+        >
+          <option value="secondaire">Secondaire</option>
+          <option value="principale">Principale</option>
+        </select>
+        
+        <span className={`${styles['priority-badge']} ${styles[sub.priorite]}`}>
+          {sub.priorite === 'principale' ? 'Principale' : 'Secondaire'}
+        </span>
+      </div>
+      <button
+        disabled={statutProc === 'TERMINEE' || !statutProc}
+        className={styles['remove-btn']}
+        onClick={() => handleSelect(sub)}
+      >
+        <FiX />
+      </button>
+    </li>
+  ))}
+</ul>
                 </div>
               </div>
 </div>
@@ -945,7 +1065,7 @@ const saveCoordinatesToBackend = async () => {
               <button
                 className={styles['btnSave']}
                 onClick={handleSaveEtape}
-                disabled={savingEtape }
+                disabled={savingEtape || statutProc === 'TERMINEE' || !statutProc}
               >
                 <BsSave className={styles['btnIcon']} /> {savingEtape ? "Sauvegarde en cours..." : "Sauvegarder l'étape"}
               </button>

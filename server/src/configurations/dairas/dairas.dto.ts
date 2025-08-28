@@ -15,7 +15,12 @@ export class CreateDairaDto {
   @ApiProperty({ description: 'Daira name', example: 'Sidi M\'Hamed' })
   @IsString()
   @IsNotEmpty()
-  nom_daira: string;
+  nom_dairaFR: string;
+
+  @ApiProperty({ description: 'Daira name', example: 'سي' })
+  @IsString()
+  @IsNotEmpty()
+  nom_dairaAR: string;
 }
 
 export class UpdateDairaDto {

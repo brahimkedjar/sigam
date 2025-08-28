@@ -8,7 +8,7 @@ export class DetenteurMoraleService {
 
   async findAll() {
     return this.prisma.detenteurMorale.findMany({
-      orderBy: { nom_sociétéFR: 'asc' },
+      orderBy: { nom_societeFR: 'asc' },
     });
   }
 

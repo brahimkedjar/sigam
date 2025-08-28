@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateExpertDto {
   @IsString()
@@ -7,13 +7,34 @@ export class CreateExpertDto {
 
   @IsString()
   @IsNotEmpty()
-  fonction: string;
+  num_agrement: string;
+  
+@IsDateString()
+@IsNotEmpty()
+date_agrement: string;
 
-  @IsString()
-  @IsOptional()
-  num_registre?: string;
 
   @IsString()
   @IsNotEmpty()
-  organisme: string;
+  etat_agrement: string;
+
+  @IsString()
+  @IsOptional()
+  adresse?: string;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  tel_expert?: string;
+
+  @IsString()
+  @IsOptional()
+  fax_expert?: string;
+
+  @IsString()
+  @IsOptional()
+  specialisation?: string;
 }

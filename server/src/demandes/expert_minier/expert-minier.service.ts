@@ -3,20 +3,21 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateExpertDto } from './create-expert.dto';
 import { UpdateExpertDto } from './update-expert.dto';
 import { ExpertResponseDto } from './expert-response.dto';
-import { Readable } from 'stream';
 
 @Injectable()
 export class ExpertMinierService {
- 
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createExpertDto: CreateExpertDto): Promise<ExpertResponseDto> {
-    const expert = await this.prisma.expertMinier.create({
-      data: createExpertDto,
-    });
-    const result = this.toResponseDto(expert);
-    return result;
-  }
+  const expert = await this.prisma.expertMinier.create({
+    data: {
+      ...createExpertDto,
+      date_agrement: new Date(createExpertDto.date_agrement), 
+    },
+  });
+  return this.toResponseDto(expert);
+}
+
 
   async findAll(): Promise<ExpertResponseDto[]> {
     const experts = await this.prisma.expertMinier.findMany();
@@ -31,12 +32,18 @@ export class ExpertMinierService {
   }
 
   async update(id: number, updateExpertDto: UpdateExpertDto): Promise<ExpertResponseDto> {
-    const updatedExpert = await this.prisma.expertMinier.update({
-      where: { id_expert: id },
-      data: updateExpertDto,
-    });
-    return this.toResponseDto(updatedExpert);
-  }
+  const updatedExpert = await this.prisma.expertMinier.update({
+    where: { id_expert: id },
+    data: {
+      ...updateExpertDto,
+      date_agrement: updateExpertDto.date_agrement 
+        ? new Date(updateExpertDto.date_agrement) // ✅ convert only if present
+        : undefined,
+    },
+  });
+  return this.toResponseDto(updatedExpert);
+}
+
 
   async remove(id: number): Promise<void> {
     await this.prisma.expertMinier.delete({
@@ -48,9 +55,14 @@ export class ExpertMinierService {
     return {
       id_expert: expert.id_expert,
       nom_expert: expert.nom_expert,
-      fonction: expert.fonction,
-      num_registre: expert.num_registre,
-      organisme: expert.organisme,
+      num_agrement: expert.num_agrement,
+      date_agrement: expert.date_agrement,
+      etat_agrement: expert.etat_agrement,
+      adresse: expert.adresse,
+      email: expert.email,
+      tel_expert: expert.tel_expert,
+      fax_expert: expert.fax_expert,
+      specialisation: expert.specialisation,
     };
   }
 
@@ -61,7 +73,7 @@ export class ExpertMinierService {
     let importedCount = 0;
     
     for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue; // Skip empty lines
+      if (!lines[i].trim()) continue;
       
       const values = lines[i].split(',').map(value => value.trim());
       const row: any = {};
@@ -73,19 +85,26 @@ export class ExpertMinierService {
       try {
         const expertData: CreateExpertDto = {
           nom_expert: row.nom_expert || row.nom || row.name || '',
-          fonction: row.fonction || row.function || row.role || '',
-          num_registre: row.num_registre || row.registre || row.registration || null,
-          organisme: row.organisme || row.organization || row.org || '',
+          num_agrement: row.num_agrement || row.agrement || row.numero_agrement || '',
+date_agrement: row.date_agrement 
+  ? row.date_agrement.split('T')[0]  
+  : new Date().toISOString().split('T')[0],  
+          etat_agrement: row.etat_agrement || row.etat || row.status || '',
+          adresse: row.adresse || row.address || '',
+          email: row.email || row.mail || '',
+          tel_expert: row.tel_expert || row.telephone || row.phone || '',
+          fax_expert: row.fax_expert || row.fax || '',
+          specialisation: row.specialisation || row.specialty || '',
         };
 
-        if (!expertData.nom_expert || !expertData.fonction || !expertData.organisme) {
+        if (!expertData.nom_expert || !expertData.num_agrement || !expertData.etat_agrement) {
           continue;
         }
 
         const existingExpert = await this.prisma.expertMinier.findFirst({
           where: {
             nom_expert: expertData.nom_expert,
-            organisme: expertData.organisme,
+            num_agrement: expertData.num_agrement,
           },
         });
 
@@ -103,14 +122,9 @@ export class ExpertMinierService {
         importedCount++;
       } catch (error) {
         console.error('Error importing row:', error);
-        // Continue with next row
       }
     }
     
     return importedCount;
   }
 }
-
-
-
-

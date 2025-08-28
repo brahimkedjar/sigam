@@ -5,8 +5,8 @@ async function main() {
   await prisma.statutPermis.createMany({
     data: [
       {
-        lib_statut: 'Actif',
-        description: 'Le permis est actuellement actif',
+        lib_statut: 'En vigueur',
+        description: 'Le permis est actuellement En vigueur',
       },
       {
         lib_statut: 'Suspendu',

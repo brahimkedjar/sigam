@@ -4,4 +4,5 @@ export class CreateDecisionDto {
   decision_cd: 'favorable' | 'defavorable';
   duree_decision?: number;
   commentaires?: string;
+  numero_decision: string;
 }

@@ -88,6 +88,7 @@ const PermitRenewalPage = () => {
   }
 }, [permitDetails, permitTypeDetails]);
 
+
   useEffect(() => {
     if (!idProc) return;
 
@@ -108,7 +109,7 @@ const PermitRenewalPage = () => {
           setPermitDetails({
             code_permis: permit.code_permis,
             typePermis: permit.typePermis?.lib_type || 'N/A',
-            detenteur: permit.detenteur?.nom_sociétéFR || 'N/A',
+            detenteur: permit.detenteur?.nom_societeFR || 'N/A',
             date_expiration: permit.date_expiration,
             currentStatus: permit.statut?.lib_statut || 'N/A',
             id_typePermis: permit.id_typePermis

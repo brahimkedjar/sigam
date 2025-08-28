@@ -20,10 +20,16 @@ import { toast } from 'react-toastify';
 type ExpertMinier = {
   id_expert: number;
   nom_expert: string;
-  fonction: string;
-  num_registre: string | null;
-  organisme: string;
+  num_agrement: string;
+  date_agrement: string;
+  etat_agrement: string;
+  adresse: string | null;
+  email: string | null;
+  tel_expert: string | null;
+  fax_expert: string | null;
+  specialisation: string | null;
 };
+
 export default function Capacites() {
   const [form, setForm] = useState({
     id_expert: 0,
@@ -33,9 +39,9 @@ export default function Capacites() {
     description: '',
     financement: '',
     nom_expert: '',
-    fonction: '',
-    num_registre: '',
-    organisme: '',
+    specialisation: '',
+    num_agrement: '',
+    etat_agrement: '',
     date_demarrage_prevue:''
   });
   
@@ -62,9 +68,9 @@ export default function Capacites() {
     setForm(prev => ({
       ...prev,
       nom_expert: selectedExpert.nom_expert,
-      fonction: selectedExpert.fonction,
-      num_registre: selectedExpert.num_registre || '',
-      organisme: selectedExpert.organisme,
+      specialisation: selectedExpert.specialisation || '',
+      num_agrement: selectedExpert.num_agrement || '',
+      etat_agrement: selectedExpert.etat_agrement,
       id_expert: selectedExpert.id_expert, 
     }));
   }
@@ -104,9 +110,9 @@ export default function Capacites() {
   description: demande.description_travaux || '',
   financement: demande.sources_financement || '',
   nom_expert: demande.expertMinier?.nom_expert || '',
-  fonction: demande.expertMinier?.fonction || '',
-  num_registre: demande.expertMinier?.num_registre || '',
-  organisme: demande.expertMinier?.organisme || '',
+  specialisation: demande.expertMinier?.specialisation || '',
+  num_agrement: demande.expertMinier?.num_agrement || '',
+  etat_agrement: demande.expertMinier?.etat_agrement || '',
   date_demarrage_prevue: demande.date_demarrage_prevue?.split('T')[0] || ''
 });
 
@@ -366,38 +372,38 @@ const handleSaveEtape = async () => {
     />
   </div>
   <div className={styles.formGroup}>
-    <label className={styles.formLabel}>Fonction*</label>
+    <label className={styles.formLabel}>Specialisation*</label>
     <input
       type="text"
-      name="fonction"
+      name="specialisation"
       className={styles.formInput}
       onChange={handleChange}
-      value={form.fonction}
+      value={form.specialisation}
       placeholder="Ex: Géologue senior"
       required
       disabled
     />
   </div>
   <div className={styles.formGroup}>
-    <label className={styles.formLabel}>Numéro de registre</label>
+    <label className={styles.formLabel}>Numéro d'aggrement</label>
     <input
       type="text"
-      name="num_registre"
+      name="numero d'aggrement"
       className={styles.formInput}
       onChange={handleChange}
-      value={form.num_registre}
+      value={form.num_agrement}
       placeholder="Numéro d'enregistrement"
       disabled
     />
   </div>
   <div className={styles.formGroup}>
-    <label className={styles.formLabel}>Organisme*</label>
+    <label className={styles.formLabel}>Etat D'aggrement*</label>
     <input
       type="text"
-      name="organisme"
+      name="etat d'aggrement"
       className={styles.formInput}
       onChange={handleChange}
-      value={form.organisme}
+      value={form.etat_agrement}
       placeholder="Organisme d'affiliation"
       required
       disabled
@@ -428,7 +434,7 @@ const handleSaveEtape = async () => {
               <button
                 onClick={handleNext}
                className={styles.btnNext}
-                disabled={isLoading || !form.nom_expert || !form.fonction || !form.organisme}
+                disabled={isLoading || !form.nom_expert || !form.specialisation || !form.etat_agrement}
               >
                 Suivant
                                 <FiChevronRight className={styles.btnIcon} />

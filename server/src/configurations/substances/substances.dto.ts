@@ -15,7 +15,7 @@ export class CreateSubstanceDto {
   @ApiProperty({ description: 'Substance category', example: 'Métal précieux' })
   @IsString()
   @IsNotEmpty()
-  catégorie_sub: string;
+  categorie_sub: string;
 
   @ApiProperty({ description: 'Associated royalty rate ID', example: 1, required: false })
   @IsNumber()
@@ -37,7 +37,7 @@ export class UpdateSubstanceDto {
   @ApiProperty({ description: 'Substance category', example: 'Métal précieux', required: false })
   @IsString()
   @IsOptional()
-  catégorie_sub?: string;
+  categorie_sub?: string;
 
   @ApiProperty({ description: 'Associated royalty rate ID', example: 1, required: false })
   @IsNumber()

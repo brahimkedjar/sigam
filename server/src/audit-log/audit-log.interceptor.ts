@@ -46,37 +46,37 @@ export class AuditLogInterceptor implements NestInterceptor {
   }
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
-    const request = context.switchToHttp().getRequest();
-    const { method, originalUrl, body, params } = request;
+  const request = context.switchToHttp().getRequest();
+  const { method, originalUrl, body, params } = request;
 
-    if (this.shouldSkipLogging(request)) {
-      return next.handle();
-    }
+  if (this.shouldSkipLogging(request)) {
+    return next.handle();
+  }
 
-    if (this.excludedRoutes.includes(originalUrl) || (method === 'GET' && !originalUrl.includes('/export'))) {
-      return next.handle();
-    }
+  if (this.excludedRoutes.includes(originalUrl) || (method === 'GET' && !originalUrl.includes('/export'))) {
+    return next.handle();
+  }
 
-    if (!this.modelCacheInitialized) {
-      await this.initializeModelCache();
-    }
+  if (!this.modelCacheInitialized) {
+    await this.initializeModelCache();
+  }
 
-    const entityType = this.getEntityType(context, originalUrl);
-    const entityId = params.id ? Number(params.id) : body?.id ? Number(body.id) : undefined;
-    
-    let previousState: Record<string, any> | null = null;
-    let changes: Record<string, { old?: any; new: any }> = {};
+  const entityType = this.getEntityType(context, originalUrl);
+  const entityId = params.id ? Number(params.id) : body?.id ? Number(body.id) : undefined;
+  
+  let previousState: Record<string, any> | null = null;
+  let changes: Record<string, { old?: any; new: any }> = {};
 
-    if (['PUT', 'PATCH', 'DELETE'].includes(method) && entityId) {
-      try {
-        const modelName = await this.getPrismaModelName(entityType);
-        if (modelName) {
-          previousState = await this.getPreviousState(modelName, entityId);
-          
-          if (!previousState) {
-            throw new NotFoundException(`${entityType} not found`);
-          }
-
+  if (['PUT', 'PATCH', 'DELETE'].includes(method) && entityId) {
+    try {
+      const modelName = await this.getPrismaModelName(entityType);
+      if (modelName) {
+        previousState = await this.getPreviousState(modelName, entityId);
+        
+        // Don't throw error if previous state is null, just log and continue
+        if (!previousState) {
+          this.logger.warn(`Previous state not found for ${entityType} with ID ${entityId}`);
+        } else {
           request['_oldData'] = previousState;
 
           if (method === 'DELETE') {
@@ -89,127 +89,119 @@ export class AuditLogInterceptor implements NestInterceptor {
             changes = this.getChanges(body, previousState, method) || {};
           }
         }
-      } catch (error) {
-        this.logger.error(`Error getting previous state: ${error.message}`);
-        if (error instanceof NotFoundException) {
-          throw error;
-        }
       }
+    } catch (error) {
+      this.logger.error(`Error getting previous state: ${error.message}`);
+      // Don't rethrow the error, just continue without previous state
     }
-
-    if (method === 'POST') {
-      changes = this.getChanges(body, null, method) || {};
-    }
-
-    return next.handle().pipe(
-      tap({
-        next: async (response) => {
-          const finalEntityId = entityId || response?.id || 
-                              (response?.data?.id ? Number(response.data.id) : undefined);
-
-          if (['PUT', 'PATCH'].includes(method)) {
-            const updatedChanges = this.getChanges(body, request['_oldData'], method);
-            if (updatedChanges) {
-              changes = updatedChanges;
-            }
-          }
-
-          if (method === 'POST' && response) {
-            changes = this.getCreateChanges(body, response);
-          }
-
-          await this.logAction({
-            request,
-            action: this.getAction(method),
-            entityType,
-            entityId: finalEntityId,
-            changes,
-            previousState,
-            status: 'SUCCESS',
-            response
-          });
-        },
-        error: async (error) => {
-          await this.logAction({
-            request,
-            action: this.getAction(method),
-            entityType,
-            entityId,
-            changes,
-            previousState,
-            status: 'FAILURE',
-            error
-          });
-        },
-      }),
-    );
   }
+
+  if (method === 'POST') {
+    changes = this.getChanges(body, null, method) || {};
+  }
+
+  return next.handle().pipe(
+    tap({
+      next: async (response) => {
+        const finalEntityId = entityId || response?.id || 
+                            (response?.data?.id ? Number(response.data.id) : undefined);
+
+        if (['PUT', 'PATCH'].includes(method) && request['_oldData']) {
+          const updatedChanges = this.getChanges(body, request['_oldData'], method);
+          if (updatedChanges) {
+            changes = updatedChanges;
+          }
+        }
+
+        if (method === 'POST' && response) {
+          changes = this.getCreateChanges(body, response);
+        }
+
+        await this.logAction({
+          request,
+          action: this.getAction(method),
+          entityType,
+          entityId: finalEntityId,
+          changes,
+          previousState,
+          status: 'SUCCESS',
+          response
+        });
+      },
+      error: async (error) => {
+        await this.logAction({
+          request,
+          action: this.getAction(method),
+          entityType,
+          entityId,
+          changes,
+          previousState,
+          status: 'FAILURE',
+          error
+        });
+      },
+    }),
+  );
+}
 
   private async initializeModelCache(): Promise<void> {
-    try {
-      const prismaClient = this.prisma as any;
-      
-      // Method 1: Use Prisma's DMMF (Data Model Meta Format) - Most reliable
-      if (prismaClient._dmmf?.datamodel?.models) {
-        for (const model of prismaClient._dmmf.datamodel.models) {
-          const primaryKeyField = model.fields.find((field: any) => field.isId);
-          const fields = model.fields.map((field: any) => field.name);
-          
-          this.prismaModels.set(model.name, {
-            name: model.name,
-            primaryKey: primaryKeyField?.name || 'id',
-            fields: fields
-          });
-        }
-        this.modelCacheInitialized = true;
-        this.logger.log(`Discovered ${this.prismaModels.size} Prisma models from DMMF`);
-        this.logModels();
-        return;
-      }
-
-      // Method 2: Use Prisma's modelMap (alternative approach)
-      if (prismaClient._dmmf?.modelMap) {
-        for (const [modelName, modelInfo] of Object.entries(prismaClient._dmmf.modelMap as Record<string, any>)) {
-          const primaryKeyField = modelInfo.fields?.find((field: any) => field.isId);
-          const fields = modelInfo.fields?.map((field: any) => field.name) || [];
-          
-          this.prismaModels.set(modelName, {
-            name: modelName,
-            primaryKey: primaryKeyField?.name || 'id',
-            fields: fields
-          });
-        }
-        this.modelCacheInitialized = true;
-        this.logger.log(`Discovered ${this.prismaModels.size} Prisma models from modelMap`);
-        this.logModels();
-        return;
-      }
-
-      // Method 3: Dynamic discovery by testing each potential model
-      await this.discoverModelsDynamically();
-      
-    } catch (error) {
-      this.logger.error('Failed to initialize model cache', error);
-      throw error;
-    }
-  }
-
-  private async discoverModelsDynamically(): Promise<void> {
+  try {
     const prismaClient = this.prisma as any;
-    const potentialModels = Object.keys(prismaClient).filter(key => 
-      !key.startsWith('_') && 
-      !key.startsWith('$') && 
-      typeof prismaClient[key] === 'object' &&
-      prismaClient[key]?.findMany
-    );
+    
+    // Method 1: Use Prisma's DMMF (Data Model Meta Format) - Most reliable
+    if (prismaClient._dmmf?.datamodel?.models) {
+      for (const model of prismaClient._dmmf.datamodel.models) {
+        // Only add models that actually exist in the database
+        try {
+          const modelInstance = prismaClient[model.name];
+          if (modelInstance && typeof modelInstance.findMany === 'function') {
+            const primaryKeyField = model.fields.find((field: any) => field.isId);
+            const fields = model.fields.map((field: any) => field.name);
+            
+            this.prismaModels.set(model.name, {
+              name: model.name,
+              primaryKey: primaryKeyField?.name || 'id',
+              fields: fields
+            });
+          }
+        } catch (error) {
+          this.logger.debug(`Skipping model ${model.name}: ${error.message}`);
+        }
+      }
+      this.modelCacheInitialized = true;
+      this.logger.log(`Discovered ${this.prismaModels.size} Prisma models from DMMF`);
+      this.logModels();
+      return;
+    }
 
-    for (const modelName of potentialModels) {
+    // Fallback to dynamic discovery with better error handling
+    await this.discoverModelsDynamically();
+    
+  } catch (error) {
+    this.logger.error('Failed to initialize model cache', error);
+    // Don't throw, continue with empty cache
+    this.modelCacheInitialized = true;
+  }
+}
+
+  private readonly knownValidModels = [
+  'user', 'role', 'permission', 'auditLog', 'procedure', 'demande', 'permis',
+  'typePermis', 'statutPermis', 'expertMinier', 'detenteurMorale', 'personnePhysique',
+  'registreCommerce', 'comiteDirection', 'decisionCD', 'membresComite', 'seanceCDPrevue',
+  'redevanceBareme', 'obligationFiscale', 'paiement', 'typePaiement', 'antenne',
+  'wilaya', 'daira', 'commune', 'substance', 'dossierAdministratif', 'document'
+];
+
+private async discoverModelsDynamically(): Promise<void> {
+  const prismaClient = this.prisma as any;
+  
+  // First, try known valid models
+  for (const modelName of this.knownValidModels) {
+    if (prismaClient[modelName] && typeof prismaClient[modelName]?.findMany === 'function') {
       try {
-        // Test if this is actually a Prisma model by trying to count records
         const model = prismaClient[modelName];
-        const count = await model.count({ take: 1 });
+        const count = await model.count({ take: 1 }).catch(() => 0);
         
-        // If successful, it's a valid model
         const primaryKey = await this.discoverPrimaryKey(modelName, model);
         const fields = await this.discoverFields(modelName, model);
         
@@ -220,37 +212,168 @@ export class AuditLogInterceptor implements NestInterceptor {
         });
         
       } catch (error) {
-        // Not a valid model, skip
-        continue;
+        this.logger.debug(`Known model ${modelName} failed: ${error.message}`);
+      }
+    }
+  }
+
+  // Then try other potential models more cautiously
+  const potentialModels = Object.keys(prismaClient).filter(key => 
+    !key.startsWith('_') && 
+    !key.startsWith('$') && 
+    typeof prismaClient[key] === 'object' &&
+    prismaClient[key]?.findMany &&
+    !this.knownValidModels.includes(key) // Skip already processed models
+  );
+
+  for (const modelName of potentialModels) {
+    try {
+      const model = prismaClient[modelName];
+      
+      // Quick test with timeout
+      const testPromise = model.findFirst({ select: { id: true } });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 500)
+      );
+      
+      await Promise.race([testPromise, timeoutPromise]);
+      
+      const primaryKey = await this.discoverPrimaryKey(modelName, model);
+      const fields = await this.discoverFields(modelName, model);
+      
+      this.prismaModels.set(modelName, {
+        name: modelName,
+        primaryKey,
+        fields
+      });
+      
+    } catch (error) {
+      this.logger.debug(`Skipping model ${modelName}: ${error.message}`);
+      continue;
+    }
+  }
+
+  this.modelCacheInitialized = true;
+  this.logger.log(`Discovered ${this.prismaModels.size} Prisma models dynamically`);
+  this.logModels();
+}
+
+  private async discoverPrimaryKey(modelName: string, model: any): Promise<string> {
+  try {
+    const prismaClient = this.prisma as any;
+    
+    // Method 1: Use Prisma's DMMF (Data Model Meta Format) - Most reliable
+    if (prismaClient._dmmf?.datamodel?.models) {
+      const modelInfo = prismaClient._dmmf.datamodel.models.find(
+        (m: any) => m.name === modelName
+      );
+      
+      if (modelInfo) {
+        const primaryKeyField = modelInfo.fields.find((field: any) => field.isId);
+        if (primaryKeyField) {
+          this.logger.debug(`Found primary key from DMMF: ${modelName}.${primaryKeyField.name}`);
+          return primaryKeyField.name;
+        }
       }
     }
 
-    this.modelCacheInitialized = true;
-    this.logger.log(`Discovered ${this.prismaModels.size} Prisma models dynamically`);
-    this.logModels();
-  }
+    // Method 2: Use Prisma's modelMap
+    if (prismaClient._dmmf?.modelMap) {
+      const modelInfo = prismaClient._dmmf.modelMap[modelName];
+      if (modelInfo) {
+        const primaryKeyField = modelInfo.fields?.find((field: any) => field.isId);
+        if (primaryKeyField) {
+          this.logger.debug(`Found primary key from modelMap: ${modelName}.${primaryKeyField.name}`);
+          return primaryKeyField.name;
+        }
+      }
+    }
 
-  private async discoverPrimaryKey(modelName: string, model: any): Promise<string> {
+    // Method 3: Direct database introspection using raw SQL query
     try {
-      // Try to find a record to analyze
+      const databaseUrl = process.env.DATABASE_URL;
+      if (databaseUrl) {
+        const dbType = databaseUrl.split(':')[0];
+        
+        if (dbType === 'postgresql') {
+          // PostgreSQL specific query to get primary keys
+          const result = await this.prisma.$queryRaw`
+            SELECT a.attname as column_name
+            FROM pg_index i
+            JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+            WHERE i.indrelid = ${modelName}::regclass
+            AND i.indisprimary;
+          `;
+          
+          if (result && Array.isArray(result) && result.length > 0) {
+            const primaryKey = result[0].column_name;
+            this.logger.debug(`Found primary key from PostgreSQL: ${modelName}.${primaryKey}`);
+            return primaryKey;
+          }
+        } 
+      }
+    } catch (sqlError) {
+      this.logger.debug(`SQL introspection failed for ${modelName}: ${sqlError.message}`);
+    }
+
+    // Method 4: Use Prisma's internal metadata
+    try {
+      // Access Prisma's internal model metadata
+      const modelMeta = (model as any)?._meta?.model;
+      if (modelMeta?.primaryKey) {
+        const primaryKeyFields = modelMeta.primaryKey.fields;
+        if (primaryKeyFields && primaryKeyFields.length > 0) {
+          this.logger.debug(`Found primary key from Prisma meta: ${modelName}.${primaryKeyFields[0]}`);
+          return primaryKeyFields[0];
+        }
+      }
+
+      // Try to access the unique fields from the model
+      const uniqueFields = modelMeta?.uniqueFields || [];
+      if (uniqueFields.length > 0) {
+        // Return the first unique field that looks like an ID
+        const idField = uniqueFields.find((field: string) => 
+          field.toLowerCase().includes('id') || field === 'id'
+        );
+        if (idField) {
+          this.logger.debug(`Found unique ID field: ${modelName}.${idField}`);
+          return idField;
+        }
+        return uniqueFields[0];
+      }
+    } catch (metaError) {
+      this.logger.debug(`Metadata access failed for ${modelName}: ${metaError.message}`);
+    }
+
+    // Method 5: Fallback to analyzing the first record
+    try {
       const record = await model.findFirst({});
       if (record) {
-        // Look for fields that look like primary keys
+        // Look for fields that are likely primary keys
         const possibleKeys = Object.keys(record).filter(key => 
           (key === 'id' || key.toLowerCase().includes('id')) &&
-          (typeof record[key] === 'number' || typeof record[key] === 'string')
+          (typeof record[key] === 'number' || typeof record[key] === 'string' || typeof record[key] === 'bigint')
         );
 
         if (possibleKeys.length > 0) {
-          return possibleKeys[0]; // Return the first likely primary key
+          const primaryKey = possibleKeys[0];
+          this.logger.debug(`Found primary key from record analysis: ${modelName}.${primaryKey}`);
+          return primaryKey;
         }
       }
-    } catch (error) {
-      this.logger.debug(`Failed to discover primary key for ${modelName}: ${error.message}`);
+    } catch (findError) {
+      this.logger.debug(`Record analysis failed for ${modelName}: ${findError.message}`);
     }
 
-    return 'id'; // Fallback
+    // Ultimate fallback
+    this.logger.warn(`Using fallback primary key 'id' for model: ${modelName}`);
+    return 'id';
+
+  } catch (error) {
+    this.logger.error(`Failed to discover primary key for ${modelName}: ${error.message}`);
+    return 'id';
   }
+}
 
   private async discoverFields(modelName: string, model: any): Promise<string[]> {
     try {
@@ -270,6 +393,8 @@ export class AuditLogInterceptor implements NestInterceptor {
   }
 
   private async getPrismaModelName(entityType: string): Promise<string | null> {
+      this.logger.debug(`Looking up model for entity type: ${entityType}`);
+
   if (!entityType) return null;
 
   const entityLower = entityType.toLowerCase();
@@ -283,6 +408,10 @@ export class AuditLogInterceptor implements NestInterceptor {
 
   // 2. French to model mapping for common cases
   const frenchMappings: Record<string, string> = {
+    'GeneratePermis': 'permis',
+    'generate-permis': 'permis',
+    'generate_permis': 'permis',
+    'generation-permis': 'permis',
     'societe': 'detenteurMorale',
     'société': 'detenteurMorale',
     'entreprise': 'detenteurMorale',
@@ -338,8 +467,6 @@ export class AuditLogInterceptor implements NestInterceptor {
     'seance': 'seanceCDPrevue',
     'session': 'seanceCDPrevue',
     'meeting': 'seanceCDPrevue',
-    'ingenieur': 'ingenieur',
-    'engineer': 'ingenieur',
     'zone': 'zoneInterdite',
     'area': 'zoneInterdite',
     'region': 'zoneInterdite',
@@ -519,33 +646,48 @@ private async findSemanticMatch(entityType: string): Promise<string | null> {
   }
 
   private async getPreviousState(modelName: string, entityId: number): Promise<any> {
-    try {
-      const prismaClient = this.prisma as any;
-      const model = prismaClient[modelName];
-      
-      if (!model?.findUnique) {
-        throw new Error(`Model ${modelName} not found`);
-      }
-
-      const modelInfo = this.prismaModels.get(modelName);
-      const primaryKey = modelInfo?.primaryKey || 'id';
-
-      this.logger.debug(`Fetching previous state for ${modelName} with ${primaryKey}=${entityId}`);
-
-      return await model.findUnique({
-        where: { [primaryKey]: entityId },
-      });
-      
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        // Handle specific Prisma errors
-        this.logger.error(`Prisma error fetching ${modelName}: ${error.message}`);
-      } else {
-        this.logger.error(`Error fetching previous state for ${modelName}:${entityId}`, error);
-      }
-      return null;
+  try {
+    const prismaClient = this.prisma as any;
+    const model = prismaClient[modelName];
+    
+    if (!model?.findUnique) {
+      throw new Error(`Model ${modelName} not found`);
     }
+
+    const modelInfo = this.prismaModels.get(modelName);
+    const primaryKey = modelInfo?.primaryKey || 'id';
+
+    this.logger.debug(`Fetching previous state for ${modelName} with ${primaryKey}=${entityId}`);
+    this.logger.debug(`Available fields for ${modelName}: ${modelInfo?.fields?.join(', ') || 'unknown'}`);
+
+    // Debug: Check what fields the model actually expects
+    try {
+      const sample = await model.findFirst({});
+      if (sample) {
+        this.logger.debug(`Sample record fields: ${Object.keys(sample).join(', ')}`);
+      }
+    } catch (sampleError) {
+      this.logger.debug(`Could not get sample record: ${sampleError.message}`);
+    }
+
+    return await model.findUnique({
+      where: { [primaryKey]: entityId },
+    });
+    
+  } catch (error) {
+    this.logger.error(`Detailed error fetching ${modelName}:${entityId}`, {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    
+    if (error instanceof PrismaClientKnownRequestError) {
+      this.logger.error(`Prisma error code: ${error.code}`);
+    }
+    
+    return null;
   }
+}
 
   private getEntityType(context: ExecutionContext, url: string): string {
     // 1. Try to get from metadata

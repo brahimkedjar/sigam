@@ -63,7 +63,7 @@ interface Fonction {
 }
 
 interface Detenteur {
-  nom_sociétéFR: string;
+  nom_societeFR: string;
   telephone: string;
   registreCommerce?: RegistreCommerce; 
   fonctions: Fonction[];
@@ -174,7 +174,7 @@ export default function SummaryModal({ data, onClose }: SummaryModalProps) {
                 <div className={styles['info-grid']}>
                   <div className={styles['info-item']}>
                     <span className={styles['info-label']}><FiBriefcase /> Nom</span>
-                    <span className={styles['info-value']}>{detenteur.nom_sociétéFR}</span>
+                    <span className={styles['info-value']}>{detenteur.nom_societeFR}</span>
                   </div>
                   <div className={styles['info-item']}>
                     <span className={styles['info-label']}><FiHash /> RC</span>

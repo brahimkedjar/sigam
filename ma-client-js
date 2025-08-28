@@ -424,10 +424,10 @@ model DetenteurMorale {
   id_detenteur       Int                @id @default(autoincrement())
   id_statutJuridique Int
   statutJuridique    StatutJuridique    @relation(fields: [id_statutJuridique], references: [id_statutJuridique])
-  nom_sociétéFR      String
-  nom_sociétéAR      String
-  nationalité        String
-  adresse_siège      String
+  nom_societeFR      String
+  nom_societeAR      String
+  nationalite        String
+  adresse_siege      String
   telephone          String
   fax                String
   pay                String
@@ -500,7 +500,7 @@ model Substance {
   id_sub           Int                        @id @default(autoincrement())
   nom_subFR        String
   nom_subAR        String
-  catégorie_sub    String
+  categorie_sub    String
   id_redevance     Int?
   redevance        RedevanceBareme?          @relation(fields: [id_redevance], references: [id_redevance])
   associeesDemande SubstanceAssocieeDemande[]
@@ -677,7 +677,7 @@ model Commune {
   id_commune   Int      @id @default(autoincrement())
   id_daira     Int
   code_commune String   @unique
-  nom_commune  String
+  nom_communeFR  String
   daira        Daira    @relation(fields: [id_daira], references: [id_daira])
 
   Demande Demande[]

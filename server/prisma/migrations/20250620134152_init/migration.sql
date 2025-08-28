@@ -26,7 +26,7 @@ CREATE TABLE "Procedure" (
 CREATE TABLE "DetenteurMorale" (
     "id_detenteur" SERIAL NOT NULL,
     "id_statutJuridique" TEXT NOT NULL,
-    "nom_sociétéFR" TEXT NOT NULL,
+    "nom_societeFR" TEXT NOT NULL,
     "nom_sociétéAR" TEXT NOT NULL,
     "nationalité" TEXT NOT NULL,
     "adresse_siège" TEXT NOT NULL,

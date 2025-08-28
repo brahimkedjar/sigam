@@ -106,8 +106,6 @@ export class CdService {
       data: {
         id_seance: createComiteDto.id_seance,
         date_comite: new Date(createComiteDto.date_comite),
-        numero_decision: numDecision,
-        objet_deliberation: createComiteDto.objet_deliberation,
         resume_reunion: createComiteDto.resume_reunion,
         fiche_technique: createComiteDto.fiche_technique,
         carte_projettee: createComiteDto.carte_projettee,
@@ -116,7 +114,8 @@ export class CdService {
           create: createComiteDto.decisions.map(decision => ({
             decision_cd: decision.decision_cd,
             duree_decision: decision.duree_decision,
-            commentaires: decision.commentaires
+            commentaires: decision.commentaires,
+            numero_decision: numDecision
           }))
         } : undefined
       },
@@ -170,8 +169,6 @@ export class CdService {
         where: { id_comite: id },
         data: {
           date_comite: updateComiteDto.date_comite ? new Date(updateComiteDto.date_comite) : undefined,
-          numero_decision: updateComiteDto.numero_decision,
-          objet_deliberation: updateComiteDto.objet_deliberation,
           resume_reunion: updateComiteDto.resume_reunion,
           fiche_technique: updateComiteDto.fiche_technique,
           carte_projettee: updateComiteDto.carte_projettee,
@@ -180,7 +177,8 @@ export class CdService {
             create: updateComiteDto.decisions.map(decision => ({
               decision_cd: decision.decision_cd,
               duree_decision: decision.duree_decision,
-              commentaires: decision.commentaires
+              commentaires: decision.commentaires,
+              numero_decision:decision.numero_decision
             }))
           } : undefined
         },
@@ -210,7 +208,8 @@ export class CdService {
         id_comite: createDecisionDto.id_comite,
         decision_cd: createDecisionDto.decision_cd,
         duree_decision: createDecisionDto.duree_decision,
-        commentaires: createDecisionDto.commentaires
+        commentaires: createDecisionDto.commentaires,
+        numero_decision: createDecisionDto.numero_decision
       }
     });
   }

@@ -387,7 +387,7 @@ async terminerProcedure(idProc: number) {
       where: { id_demande: demande.id_demande },
       data: {
         statut_demande: 'ACCEPTEE',
-        date_fin: now,
+        date_fin_instruction: now,
       },
     }),
   ]);
